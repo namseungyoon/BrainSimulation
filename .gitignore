@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+x86_64/
+*.dll
+*.o
+*.lib
+*.exp
+**/shared/models/
+**/data/
+*.h5
+*.nrrd
+*.zip
+Thumbs.db
+.DS_Store

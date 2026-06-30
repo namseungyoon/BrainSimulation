@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# NEURON 컴파일 산출물
+x86_64/
+*.dll
+*.o
+*.lib
+*.exp
+*.c.bak
+
+# 대용량/라이선스 자산 (저장소에 포함하지 않음)
+shared/models/          # BBP 라이선스 형태·e-model (23 me-model) — 별도 보관
+**/data/                # 대용량 다운로드 (Romani circuit/atlas 등)
+*.h5
+*.nrrd
+*.zip
+
+# OS
+Thumbs.db
+.DS_Store
