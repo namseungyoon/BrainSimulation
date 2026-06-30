@@ -1,15 +1,38 @@
+# ── Python ──
 __pycache__/
-*.py[cod]
+*.py[codz]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+*.egg
 .ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Environments ──
+.env
+.venv
+env/
+venv/
+ENV/
+
+# ── NEURON 컴파일 산출물 ──
 x86_64/
 *.dll
 *.o
 *.lib
 *.exp
+
+# ── 대용량/라이선스 자산 (저장소 미포함) ──
 **/shared/models/
 **/data/
 *.h5
 *.nrrd
 *.zip
+
+# ── OS ──
 Thumbs.db
 .DS_Store
