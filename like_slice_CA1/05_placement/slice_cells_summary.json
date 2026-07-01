@@ -1,0 +1,31 @@
+{
+  "step": "5 placement (V2b)",
+  "slice": "slice400",
+  "n_cells": 17647,
+  "n_all": 456378,
+  "EI": {
+    "exc": 15723,
+    "inh": 1924,
+    "ratio": "89.1:10.9"
+  },
+  "by_layer": {
+    "SLM": 29,
+    "SR": 24,
+    "SP": 17330,
+    "SO": 264
+  },
+  "by_mtype": {
+    "SP_PC": 15723,
+    "SP_Ivy": 679,
+    "SP_PVBC": 445,
+    "SP_CCKBC": 271,
+    "SO_OLM": 147,
+    "SP_BS": 135,
+    "SP_AA": 77,
+    "SO_Tri": 53,
+    "SO_BS": 41,
+    "SLM_PPA": 29,
+    "SR_SCA": 24,
+    "SO_BP": 23
+  }
+}
