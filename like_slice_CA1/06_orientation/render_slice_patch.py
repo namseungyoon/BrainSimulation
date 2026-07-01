@@ -36,8 +36,8 @@ FIG = os.path.join(HERE, "figures")
 LAYER_BOUND = [("SO", 0, 233), ("SP", 233, 315), ("SR", 315, 702), ("SLM", 702, 905)]
 LAYER_BG = {"SO": "#eaf0f7", "SP": "#fdece0", "SR": "#eaf5ee", "SLM": "#f9eaea"}
 T_TOTAL = 905.0
-COMP_COLOR = {3: "#2b6cb0", 4: "#2f8f4e", 1: "#000000"}  # 기저/정점/소마
-COMP_NAME = {3: "기저수상", 4: "정점수상", 1: "소마"}
+COMP_COLOR = {1: "#000000", 2: "#e08214", 3: "#2b6cb0", 4: "#2f8f4e"}  # 소마/축삭/기저/정점
+COMP_NAME = {1: "소마", 2: "축삭", 3: "기저수상", 4: "정점수상"}
 rng = np.random.default_rng(3)
 
 
@@ -48,25 +48,39 @@ def local_frame(quat):
             R.apply([0., 0., 1.]))   # t2(두께)
 
 
-def draw_cell(ax, world, swc, c0_pos, nd_c0, radial, t1, include_axon=False):
-    """세포 형태를 (가로=t1투영, 세로=깊이) 평면에 선분으로."""
+def draw_cell(ax, world, swc, c0_pos, nd_c0, radial, t1, include_axon=True):
+    """세포 형태를 (가로=t1투영, 세로=깊이) 평면에 구획별 색 선분으로.
+    축삭은 옅고 얇게(배경 haze), 수상돌기는 진하게 위에 그림."""
     id2idx = {int(i): k for k, i in enumerate(swc["id"])}
     horiz = (world - c0_pos) @ t1
     depth = nd_c0 * T_TOTAL + (world - c0_pos) @ radial
-    segs, cols = [], []
+    ax_segs, dn_segs, dn_cols = [], [], []
     for k, par in enumerate(swc["parent"]):
         t = swc["type"][k]
-        if t == 2 and not include_axon:
-            continue
         j = id2idx.get(int(par))
         if j is None:
             continue
-        segs.append([(horiz[j], depth[j]), (horiz[k], depth[k])])
-        cols.append(COMP_COLOR.get(t, "#bbbbbb"))
-    ax.add_collection(LineCollection(segs, colors=cols, linewidths=0.4, alpha=0.8))
-    # 소마 점
+        seg = [(horiz[j], depth[j]), (horiz[k], depth[k])]
+        if t == 2:
+            if include_axon:
+                ax_segs.append(seg)
+        else:
+            dn_segs.append(seg); dn_cols.append(COMP_COLOR.get(t, "#bbbbbb"))
+    if ax_segs:   # 축삭: 옅은 배경
+        ax.add_collection(LineCollection(ax_segs, colors=COMP_COLOR[2],
+                                         linewidths=0.2, alpha=0.18, zorder=2))
+    ax.add_collection(LineCollection(dn_segs, colors=dn_cols,
+                                     linewidths=0.5, alpha=0.85, zorder=3))
     sm = swc["type"] == 1
-    ax.scatter(horiz[sm].mean(), depth[sm].mean(), s=18, c="k", zorder=5)
+    ax.scatter(horiz[sm].mean(), depth[sm].mean(), s=16, c="k", zorder=5)
+
+
+def comp_legend(ax, with_axon=True):
+    from matplotlib.lines import Line2D
+    order = [1, 2, 3, 4] if with_axon else [1, 3, 4]
+    ax.legend(handles=[Line2D([0], [0], color=COMP_COLOR[t], lw=2,
+                              label=COMP_NAME[t]) for t in order],
+              loc="upper left", fontsize=9, framealpha=0.9)
 
 
 def layer_bands(ax, xmin, xmax):
@@ -126,10 +140,8 @@ def main():
     ax.set_xlim(hmin, hmax); ax.set_ylim(-30, T_TOTAL + 30)
     ax.set_xlabel("횡방향 (µm)"); ax.set_ylabel("깊이 (µm, SO바닥=0 → SLM천장)")
     ax.set_title(f"V2d-6  찍은 직사각형 박스 내 전체 {len(idx)}세포 (가로150×두께36µm×전층)\n"
-                 "기저수상(파랑)=SO쪽 · 정점수상(초록)=SR/SLM쪽 · 검정=소마 · 배경=층")
-    from matplotlib.lines import Line2D
-    ax.legend(handles=[Line2D([0], [0], color=COMP_COLOR[t], label=COMP_NAME[t])
-                       for t in (3, 4, 1)], loc="upper left", fontsize=9)
+                 "구획별 색: 소마/축삭/기저수상/정점수상 · 배경=층")
+    comp_legend(ax, with_axon=True)
     ax.set_aspect("equal")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V2d_6_slice_patch.png"), dpi=140)
@@ -141,11 +153,13 @@ def main():
     w, _ = mt.transform(s["xyz"], mt.soma_center(s), quat[c0], xyz[c0])
     hh = (w - xyz[c0]) @ t1
     layer_bands(ax, hh.min(), hh.max())
-    draw_cell(ax, w, s, xyz[c0], nd_c0, radial, t1, include_axon=False)
-    ax.set_xlim(hh.min() - 20, hh.max() + 40)
+    draw_cell(ax, w, s, xyz[c0], nd_c0, radial, t1, include_axon=True)
+    ax.set_xlim(hh.min() - 40, hh.max() + 60)
     ax.set_ylim(-30, T_TOTAL + 30)
     ax.set_xlabel("횡방향 (µm)"); ax.set_ylabel("깊이 (µm)")
-    ax.set_title("V2d-7  추체세포 1개 확대\n소마(SP)에서 기저수상↓(SO)·정점수상↑(SR→SLM)")
+    ax.set_title("V2d-7  추체세포 1개 확대 (구획별 색)\n"
+                 "소마(SP)·기저수상↓(SO)·정점수상↑(SR→SLM)·축삭(주황)")
+    comp_legend(ax, with_axon=True)
     ax.set_aspect("equal")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V2d_7_zoom.png"), dpi=150)
