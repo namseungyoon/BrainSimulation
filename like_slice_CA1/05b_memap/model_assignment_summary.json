@@ -86,5 +86,59 @@
     "SR-SCA_cAC": {
       "SR": 24
     }
+  },
+  "morphology": {
+    "unique_total": 2189,
+    "by_mtype": {
+      "SLM_PPA": {
+        "n_cells": 29,
+        "n_unique_morph": 10
+      },
+      "SO_BP": {
+        "n_cells": 23,
+        "n_unique_morph": 11
+      },
+      "SO_BS": {
+        "n_cells": 41,
+        "n_unique_morph": 12
+      },
+      "SO_OLM": {
+        "n_cells": 147,
+        "n_unique_morph": 12
+      },
+      "SO_Tri": {
+        "n_cells": 53,
+        "n_unique_morph": 13
+      },
+      "SP_AA": {
+        "n_cells": 77,
+        "n_unique_morph": 23
+      },
+      "SP_BS": {
+        "n_cells": 135,
+        "n_unique_morph": 27
+      },
+      "SP_CCKBC": {
+        "n_cells": 271,
+        "n_unique_morph": 42
+      },
+      "SP_Ivy": {
+        "n_cells": 679,
+        "n_unique_morph": 105
+      },
+      "SP_PC": {
+        "n_cells": 15723,
+        "n_unique_morph": 1857
+      },
+      "SP_PVBC": {
+        "n_cells": 445,
+        "n_unique_morph": 67
+      },
+      "SR_SCA": {
+        "n_cells": 24,
+        "n_unique_morph": 10
+      }
+    },
+    "note": "e-model(biophysics)=23모델 재사용, morphology=Romani 세포별 변이형태(라이브러리)"
   }
 }

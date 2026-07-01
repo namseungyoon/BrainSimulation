@@ -31,6 +31,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                       # like_slice_CA1
 REGISTRY = os.path.join(ROOT, "..", "shared", "models", "models_registry.json")
 CELLS = os.path.join(ROOT, "05_placement", "slice_cells.npz")
+NODES_H5 = os.path.join(ROOT, "data", "circuit", "networks", "nodes",
+                        "hippocampus_neurons", "nodes.h5")
+MORPH_LIB = os.path.join(ROOT, "data", "morphology_library")  # (단계6에서 압축해제)
 FIG = os.path.join(HERE, "figures")
 os.makedirs(FIG, exist_ok=True)
 
@@ -64,6 +67,14 @@ def main():
     etype = d["etype"].astype(str)
     layer = d["layer"].astype(str)
     N = len(mtype)
+
+    # 세포별 형태(morphology) = Romani 가 nodes.h5 에 지정한 변이 형태 (라이브러리 .swc)
+    import h5py
+    with h5py.File(NODES_H5, "r") as f:
+        g = f["nodes/hippocampus_neurons/0"]
+        mlib = [s.decode() for s in g["@library"]["morphology"][:]]
+        midx = g["morphology"][:]
+    morphology = np.array(mlib, dtype=object)[midx][d["node_id"]].astype(str)
 
     assigned = np.empty(N, dtype=object)
     substituted = np.zeros(N, bool)
@@ -106,10 +117,21 @@ def main():
     for k, v in sub_detail.most_common():
         print(f"  {k}: {v:,}")
 
+    # 형태 다양성 집계 (m-type별 고유 형태 수)
+    morph_div = {}
+    for m in sorted(set(d["mtype"].astype(str))):
+        sel = d["mtype"].astype(str) == m
+        morph_div[m] = {"n_cells": int(sel.sum()),
+                        "n_unique_morph": int(len(set(morphology[sel])))}
+    n_uniq_all = int(len(set(morphology)))
+    print(f"\n[형태 다양성] slice400 고유 형태 {n_uniq_all:,}종 "
+          f"(세포 {N:,}) — 동일복제 아님, 세포별 Romani 변이형태")
+
     # 저장
     np.savez_compressed(os.path.join(HERE, "model_assignment.npz"),
                         node_id=d["node_id"], model=assigned.astype("U40"),
-                        substituted=substituted)
+                        substituted=substituted,
+                        morphology=morphology.astype("U80"))
     summary = {
         "step": "5b me-map (V2c)", "n_cells": int(N),
         "n_models_used": int(sum(1 for n in model_names if rep.get(n, 0))),
@@ -119,6 +141,8 @@ def main():
         "replication_per_model": {n: int(rep.get(n, 0)) for n in model_names},
         "substitution_detail": dict(sub_detail),
         "by_model_layer": {n: dict(ml[n]) for n in model_names if rep.get(n, 0)},
+        "morphology": {"unique_total": n_uniq_all, "by_mtype": morph_div,
+                       "note": "e-model(biophysics)=23모델 재사용, morphology=Romani 세포별 변이형태(라이브러리)"},
     }
     json.dump(summary, open(os.path.join(HERE, "model_assignment_summary.json"),
                             "w", encoding="utf-8"), ensure_ascii=False, indent=2)
@@ -126,6 +150,7 @@ def main():
     _fig_counts(model_names, rep, model_layer)
     _fig_model_layer(model_names, ml, rep)
     _fig_substitution(sub_detail, n_sub, N)
+    _fig_diversity(morph_div, n_uniq_all, N)
     print(f"\n[OK] model_assignment + figures -> {FIG}")
 
 
@@ -185,6 +210,29 @@ def _fig_substitution(sub_detail, n_sub, N):
     ax.set_title(title, fontsize=9)
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V2c_3_substitution.png"), dpi=130)
+    plt.close(fig)
+
+
+def _fig_diversity(morph_div, n_uniq_all, N):
+    """m-type별 고유 형태 수 vs 세포 수 (형태 다양성)."""
+    ms = sorted(morph_div, key=lambda m: -morph_div[m]["n_cells"])
+    cells = [morph_div[m]["n_cells"] for m in ms]
+    uniq = [morph_div[m]["n_unique_morph"] for m in ms]
+    x = np.arange(len(ms))
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    ax.bar(x - 0.2, cells, 0.4, label="세포 수", color="#4C72B0")
+    ax.bar(x + 0.2, uniq, 0.4, label="고유 형태 수", color="#DD8452")
+    ax.set_yscale("log")
+    ax.set_xticks(x); ax.set_xticklabels(ms, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("개수 (로그)")
+    for i in range(len(ms)):
+        ax.text(i + 0.2, uniq[i], str(uniq[i]), ha="center", va="bottom", fontsize=7)
+    ax.legend()
+    ax.set_title(f"V2c-4  형태 다양성: m-type별 세포수 vs 고유 형태수\n"
+                 f"slice400 전체 고유 형태 {n_uniq_all:,}종 / {N:,}세포 "
+                 f"(Romani 라이브러리 세포별 변이 — 동일복제 아님)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG, "V2c_4_morph_diversity.png"), dpi=130)
     plt.close(fig)
 
 
