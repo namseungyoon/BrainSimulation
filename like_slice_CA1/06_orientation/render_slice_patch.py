@@ -91,15 +91,26 @@ def main():
     radial, t1, t2 = local_frame(quat[c0])
     nd_c0 = nd[c0]
 
-    # 패치 선택: 가로 |t1|<250, 두께 |t2|<35 (얇은 절편)
+    # 고정 직사각형 박스 (중심 c0): 가로(t1) ±HW, 두께(t2) ±TH, 깊이 전층.
+    # 박스 안 세포는 전부 표시 (랜덤 추출 아님).
+    HW, TH = 75.0, 18.0     # 가로 150µm × 두께 36µm
     rel = xyz - xyz[c0]
     h = rel @ t1; th = rel @ t2
-    inpatch = (np.abs(h) < 250) & (np.abs(th) < 35)
+    inpatch = (np.abs(h) < HW) & (np.abs(th) < TH)
     idx = np.where(inpatch)[0]
-    if len(idx) > 40:
-        idx = idx[rng.choice(len(idx), 40, replace=False)]
-    print(f"[patch] 중심세포 {c0}, 패치 세포 {len(idx)} "
+    print(f"[patch] 박스 중심세포 {c0}, 가로±{HW} 두께±{TH}µm 안 세포 {len(idx)}개 "
           f"(층: {dict(zip(*np.unique(layer[idx], return_counts=True)))})")
+
+    # ---- 위치 지도: 전체 slice400 top-view + 박스 세포 강조 ----
+    fig, axm = plt.subplots(figsize=(8, 6.5))
+    axm.scatter(xyz[:, 0], xyz[:, 2], s=1, c="#dddddd", alpha=0.4, label="slice400 전체")
+    axm.scatter(xyz[idx, 0], xyz[idx, 2], s=14, c="red", label=f"박스 내 {len(idx)}세포")
+    axm.scatter(xyz[c0, 0], xyz[c0, 2], s=60, marker="*", c="k", label="박스 중심")
+    axm.set_aspect("equal"); axm.set_xlabel("x (µm)"); axm.set_ylabel("z (µm)")
+    axm.legend(fontsize=9); axm.set_title("V2d-8  찍은 직사각형 부위 위치 (위에서 본 slice400)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG, "V2d_8_patch_location.png"), dpi=130)
+    plt.close(fig)
 
     # ---- 그림 1: 패치 단면 ----
     fig, ax = plt.subplots(figsize=(8, 9))
@@ -114,7 +125,7 @@ def main():
         draw_cell(ax, w, s, xyz[c0], nd_c0, radial, t1)
     ax.set_xlim(hmin, hmax); ax.set_ylim(-30, T_TOTAL + 30)
     ax.set_xlabel("횡방향 (µm)"); ax.set_ylabel("깊이 (µm, SO바닥=0 → SLM천장)")
-    ax.set_title(f"V2d-6  slice400 얇은 절편 단면 ({len(idx)}세포)\n"
+    ax.set_title(f"V2d-6  찍은 직사각형 박스 내 전체 {len(idx)}세포 (가로150×두께36µm×전층)\n"
                  "기저수상(파랑)=SO쪽 · 정점수상(초록)=SR/SLM쪽 · 검정=소마 · 배경=층")
     from matplotlib.lines import Line2D
     ax.legend(handles=[Line2D([0], [0], color=COMP_COLOR[t], label=COMP_NAME[t])
