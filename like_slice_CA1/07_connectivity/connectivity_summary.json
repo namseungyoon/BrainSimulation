@@ -1,0 +1,42 @@
+{
+  "step": "7 connectivity (V3)",
+  "n_cells": 17647,
+  "n_edges": 536129,
+  "sigma_um": 100.0,
+  "radius_um": 250.0,
+  "P0": {
+    "E": 0.03,
+    "I": 0.06
+  },
+  "n_classes": 9,
+  "classes": [
+    "CCK+->CCK+ (I1)",
+    "CCK+->PC (I3)",
+    "CCK-->CCK- (I2)",
+    "NOS+->PC (I3)",
+    "PC->PC (E2)",
+    "PC->SOM+ (E1)",
+    "PC->SOM- (E2)",
+    "PV+->PC (I2)",
+    "SOM+->PC (I2)"
+  ],
+  "none_edges": 0,
+  "mean_in_degree": 30.380744602482007,
+  "mean_out_degree": 30.380744602482007,
+  "in_degree_PC": 30.806589073332063,
+  "in_degree_INT": 26.90072765072765,
+  "edges_by_class": {
+    "CCK+->CCK+ (I1)": 1474,
+    "CCK+->PC (I3)": 13798,
+    "CCK-->CCK- (I2)": 3501,
+    "NOS+->PC (I3)": 38001,
+    "PC->PC (E2)": 398820,
+    "PC->SOM+ (E1)": 5282,
+    "PC->SOM- (E2)": 37251,
+    "PV+->PC (I2)": 32775,
+    "SOM+->PC (I2)": 5227
+  },
+  "excitatory_edges": 441353,
+  "inhibitory_edges": 94776,
+  "EI_edge_ratio": "82.3:17.7"
+}
