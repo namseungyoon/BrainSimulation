@@ -1,0 +1,8 @@
+{
+  "step": "6 orientation (V2d)",
+  "length_ratio_mean": 1.0,
+  "length_ratio_min": 0.9999999999999998,
+  "length_ratio_max": 1.0000000000000004,
+  "apical_radial_cos_mean": 0.9908198821093545,
+  "n_sampled": 60
+}
