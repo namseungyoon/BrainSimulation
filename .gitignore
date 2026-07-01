@@ -1,0 +1,50 @@
+# =====================================================================
+#  BrainSimulation — CA1 in silico (Ecker 2020 재현 + like-slice)
+#  단일 저장소: 03_BrainSimulator 를 그대로 GitHub 미러로 사용
+#  (주석은 반드시 줄 맨 앞에 — git .gitignore 는 인라인 주석 미지원)
+# =====================================================================
+
+# 대용량 데이터 (Romani Dataverse 다운로드, 13.8GB)
+like_slice_CA1/data/
+
+# 라이선스 자산 — BBP me-model 형태 라이브러리 (재배포 불가)
+shared/models/
+
+# 저작권 자산 — 논문 PDF
+references/
+
+# 아카이브·구버전·이전 발행용 복사본 (제거 예정)
+_archive/
+legacy/
+BrainSimulation/
+
+# 로컬 git 백업 (like_slice_CA1 독립 저장소 흔적)
+like_slice_CA1/.git_local_backup/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+
+# NEURON 컴파일 산출물
+x86_64/
+*.dll
+*.o
+*.lib
+*.exp
+
+# 대용량/바이너리
+*.h5
+*.nrrd
+*.zip
+
+# 에디터/도구 설정
+.claude/
+.vscode/
+.venv/
+
+# OS
+Thumbs.db
+.DS_Store

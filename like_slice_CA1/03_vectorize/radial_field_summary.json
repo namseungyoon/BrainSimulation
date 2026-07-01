@@ -1,0 +1,15 @@
+{
+  "step": "3 vectorize (V1b)",
+  "radial_def": "R(quaternion w,x,y,z -> scipy x,y,z,w) applied to local Y [0,1,0]",
+  "coordinates_channels": {
+    "ch0": "tangential",
+    "ch1": "tangential",
+    "ch2": "radial/depth (corr 0.91 vs [PH]y)"
+  },
+  "V1b_alignment_cos": {
+    "mean": 0.8116903361251705,
+    "median": 0.8788159411963322,
+    "fraction_positive": 0.9948344370860928
+  },
+  "note": "radial vector perpendicular to layers and points SO->SLM"
+}
