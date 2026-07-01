@@ -24,6 +24,7 @@
   python 05_placement/place_cells.py
 """
 import os
+import sys
 import json
 from collections import Counter
 
@@ -38,6 +39,9 @@ from matplotlib.patches import Patch
 
 plt.rcParams["font.family"] = "Malgun Gothic"
 plt.rcParams["axes.unicode_minus"] = False
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gif_util import save_rotate_gif  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -140,7 +144,7 @@ def _fig_3d(C, LY, n):
     ax.set_xlabel("x (µm)"); ax.set_ylabel("y (µm)"); ax.set_zlabel("z (µm)")
     ax.set_title(f"V2b-1  slice400 추출 세포 3D 배치 ({n:,}개, 층별 색)")
     ax.legend(markerscale=3, fontsize=8)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "V2b_1_cells_3d.png"), dpi=130)
+    save_rotate_gif(fig, ax, os.path.join(FIG, "V2b_1_cells_3d.gif"))
     plt.close(fig)
 
 
@@ -215,7 +219,7 @@ def _fig_orientation(C, quat, LY, n_arrow=1500):
     ax.set_title("V2b-5  세포별 정점(방사) 방향 R·[0,1,0] (단계6 회전 미리보기)")
     ax.legend(handles=[Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER],
               fontsize=8)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "V2b_5_orientation.png"), dpi=130)
+    save_rotate_gif(fig, ax, os.path.join(FIG, "V2b_5_orientation.gif"))
     plt.close(fig)
 
 

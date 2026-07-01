@@ -25,6 +25,7 @@
   python 03_vectorize/vectorize.py
 """
 import os
+import sys
 import json
 import numpy as np
 import nrrd
@@ -36,6 +37,9 @@ from matplotlib.patches import Patch
 
 plt.rcParams["font.family"] = "Malgun Gothic"
 plt.rcParams["axes.unicode_minus"] = False
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gif_util import save_rotate_gif  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -159,8 +163,7 @@ def fig_radial_3d(br, origin, vsize, ori, n=3000):
     ax.set_title("V1b-4  방사벡터장 3D (색 = 층)")
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER]
     ax.legend(handles=handles, loc="upper right", fontsize=8)
-    fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "V1b_4_radial_3d.png"), dpi=130)
+    save_rotate_gif(fig, ax, os.path.join(FIG, "V1b_4_radial_3d.gif"))
     plt.close(fig)
 
 

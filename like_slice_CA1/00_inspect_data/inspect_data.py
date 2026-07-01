@@ -16,6 +16,7 @@
   C:\\Users\\SYNAM-OFFICE\\.conda\\envs\\ca1sim\\python.exe 00_inspect_data/inspect_data.py
 """
 import os
+import sys
 from collections import Counter
 
 import numpy as np
@@ -28,6 +29,9 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 # 한글 폰트 (Windows 맑은 고딕)
 plt.rcParams["font.family"] = "Malgun Gothic"
 plt.rcParams["axes.unicode_minus"] = False
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gif_util import save_rotate_gif  # noqa: E402
 
 # ----------------------------------------------------------------------
 # 경로: 이 스크립트(00_inspect_data/) 기준으로 프로젝트 루트를 찾는다.
@@ -171,8 +175,7 @@ def _fig_3d_scatter(xyz, layer_dec, n_sample=20000):
     ax.set_zlabel("z (µm)")
     ax.set_title(f"V0  CA1 세포 배치 (3D, {len(idx):,}개 샘플)")
     ax.legend(markerscale=4, loc="upper right")
-    fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V0_placement_3d.png"), dpi=130)
+    save_rotate_gif(fig, ax, os.path.join(FIG_DIR, "V0_placement_3d.gif"))
     plt.close(fig)
 
 
