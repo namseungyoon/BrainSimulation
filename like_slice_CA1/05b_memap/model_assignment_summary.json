@@ -1,0 +1,90 @@
+{
+  "step": "5b me-map (V2c)",
+  "n_cells": 17647,
+  "n_models_used": 16,
+  "n_models_total": 23,
+  "resolved_pct": 100.0,
+  "n_substituted": 606,
+  "n_exact": 17041,
+  "replication_per_model": {
+    "SP-PC_cACpyr": 15723,
+    "SLM-PPA_bAC": 29,
+    "SO-BP_bAC": 0,
+    "SO-BP_cAC": 0,
+    "SO-BP_cNAC": 23,
+    "SO-BS_bAC": 13,
+    "SO-BS_cNAC": 28,
+    "SO-OLM_bAC": 0,
+    "SO-OLM_cAC": 147,
+    "SO-OLM_cNAC": 0,
+    "SO-Tri_bAC": 53,
+    "SO-Tri_cNAC": 0,
+    "SP-AA_cNAC": 77,
+    "SP-BS_cAC": 29,
+    "SP-BS_cNAC": 106,
+    "SP-CCKBC_cAC": 271,
+    "SP-Ivy_cAC": 447,
+    "SP-Ivy_cNAC": 232,
+    "SP-PVBC_bAC": 127,
+    "SP-PVBC_cAC": 0,
+    "SP-PVBC_cNAC": 318,
+    "SR-SCA_cAC": 24,
+    "SR-SCA_cNAC": 0
+  },
+  "substitution_detail": {
+    "SP-BS bAC→cAC": 29,
+    "SP-AA bAC→cNAC": 77,
+    "SP-Ivy bAC→cAC": 447,
+    "SO-Tri cAC→bAC": 53
+  },
+  "by_model_layer": {
+    "SP-PC_cACpyr": {
+      "SP": 15723
+    },
+    "SLM-PPA_bAC": {
+      "SLM": 29
+    },
+    "SO-BP_cNAC": {
+      "SO": 23
+    },
+    "SO-BS_bAC": {
+      "SO": 13
+    },
+    "SO-BS_cNAC": {
+      "SO": 28
+    },
+    "SO-OLM_cAC": {
+      "SO": 147
+    },
+    "SO-Tri_bAC": {
+      "SO": 53
+    },
+    "SP-AA_cNAC": {
+      "SP": 77
+    },
+    "SP-BS_cAC": {
+      "SP": 29
+    },
+    "SP-BS_cNAC": {
+      "SP": 106
+    },
+    "SP-CCKBC_cAC": {
+      "SP": 271
+    },
+    "SP-Ivy_cAC": {
+      "SP": 447
+    },
+    "SP-Ivy_cNAC": {
+      "SP": 232
+    },
+    "SP-PVBC_bAC": {
+      "SP": 127
+    },
+    "SP-PVBC_cNAC": {
+      "SP": 318
+    },
+    "SR-SCA_cAC": {
+      "SR": 24
+    }
+  }
+}
