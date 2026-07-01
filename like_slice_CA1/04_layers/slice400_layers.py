@@ -35,6 +35,25 @@ LAYER_COLOR = {"SO": "#4C72B0", "SP": "#DD8452",
                "SR": "#55A868", "SLM": "#C44E52"}
 
 
+def _fig_cross(tcoord, ndv, lab):
+    """펼친 슬라이스 층 단면: 가로 t 횡좌표, 세로 nd 깊이, 색=층."""
+    ok = np.isfinite(ndv) & np.isfinite(tcoord)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    for L in LAYER_ORDER:
+        m = ok & (lab == LAYER_ID[L])
+        if m.any():
+            ax.scatter(tcoord[m], ndv[m], s=5, c=LAYER_COLOR[L], label=L)
+    ax.set_xlabel("t 횡좌표 (ch1, 절편 폭 방향)")
+    ax.set_ylabel("정규화 깊이 nd (0=SO 바닥, 1=SLM 천장)")
+    ax.set_ylim(0, 1)
+    ax.legend(markerscale=2)
+    ax.set_title("V1c(slice400)  펼친 슬라이스 층 단면\n"
+                 "깊이(nd)를 따라 SO→SP→SR→SLM 이 가로 띠로 깔끔히 층서")
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG, "V1c_slice400_cross.png"), dpi=130)
+    plt.close(fig)
+
+
 def main():
     mask, h = nrrd.read(os.path.join(ATLAS, "nrrd_volumes", "slices", "slice400.nrrd"))
     origin = np.asarray(h["space origin"], float)
@@ -46,9 +65,14 @@ def main():
     with np.errstate(invalid="ignore", divide="ignore"):
         nd = (phy - so[0]) / (slm[1] - so[0])
 
+    co, _ = nrrd.read(os.path.join(ATLAS, "coordinates.nrrd"))   # l/t/r
     vox = np.argwhere(mask > 0)
     lab = br[vox[:, 0], vox[:, 1], vox[:, 2]]
     ndv = nd[vox[:, 0], vox[:, 1], vox[:, 2]]
+    tcoord = co[1, vox[:, 0], vox[:, 1], vox[:, 2]]   # 횡좌표 t
+
+    # 펼친 슬라이스 층 단면 (가로 t, 세로 nd, 색=층)
+    _fig_cross(tcoord, ndv, lab)
 
     # 층별 nd box
     data = [ndv[(lab == LAYER_ID[L]) & np.isfinite(ndv)] for L in LAYER_ORDER]

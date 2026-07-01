@@ -42,6 +42,26 @@ def radial_at(ori, idx):
     return Rot.from_quat(q[:, [1, 2, 3, 0]]).apply(np.array([0.0, 1.0, 0.0]))
 
 
+def _fig_coords(vox, co):
+    """slice400 국한 l/t/r 좌표장. 펼친 슬라이스(가로 t=ch1, 세로 r=ch2)에 3채널 색."""
+    l = co[0, vox[:, 0], vox[:, 1], vox[:, 2]]   # 종축 longitudinal
+    t = co[1, vox[:, 0], vox[:, 1], vox[:, 2]]   # 횡축 transverse
+    r = co[2, vox[:, 0], vox[:, 1], vox[:, 2]]   # 방사 radial(깊이)
+    labels = [("l 종축(longitudinal)", l), ("t 횡축(transverse)", t),
+              ("r 방사(radial/깊이)", r)]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    for ax, (name, val) in zip(axes, labels):
+        sc = ax.scatter(t, r, c=val, s=4, cmap="viridis", vmin=0, vmax=1)
+        ax.set_xlabel("t 횡좌표 (ch1)"); ax.set_ylabel("r 깊이좌표 (ch2)")
+        ax.set_title(f"색 = {name}")
+        fig.colorbar(sc, ax=ax, fraction=0.046)
+    fig.suptitle("V1b(slice400)  좌표장 l/t/r — 펼친 슬라이스(가로 t · 세로 r)\n"
+                 "l(종축)은 절편 내 거의 일정, t·r로 절편 면이 정의됨")
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIG, "V1b_slice400_coords.png"), dpi=130)
+    plt.close(fig)
+
+
 def main():
     mask, h = nrrd.read(os.path.join(ATLAS, "nrrd_volumes", "slices", "slice400.nrrd"))
     origin = np.asarray(h["space origin"], float)
@@ -49,8 +69,12 @@ def main():
     br, _ = nrrd.read(os.path.join(ATLAS, "brain_regions.nrrd"))
     ori, _ = nrrd.read(os.path.join(ATLAS, "orientation.nrrd"))
     phy, _ = nrrd.read(os.path.join(ATLAS, "[PH]y.nrrd"))
+    co, _ = nrrd.read(os.path.join(ATLAS, "coordinates.nrrd"))    # l/t/r 좌표장
     vox = np.argwhere(mask > 0)
     radial = radial_at(ori, vox)
+
+    # 좌표장 l/t/r 그림 (slice400 국한, 펼친 슬라이스: 횡 t vs 깊이 r)
+    _fig_coords(vox, co)
 
     # 정렬도
     gx, gy, gz = np.gradient(phy)
