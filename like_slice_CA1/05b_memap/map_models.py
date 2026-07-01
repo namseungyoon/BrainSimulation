@@ -131,7 +131,7 @@ def main():
     np.savez_compressed(os.path.join(HERE, "model_assignment.npz"),
                         node_id=d["node_id"], model=assigned.astype("U40"),
                         substituted=substituted,
-                        morphology=morphology.astype("U80"))
+                        morphology=morphology.astype("U120"))
     summary = {
         "step": "5b me-map (V2c)", "n_cells": int(N),
         "n_models_used": int(sum(1 for n in model_names if rep.get(n, 0))),

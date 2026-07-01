@@ -38,14 +38,25 @@ rng = np.random.default_rng(1)
 
 
 def main():
-    n_cells = int(sys.argv[1]) if len(sys.argv) > 1 else 300
+    # 층별 상한(SP 상한, 희소 층은 전부) — 가독성용, 실제 밀도 아님
+    sp_cap = int(sys.argv[1]) if len(sys.argv) > 1 else 500
     c = np.load(CELLS, allow_pickle=True)
     a = np.load(ASSIGN, allow_pickle=True)
     xyz = c["xyz"].astype(float); quat = c["quat_wxyz"].astype(float)
     layer = c["layer"].astype(str); morph = a["morphology"].astype(str)
     N = len(xyz)
-    pick = rng.choice(N, min(n_cells, N), replace=False)
-    print(f"[render] 표본 {len(pick)} / {N:,} 세포 (실제 구성비)")
+    cap = {"SP": sp_cap, "SO": 100000, "SR": 100000, "SLM": 100000}
+    picks = []
+    per = {}
+    for L in LAYER_ORDER:
+        cand = np.where(layer == L)[0]
+        take = min(cap[L], len(cand))
+        sel = rng.choice(cand, take, replace=False) if take < len(cand) else cand
+        picks.append(sel); per[L] = (take, len(cand))
+    pick = np.concatenate(picks)
+    print(f"[render] 층별 표본(가독성용, 실제밀도 아님): "
+          + " · ".join(f"{L} {per[L][0]}/{per[L][1]}" for L in LAYER_ORDER)
+          + f"  총 {len(pick)}")
 
     allpts, allcol = [], []
     for j, k in enumerate(pick):
@@ -77,7 +88,7 @@ def main():
     ax.legend(handles=[Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER],
               fontsize=8, loc="upper right")
     save_rotate_gif(fig, ax, os.path.join(FIG, "V2d_5_placement_dense.gif"),
-                    title=f"V2d-5  slice400 세포 배치 ({len(pick)}개 표본, 수상, 층별 색) 회전")
+                    title=f"V2d-5  slice400 배치 (층별표본 {len(pick)}개: SP상한{sp_cap}·희소층 전부, 가독성용) 회전")
     plt.close(fig)
 
     # top-view PNG
@@ -89,7 +100,8 @@ def main():
     ax.set_aspect("equal"); ax.set_xlabel("x (µm)"); ax.set_ylabel("z (µm)")
     ax.legend(handles=[Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER],
               fontsize=8)
-    ax.set_title(f"V2d-5  slice400 세포 배치 위에서 본 그림 ({len(pick)}개 표본)")
+    ax.set_title(f"V2d-5  slice400 배치 위에서 본 그림 (층별표본 {len(pick)}개: "
+                 f"SP상한{sp_cap}·희소층 전부, 가독성용)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V2d_5_placement_top.png"), dpi=130)
     plt.close(fig)
