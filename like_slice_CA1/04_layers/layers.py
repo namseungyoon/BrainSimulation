@@ -32,6 +32,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 ATLAS = os.path.join(ROOT, "data", "atlas")
@@ -116,9 +119,9 @@ def _fig_depth_by_layer(br, nd, ca1, boundaries):
         ax.axvline(b, color="gray", ls="--", lw=1)
         ax.text(b, 4.6, f"{b:.3f}", ha="center", fontsize=8, color="gray")
         prev = b
-    ax.set_xlabel("normalized depth  (0 = SO base, 1 = SLM top)")
-    ax.set_title("V1c-1  layer separation by normalized depth\n"
-                 "(dashed = cumulative boundary from thickness)")
+    ax.set_xlabel("정규화 깊이  (0 = SO 바닥, 1 = SLM 천장)")
+    ax.set_title("V1c-1  정규화 깊이에 의한 층 분리\n"
+                 "(점선 = 두께 기반 누적 경계)")
     ax.set_xlim(0, 1)
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1c_1_depth_by_layer.png"), dpi=130)
@@ -138,8 +141,8 @@ def _fig_boundaries_cross(br, origin, vsize):
     ax.set_xlim(y0 - 2, y1 + 2); ax.set_ylim(z0 - 2, z1 + 2)
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER]
     ax.legend(handles=handles, loc="upper right")
-    ax.set_xlabel("y voxel"); ax.set_ylabel("z voxel")
-    ax.set_title(f"V1c-2  layer boundaries — cross-section @ x-index {cx}")
+    ax.set_xlabel("y 복셀"); ax.set_ylabel("z 복셀")
+    ax.set_title(f"V1c-2  층 경계 — 단면 @ x-인덱스 {cx}")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1c_2_boundaries_cross.png"), dpi=130)
     plt.close(fig)
@@ -157,9 +160,9 @@ def _fig_thickness_map(br, origin, vsize, total):
     fig, ax = plt.subplots(figsize=(9, 7))
     sc = ax.scatter(xw, zw, c=tv, s=2, cmap="magma", vmin=np.percentile(tv, 2),
                     vmax=np.percentile(tv, 98))
-    fig.colorbar(sc, ax=ax, label="full-column thickness (um)")
-    ax.set_aspect("equal"); ax.set_xlabel("x (um)"); ax.set_ylabel("z (um)")
-    ax.set_title("V1c-3  total layer-column thickness across CA1 (top view)")
+    fig.colorbar(sc, ax=ax, label="전체 층기둥 두께 (µm)")
+    ax.set_aspect("equal"); ax.set_xlabel("x (µm)"); ax.set_ylabel("z (µm)")
+    ax.set_title("V1c-3  CA1 전체 층기둥 두께 분포 (위에서 본 그림)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1c_3_thickness_map.png"), dpi=130)
     plt.close(fig)
@@ -182,12 +185,12 @@ def _fig_column_profiles(br, origin, vsize, nd):
             m = col[ys] == LAYER_ID[L]
             ax.scatter(ndc[ys][m], ys[m], s=10, c=LAYER_COLOR[L], label=L)
         ax.set_title(f"z={z}")
-        ax.set_xlabel("normalized depth")
+        ax.set_xlabel("정규화 깊이")
         ax.set_xlim(0, 1)
-    axes[0].set_ylabel("y voxel (along column)")
+    axes[0].set_ylabel("y 복셀 (컬럼 방향)")
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER]
     axes[-1].legend(handles=handles, loc="best", fontsize=8)
-    fig.suptitle("V1c-4  radial column profiles: layer sequence vs normalized depth")
+    fig.suptitle("V1c-4  방사 컬럼 프로파일: 깊이에 따른 층 순서")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1c_4_column_profiles.png"), dpi=130)
     plt.close(fig)

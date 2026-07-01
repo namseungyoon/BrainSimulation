@@ -26,6 +26,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 ATLAS = os.path.join(ROOT, "data", "atlas")
@@ -79,8 +82,8 @@ def plot_one(name, mask_path, br, origin, vsize, foot_xz):
             ax0.scatter(world_s[m, 0], world_s[m, 2], s=3,
                         c=LAYER_COLOR[L], label=L)
     ax0.set_aspect("equal")
-    ax0.set_xlabel("x (um)"); ax0.set_ylabel("z (um)")
-    ax0.set_title(f"{name}  location in CA1 (top view x-z)")
+    ax0.set_xlabel("x (µm)"); ax0.set_ylabel("z (µm)")
+    ax0.set_title(f"{name}  CA1 내 위치 (위에서 본 x-z)")
 
     # (우) 3D
     ax1 = fig.add_subplot(1, 2, 2, projection="3d")
@@ -90,11 +93,11 @@ def plot_one(name, mask_path, br, origin, vsize, foot_xz):
             ax1.scatter(world_s[m, 0], world_s[m, 1], world_s[m, 2],
                         s=2, c=LAYER_COLOR[L], alpha=0.5, label=L)
     ax1.set_xlabel("x"); ax1.set_ylabel("y"); ax1.set_zlabel("z")
-    ax1.set_title("3D shape (color = layer)")
+    ax1.set_title("3D 형태 (색 = 층)")
 
     span = world.max(0) - world.min(0)
-    fig.suptitle(f"{name}   voxels={len(vox):,}   "
-                 f"span x{span[0]:.0f} y{span[1]:.0f} z{span[2]:.0f} um   |   "
+    fig.suptitle(f"{name}   복셀수={len(vox):,}   "
+                 f"범위 x{span[0]:.0f} y{span[1]:.0f} z{span[2]:.0f} µm   |   "
                  + "  ".join(f"{L}:{comp[L]:,}" for L in LAYER_ID),
                  fontsize=10)
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ID]
@@ -137,8 +140,8 @@ def main():
     for (i, c) in centers:
         ax.scatter(c[0], c[2], s=40, color=cm[i])
         ax.text(c[0], c[2], str(i), fontsize=7, ha="center", va="center")
-    ax.set_aspect("equal"); ax.set_xlabel("x (um)"); ax.set_ylabel("z (um)")
-    ax.set_title("overview: 47 serial slices (slice0~46) centers in CA1 (top view)")
+    ax.set_aspect("equal"); ax.set_xlabel("x (µm)"); ax.set_ylabel("z (µm)")
+    ax.set_title("개요: 47개 연속 절편(slice0~46) 중심 위치 (위에서 본 그림)")
     fig.tight_layout()
     fig.savefig(os.path.join(OUT, "_overview_all47.png"), dpi=120)
     plt.close(fig)

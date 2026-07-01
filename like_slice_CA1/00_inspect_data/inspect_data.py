@@ -25,6 +25,10 @@ matplotlib.use("Agg")  # 파일 저장 전용
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
+# 한글 폰트 (Windows 맑은 고딕)
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 # ----------------------------------------------------------------------
 # 경로: 이 스크립트(00_inspect_data/) 기준으로 프로젝트 루트를 찾는다.
 HERE = os.path.dirname(os.path.abspath(__file__))   # .../00_inspect_data
@@ -105,8 +109,8 @@ def _fig_distributions(dist, N):
     c = dist["layer"]
     vals = [c.get(k, 0) for k in LAYER_ORDER]
     axes[0].bar(LAYER_ORDER, vals, color="#4C72B0")
-    axes[0].set_title("Soma layer distribution")
-    axes[0].set_ylabel("# cells")
+    axes[0].set_title("소마 층 분포")
+    axes[0].set_ylabel("세포 수")
     for i, v in enumerate(vals):
         axes[0].text(i, v, f"{v:,}\n{100*v/N:.1f}%",
                      ha="center", va="bottom", fontsize=8)
@@ -117,8 +121,8 @@ def _fig_distributions(dist, N):
     keys = [k for k, _ in items]
     vals = [v for _, v in items]
     axes[1].barh(keys[::-1], vals[::-1], color="#55A868")
-    axes[1].set_title("m-type distribution (12 types)")
-    axes[1].set_xlabel("# cells (log)")
+    axes[1].set_title("m-type 분포 (12종)")
+    axes[1].set_xlabel("세포 수 (로그)")
     axes[1].set_xscale("log")
 
     # etype
@@ -126,11 +130,11 @@ def _fig_distributions(dist, N):
     items = sorted(c.items(), key=lambda kv: -kv[1])
     axes[2].bar([k for k, _ in items], [v for _, v in items],
                 color="#C44E52")
-    axes[2].set_title("e-type distribution")
-    axes[2].set_ylabel("# cells")
+    axes[2].set_title("e-type 분포")
+    axes[2].set_ylabel("세포 수")
     axes[2].set_yscale("log")
 
-    fig.suptitle(f"V0  CA1 nodes.h5  —  N = {N:,} cells", fontsize=13)
+    fig.suptitle(f"V0  CA1 nodes.h5 — 총 세포수 N = {N:,}", fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V0_distributions.png"), dpi=130)
     plt.close(fig)
@@ -138,10 +142,10 @@ def _fig_distributions(dist, N):
 
 def _fig_ei_pie(exc, inh):
     fig, ax = plt.subplots(figsize=(5, 5))
-    ax.pie([exc, inh], labels=[f"EXC\n{exc:,}", f"INH\n{inh:,}"],
+    ax.pie([exc, inh], labels=[f"흥분 EXC\n{exc:,}", f"억제 INH\n{inh:,}"],
            autopct="%1.1f%%", colors=["#DD8452", "#4C72B0"],
            startangle=90, wedgeprops=dict(edgecolor="w"))
-    ax.set_title("V0  Excitatory : Inhibitory  (target ~89:11)")
+    ax.set_title("V0  흥분 : 억제 비율 (목표 ~89:11)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V0_EI_ratio.png"), dpi=130)
     plt.close(fig)
@@ -162,10 +166,10 @@ def _fig_3d_scatter(xyz, layer_dec, n_sample=20000):
         if m.any():
             ax.scatter(xyz["x"][idx][m], xyz["y"][idx][m], xyz["z"][idx][m],
                        s=2, alpha=0.4, c=colors[lyr], label=lyr)
-    ax.set_xlabel("x (um)")
-    ax.set_ylabel("y (um)")
-    ax.set_zlabel("z (um)")
-    ax.set_title(f"V0  CA1 cell placement (3D, {len(idx):,} sampled)")
+    ax.set_xlabel("x (µm)")
+    ax.set_ylabel("y (µm)")
+    ax.set_zlabel("z (µm)")
+    ax.set_title(f"V0  CA1 세포 배치 (3D, {len(idx):,}개 샘플)")
     ax.legend(markerscale=4, loc="upper right")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V0_placement_3d.png"), dpi=130)

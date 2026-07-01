@@ -31,6 +31,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 # ----------------------------------------------------------------------
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -143,8 +146,8 @@ def _fig_thickness(thick, bounds, total):
     ax.set_ylim(0, total * 1.02)
     ax.set_xlim(-0.6, 0.6)
     ax.set_xticks([])
-    ax.set_ylabel("depth from SO base (um)")
-    ax.set_title(f"V1a  layer thickness (atlas)\ntotal = {total:.0f} um")
+    ax.set_ylabel("SO 바닥부터의 깊이 (µm)")
+    ax.set_title(f"V1a  층 두께 (atlas)\n합계 = {total:.0f} µm")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V1a_layer_thickness.png"), dpi=130)
     plt.close(fig)
@@ -159,16 +162,16 @@ def _fig_cross_section(br_slice, vsize):
     # x 중앙 단면 (y-z 평면)
     axes[0].imshow(br_slice[nx // 2].T, origin="lower", cmap=cmap,
                    vmin=0, vmax=4, aspect="auto")
-    axes[0].set_title(f"cross-section @ x-mid  (y vs z)")
-    axes[0].set_xlabel("y voxel"); axes[0].set_ylabel("z voxel")
+    axes[0].set_title("단면 @ x-중앙  (y vs z)")
+    axes[0].set_xlabel("y 복셀"); axes[0].set_ylabel("z 복셀")
     # z 중앙 단면 (x-y 평면)
     axes[1].imshow(br_slice[:, :, nz // 2].T, origin="lower", cmap=cmap,
                    vmin=0, vmax=4, aspect="auto")
-    axes[1].set_title("cross-section @ z-mid  (x vs y)")
-    axes[1].set_xlabel("x voxel"); axes[1].set_ylabel("y voxel")
+    axes[1].set_title("단면 @ z-중앙  (x vs y)")
+    axes[1].set_xlabel("x 복셀"); axes[1].set_ylabel("y 복셀")
     handles = [Rectangle((0, 0), 1, 1, color=LAYER_COLOR[L]) for L in LAYER_ORDER]
     axes[1].legend(handles, LAYER_ORDER, loc="upper right", fontsize=8)
-    fig.suptitle("V1a  slice cross-section (brain_regions labels)")
+    fig.suptitle("V1a  슬라이스 단면 (brain_regions 층 라벨)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V1a_cross_section.png"), dpi=130)
     plt.close(fig)
@@ -187,9 +190,9 @@ def _fig_location(lo, hi, center, n_sample=40000):
     ax.add_patch(Rectangle((lo[0], lo[2]), hi[0] - lo[0], hi[2] - lo[2],
                            fill=False, edgecolor="red", lw=2.5))
     ax.plot(center[0], center[2], "r*", ms=16)
-    ax.set_xlabel("x (um)"); ax.set_ylabel("z (um)")
-    ax.set_title("V1a  slice location in CA1 (top view x-z)\n"
-                 "red box = cylinder300 slice bbox")
+    ax.set_xlabel("x (µm)"); ax.set_ylabel("z (µm)")
+    ax.set_title("V1a  CA1 내 슬라이스 위치 (위에서 본 x-z)\n"
+                 "빨간 박스 = cylinder300 슬라이스 bbox")
     ax.set_aspect("equal")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG_DIR, "V1a_slice_location.png"), dpi=130)

@@ -22,6 +22,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from PIL import Image
 
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 ATLAS = os.path.join(ROOT, "data", "atlas")
@@ -75,8 +78,8 @@ def make_gif(name, mask_path, br, origin, vsize):
     ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
     ax.legend(loc="upper right", fontsize=8)
     span = mx - mn
-    ax.set_title(f"{name}  ({len(vox):,} vox, "
-                 f"{span[0]:.0f}x{span[1]:.0f}x{span[2]:.0f} um)", fontsize=10)
+    ax.set_title(f"{name}  (복셀 {len(vox):,}개, "
+                 f"{span[0]:.0f}x{span[1]:.0f}x{span[2]:.0f} µm)", fontsize=10)
 
     frames = []
     for k in range(N_FRAMES):

@@ -34,6 +34,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+plt.rcParams["font.family"] = "Malgun Gothic"
+plt.rcParams["axes.unicode_minus"] = False
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 ATLAS = os.path.join(ROOT, "data", "atlas")
@@ -69,18 +72,18 @@ def fig_load_coordinates(br, co):
     nx, ny, nz = br.shape
     k = nz // 2
     mask = br[:, :, k] > 0
-    titles = ["coord ch0 (tangential / longitudinal?)",
-              "coord ch1 (tangential / transverse?)",
-              "coord ch2 (RADIAL / depth, corr0.91 vs [PH]y)"]
+    titles = ["좌표 ch0 (표면 / 종방향?)",
+              "좌표 ch1 (표면 / 횡방향?)",
+              "좌표 ch2 (방사 / 깊이, [PH]y와 상관 0.91)"]
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     for c in range(3):
         img = np.where(mask, co[c, :, :, k], np.nan)
         im = axes[c].imshow(img.T, origin="lower", cmap="viridis",
                             vmin=0, vmax=1, aspect="auto")
         axes[c].set_title(titles[c], fontsize=10)
-        axes[c].set_xlabel("x voxel"); axes[c].set_ylabel("y voxel")
+        axes[c].set_xlabel("x 복셀"); axes[c].set_ylabel("y 복셀")
         fig.colorbar(im, ax=axes[c], fraction=0.046)
-    fig.suptitle("V1b-1  LOAD coordinates.nrrd (l/t/r, normalized 0~1)  @ z-mid")
+    fig.suptitle("V1b-1  (불러오기) coordinates.nrrd 좌표장 l/t/r, 정규화 0~1  @ z-중앙")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1b_1_load_coordinates.png"), dpi=130)
     plt.close(fig)
@@ -98,10 +101,10 @@ def fig_load_orientation(br, ori):
         img = np.where(mask, ori[c, :, :, k], np.nan)
         im = axes[c].imshow(img.T, origin="lower", cmap="coolwarm",
                             vmin=-1, vmax=1, aspect="auto")
-        axes[c].set_title(f"quaternion {names[c]}", fontsize=10)
-        axes[c].set_xlabel("x voxel"); axes[c].set_ylabel("y voxel")
+        axes[c].set_title(f"쿼터니언 {names[c]}", fontsize=10)
+        axes[c].set_xlabel("x 복셀"); axes[c].set_ylabel("y 복셀")
         fig.colorbar(im, ax=axes[c], fraction=0.046)
-    fig.suptitle("V1b-2  LOAD orientation.nrrd (quaternion w,x,y,z; BBP scalar-first)  @ z-mid")
+    fig.suptitle("V1b-2  (불러오기) orientation.nrrd 방향장 쿼터니언 w,x,y,z (BBP scalar-first)  @ z-중앙")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1b_2_load_orientation.png"), dpi=130)
     plt.close(fig)
@@ -130,9 +133,9 @@ def fig_radial_quiver(br, origin, vsize, ori):
               color="k", scale=30, width=0.003, alpha=0.8)
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER]
     ax.legend(handles=handles, loc="upper right")
-    ax.set_xlabel("y voxel"); ax.set_ylabel("z voxel")
-    ax.set_title(f"V1b-3  PREPROCESS radial vectors @ x-index {cx}\n"
-                 "(arrows = R·[0,1,0], should be perpendicular to layer bands, SO->SLM)")
+    ax.set_xlabel("y 복셀"); ax.set_ylabel("z 복셀")
+    ax.set_title(f"V1b-3  (전처리) 방사벡터 @ x-인덱스 {cx}\n"
+                 "(화살표 = R·[0,1,0], 층 띠에 수직·SO→SLM 이어야 함)")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1b_3_radial_quiver.png"), dpi=130)
     plt.close(fig)
@@ -153,7 +156,7 @@ def fig_radial_3d(br, origin, vsize, ori, n=3000):
                   rad[m, 0], rad[m, 1], rad[m, 2], length=60,
                   color=LAYER_COLOR[L], alpha=0.5, linewidth=0.6)
     ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
-    ax.set_title("V1b-4  radial vector field 3D (color = layer)")
+    ax.set_title("V1b-4  방사벡터장 3D (색 = 층)")
     handles = [Patch(color=LAYER_COLOR[L], label=L) for L in LAYER_ORDER]
     ax.legend(handles=handles, loc="upper right", fontsize=8)
     fig.tight_layout()
@@ -176,10 +179,10 @@ def fig_alignment(br, ori, phy, n=8000):
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.hist(cos, bins=60, color="#4C72B0", alpha=0.85)
     ax.axvline(np.median(cos), color="r", lw=2,
-               label=f"median={np.median(cos):.3f}")
-    ax.set_xlabel("cos( radial , ∇[PH]y )"); ax.set_ylabel("voxels")
-    ax.set_title("V1b-5  radial perp. to layers & SO->SLM  "
-                 f"(mean={np.mean(cos):.3f}, >0: {np.mean(cos>0)*100:.0f}%)")
+               label=f"중앙값={np.median(cos):.3f}")
+    ax.set_xlabel("cos( 방사벡터 , ∇[PH]y )"); ax.set_ylabel("복셀 수")
+    ax.set_title("V1b-5  방사벡터, 층에 수직 & SO→SLM  "
+                 f"(평균={np.mean(cos):.3f}, >0: {np.mean(cos>0)*100:.0f}%)")
     ax.legend()
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "V1b_5_alignment_hist.png"), dpi=130)
