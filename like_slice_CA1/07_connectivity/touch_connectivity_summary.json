@@ -1,0 +1,31 @@
+{
+  "step": "7b touch-connectome (Romani 방식 축소판)",
+  "subvolume_cells": 1158,
+  "box_um": [
+    500.0,
+    100.0,
+    "full-depth"
+  ],
+  "n_subsample_pts": 500,
+  "touch_radius_um": 5.0,
+  "axon_points": 579000,
+  "dend_points": 579000,
+  "apposition_pairs": 216261,
+  "total_appositions": 506730,
+  "connections_pathway_valid": 216261,
+  "mean_syn_per_conn": 2.3431409269355084,
+  "mean_in_degree": 186.7538860103627,
+  "mean_out_degree": 186.7538860103627,
+  "by_class": {
+    "PC->PC (E2)": 142741,
+    "NOS+->PC (I3)": 23364,
+    "PC->SOM- (E2)": 15760,
+    "PV+->PC (I2)": 14662,
+    "CCK+->PC (I3)": 8493,
+    "PC->SOM+ (E1)": 5463,
+    "SOM+->PC (I2)": 3451,
+    "CCK-->CCK- (I2)": 1522,
+    "CCK+->CCK+ (I1)": 805
+  },
+  "note": "축소부피·서브샘플·pruning 미적용. apposition≈잠재시냅스(과대추정 가능)."
+}
