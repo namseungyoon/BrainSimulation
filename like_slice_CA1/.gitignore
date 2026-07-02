@@ -15,3 +15,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.swp
+
+# 대용량 커넥텀 출력 (재생성 가능)
+07_connectivity/touch_connectivity.npz

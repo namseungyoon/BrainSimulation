@@ -44,10 +44,14 @@ ASSIGN = os.path.join(ROOT, "05b_memap", "model_assignment.npz")
 FIG = os.path.join(HERE, "figures")
 os.makedirs(FIG, exist_ok=True)
 
-HALF_T1, HALF_T2 = 250.0, 50.0   # 박스 반폭: 가로500 × 두께100 µm × 전층
-N_SUB = 500                       # 세포당 축삭/수상 서브샘플 점 수
-TOUCH_R = 5.0                     # 접촉 반경 (µm)
+HALF_T1, HALF_T2 = 250.0, 50.0   # 박스 반폭(box 모드): 가로500 × 두께100 µm × 전층
+BATCH = 500_000                   # 축삭점 배치 크기 (메모리 상한)
 rng = np.random.default_rng(0)
+# 실행모드: argv 에 "full" → 전체 슬라이스, "hires" → 서브샘플 없이 전량점+반경2µm
+FULL = "full" in sys.argv[1:]
+HIRES = "hires" in sys.argv[1:]
+N_SUB = None if HIRES else 500    # None=서브샘플 없음(전량 점)
+TOUCH_R = 2.0 if HIRES else 5.0   # 접촉 반경 (µm)
 
 
 def local_frame(quat):
@@ -63,64 +67,83 @@ def main():
     N = len(xyz)
     mtypes_hyphen = np.array([m.replace("_", "-") for m in mt_us])
 
-    # 중심 추체 기준 박스 선택
-    pc = np.where(mt_us == "SP_PC")[0]
-    ctr = xyz[pc].mean(0)
-    c0 = pc[np.argmin(np.linalg.norm(xyz[pc] - ctr, axis=1))]
-    radial, t1, t2 = local_frame(quat[c0])
-    rel = xyz - xyz[c0]
-    inbox = (np.abs(rel @ t1) < HALF_T1) & (np.abs(rel @ t2) < HALF_T2)
-    sub = np.where(inbox)[0]
-    print(f"[box] 하위부피 세포 {len(sub)} / {N:,} "
-          f"(가로{2*HALF_T1:.0f}×두께{2*HALF_T2:.0f}µm×전층)")
+    # 대상 세포: full → 전체, 아니면 중심 추체 기준 박스
+    if FULL:
+        sub = np.arange(N)
+        print(f"[full] 전체 슬라이스 세포 {len(sub):,}")
+    else:
+        pc = np.where(mt_us == "SP_PC")[0]
+        c0 = pc[np.argmin(np.linalg.norm(xyz[pc] - xyz[pc].mean(0), axis=1))]
+        radial, t1, t2 = local_frame(quat[c0])
+        rel = xyz - xyz[c0]
+        inbox = (np.abs(rel @ t1) < HALF_T1) & (np.abs(rel @ t2) < HALF_T2)
+        sub = np.where(inbox)[0]
+        print(f"[box] 하위부피 세포 {len(sub)} / {N:,} "
+              f"(가로{2*HALF_T1:.0f}×두께{2*HALF_T2:.0f}µm×전층)")
 
-    # 각 세포 형태 변환 + 축삭(pre)/수상+소마(post) 점 서브샘플
+    # 각 세포 형태 변환 + 축삭(pre)/수상+소마(post) 점.
+    # 최적화: 형태(.swc) 파싱을 이름별 캐싱 (17,647세포가 2,189 고유형태 공유).
+    print(f"[mode] {'HIRES 전량점·2µm' if HIRES else '서브샘플 500·5µm'}")
+    cache = {}
     axon_pts, axon_cell = [], []
     dend_pts, dend_cell = [], []
     for local_i, k in enumerate(sub):
-        try:
-            s = mt.load_swc(os.path.join(MORPH_DIR, morph[k] + ".swc"))
-        except FileNotFoundError:
-            continue
-        w, _ = mt.transform(s["xyz"], mt.soma_center(s), quat[k], xyz[k])
-        ax = w[s["type"] == 2]
-        de = w[(s["type"] == 1) | (s["type"] == 3) | (s["type"] == 4)]
-        if len(ax) > N_SUB:
-            ax = ax[rng.choice(len(ax), N_SUB, replace=False)]
-        if len(de) > N_SUB:
-            de = de[rng.choice(len(de), N_SUB, replace=False)]
-        axon_pts.append(ax); axon_cell.append(np.full(len(ax), k))
-        dend_pts.append(de); dend_cell.append(np.full(len(de), k))
-        if (local_i + 1) % 200 == 0:
-            print(f"  로드 {local_i+1}/{len(sub)}")
+        name = morph[k]
+        s = cache.get(name)
+        if s is None:
+            try:
+                s = mt.load_swc(os.path.join(MORPH_DIR, name + ".swc"))
+            except FileNotFoundError:
+                continue
+            cache[name] = {"xyz": s["xyz"], "soma": mt.soma_center(s),
+                           "isax": s["type"] == 2,
+                           "isde": (s["type"] == 1) | (s["type"] >= 3)}
+            s = cache[name]
+        w, _ = mt.transform(s["xyz"], s["soma"], quat[k], xyz[k])
+        ax = w[s["isax"]]; de = w[s["isde"]]
+        if N_SUB is not None:
+            if len(ax) > N_SUB:
+                ax = ax[rng.choice(len(ax), N_SUB, replace=False)]
+            if len(de) > N_SUB:
+                de = de[rng.choice(len(de), N_SUB, replace=False)]
+        axon_pts.append(ax); axon_cell.append(np.full(len(ax), k, np.int32))
+        dend_pts.append(de); dend_cell.append(np.full(len(de), k, np.int32))
+        if (local_i + 1) % 2000 == 0:
+            print(f"  로드 {local_i+1}/{len(sub)} (고유형태 캐시 {len(cache)})", flush=True)
     axon_pts = np.vstack(axon_pts); axon_cell = np.concatenate(axon_cell)
     dend_pts = np.vstack(dend_pts); dend_cell = np.concatenate(dend_cell)
     print(f"[points] 축삭 {len(axon_pts):,} · 수상/소마 {len(dend_pts):,}")
 
     # 접촉 검색: 축삭점 근처(≤TOUCH_R) 수상점 → (pre,post) appositions
+    # 축삭점을 BATCH 단위로 쿼리(메모리 상한), 벡터화로 (pre,post) 누적
     tree = cKDTree(dend_pts)
-    appo = Counter()                              # (pre,post) -> apposition 수
-    nbr = tree.query_ball_point(axon_pts, TOUCH_R)
-    for ai, hits in enumerate(nbr):
-        if not hits:
+    pre_all, post_all = [], []
+    n_ax = len(axon_pts)
+    for s in range(0, n_ax, BATCH):
+        e = min(s + BATCH, n_ax)
+        nbr = tree.query_ball_point(axon_pts[s:e], TOUCH_R, workers=-1)
+        lengths = np.fromiter((len(h) for h in nbr), dtype=np.int64, count=e - s)
+        if lengths.sum() == 0:
             continue
-        pre = int(axon_cell[ai])
-        posts = dend_cell[hits]
-        for po in posts:
-            po = int(po)
-            if po != pre:
-                appo[(pre, po)] += 1
-    print(f"[touch] 접촉쌍(pre,post) {len(appo):,} · 총 apposition {sum(appo.values()):,}")
+        ax_rep = np.repeat(np.arange(s, e), lengths)          # 축삭점 index
+        de_hit = np.concatenate([np.asarray(h, dtype=np.int64) for h in nbr if h])
+        pre = axon_cell[ax_rep]; post = dend_cell[de_hit]
+        m = pre != post
+        pre_all.append(pre[m]); post_all.append(post[m])
+        print(f"  [touch] 축삭 {e:,}/{n_ax:,} 처리")
+    pre_t = np.concatenate(pre_all); post_t = np.concatenate(post_all)
+    print(f"[touch] 총 apposition(자기제외) {len(pre_t):,}")
 
-    # 연결 = apposition ≥1. 시냅스 수 ≈ apposition 수.
-    pairs = np.array(list(appo.keys()))
-    syn = np.array(list(appo.values()))
-    pre_c, post_c = pairs[:, 0], pairs[:, 1]
+    # (pre,post) 별 apposition 수 = 시냅스 수 ≈. np.unique 로 집계.
+    key = pre_t.astype(np.int64) * N + post_t.astype(np.int64)
+    uk, syn = np.unique(key, return_counts=True)
+    pre_c = (uk // N).astype(np.int32); post_c = (uk % N).astype(np.int32)
+    print(f"[touch] 접촉쌍(pre,post) {len(uk):,}")
     # pathway_class 분류
     cls = np.array([pathway_class(mtypes_hyphen[p], mtypes_hyphen[q])
                     for p, q in zip(pre_c, post_c)], dtype=object)
     valid = cls != None                            # noqa: E711
-    n_conn = len(pairs); n_conn_valid = int(valid.sum())
+    n_conn = len(pre_c); n_conn_valid = int(valid.sum())
     n_syn = int(syn.sum())
     dist = np.linalg.norm(xyz[pre_c] - xyz[post_c], axis=1)
     print(f"[conn] 연결(pair) {n_conn:,} (pathway 유효 {n_conn_valid:,})  "
