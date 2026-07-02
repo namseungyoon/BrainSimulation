@@ -82,7 +82,7 @@ def main():
     type_dir = net.load_representatives(MODELS)
     print("[로드] 대표 e-type: " + ", ".join(type_dir.keys()), flush=True)
     print(f"[1/5 구축] 세포 {len(cells_meta)} …", flush=True)
-    cells = net.build_cells(cells_meta, type_dir, verbose=False)
+    cells = net.build_cells(cells_meta, type_dir, verbose=True)
     print(f"[2/5 연결] {len(edges)} EMS 시냅스 …", flush=True)
     n_ok, n_fail = net.wire_synapses(cells, edges, rng, keeph)
     if n_fail:
