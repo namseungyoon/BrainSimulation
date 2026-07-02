@@ -1,0 +1,78 @@
+{
+  "method": "Romani-style pruning (S9 syn/conn, CV0.50; conn downsample to CA1-scaled total)",
+  "raw_connections": 19952393,
+  "raw_appositions": 1693213288,
+  "keepall_synapses": 62634876,
+  "target_total_synapses": 31746024,
+  "pruned_connections": 6438379,
+  "pruned_synapses": 28233245,
+  "mean_syn_per_conn": 4.385148031826024,
+  "mean_in_degree": 364.84269280897604,
+  "mean_out_degree": 364.84269280897604,
+  "per_class": {
+    "CCK+->CCK+ (I1)": {
+      "target_syn_per_conn": 3.5,
+      "src": "D",
+      "model_syn_per_conn": 3.5041097443455587,
+      "connections": 70564,
+      "synapses": 247264
+    },
+    "CCK+->PC (I3)": {
+      "target_syn_per_conn": 6.82,
+      "src": "D(avg)",
+      "model_syn_per_conn": 6.815873120169524,
+      "connections": 608765,
+      "synapses": 4149265
+    },
+    "CCK-->CCK- (I2)": {
+      "target_syn_per_conn": 1.55,
+      "src": "D",
+      "model_syn_per_conn": 1.6020169814590193,
+      "connections": 144275,
+      "synapses": 231131
+    },
+    "NOS+->PC (I3)": {
+      "target_syn_per_conn": 5.0,
+      "src": "A",
+      "model_syn_per_conn": 4.999874875228689,
+      "connections": 1414588,
+      "synapses": 7072763
+    },
+    "PC->PC (E2)": {
+      "target_syn_per_conn": 1.17,
+      "src": "D",
+      "model_syn_per_conn": 1.2791163371075216,
+      "connections": 2167795,
+      "synapses": 2772862
+    },
+    "PC->SOM+ (E1)": {
+      "target_syn_per_conn": 2.83,
+      "src": "D",
+      "model_syn_per_conn": 2.834607881855934,
+      "connections": 167118,
+      "synapses": 473714
+    },
+    "PC->SOM- (E2)": {
+      "target_syn_per_conn": 2.5,
+      "src": "A",
+      "model_syn_per_conn": 2.508091125165706,
+      "connections": 342474,
+      "synapses": 858956
+    },
+    "PV+->PC (I2)": {
+      "target_syn_per_conn": 7.63,
+      "src": "D(avg)",
+      "model_syn_per_conn": 7.6333441419167,
+      "connections": 1184244,
+      "synapses": 9039742
+    },
+    "SOM+->PC (I2)": {
+      "target_syn_per_conn": 10.0,
+      "src": "D",
+      "model_syn_per_conn": 10.005871997542505,
+      "connections": 338556,
+      "synapses": 3387548
+    }
+  },
+  "CV": 0.5
+}

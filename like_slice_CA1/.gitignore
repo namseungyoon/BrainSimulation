@@ -18,3 +18,4 @@ Thumbs.db
 
 # 대용량 커넥텀 출력 (재생성 가능)
 07_connectivity/touch_connectivity.npz
+07_connectivity/pruned_connectivity.npz
