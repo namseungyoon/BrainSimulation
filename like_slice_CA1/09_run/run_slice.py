@@ -93,7 +93,7 @@ def main():
     print(f"[4/5 실행] TSTOP={tstop:.0f}ms dt=0.025 …", flush=True)
     net.run_network(tstop)
     spk = net.spikes_to_arrays(spikes)
-    out_png = os.path.join(OUT, "V5_network_activity.png")
+    out_png = os.path.join(OUT, f"V5_network_activity_{len(cells_meta)}cells.png")
     print("[5/5 분석] raster + 발화율 …", flush=True)
     net.analyze_activity(cells_meta, types, spk, tstop, out_png, demo=True)
 
