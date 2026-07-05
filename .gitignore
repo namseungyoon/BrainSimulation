@@ -40,6 +40,18 @@ x86_64/
 *.nrrd
 *.zip
 
+# like-slice 09_run 대용량 산출물(스파이크 CSV·20kHz 막전위 npy) — 재생성 가능, git 제외
+like_slice_CA1/09_run/spikes/
+# like-slice 실행 로그·임시·테스트 파일
+like_slice_CA1/_full_run.log
+like_slice_CA1/_full_run.err
+like_slice_CA1/_full_run.pid
+like_slice_CA1/_bench_mpi.log
+like_slice_CA1/_bench_mpi2.log
+like_slice_CA1/_mpitest.py
+like_slice_CA1/_mpitest2.py
+like_slice_CA1/09_run/figures/_test_firing.gif
+
 # 에디터/도구 설정
 .claude/
 .vscode/
