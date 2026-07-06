@@ -60,3 +60,7 @@ like_slice_CA1/09_run/figures/_test_firing.gif
 # OS
 Thumbs.db
 .DS_Store
+
+_drive_sweep.log
+like_slice_CA1/_drive_sweep.log
+like_slice_CA1/10_analysis/figures/_drive_sweep.npy

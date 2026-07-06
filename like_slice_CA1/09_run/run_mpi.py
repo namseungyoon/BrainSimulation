@@ -73,6 +73,7 @@ def main():
     n_seg = int(round(tstop / seg_ms))
     vm_khz = float(argval("--vm_khz", "0"))       # 0=끔. 20 → 소마 막전위 20kHz 기록
     vm_cells_n = int(argval("--vm_cells", "-1"))  # 랭크별 기록 세포수(-1=소유 전부)
+    drive_scale = float(argval("--drive_scale", "1.0"))  # 외부 Poisson 구동 weight 배율(튜닝용)
 
     # ── 세포 메타 (전 랭크 로드) ─────────────────────────────────────────────
     c = np.load(CELLS, allow_pickle=True)
@@ -159,7 +160,7 @@ def main():
             ns.start = 0; ns.noise = 1.0
             r = h.Random(); r.Random123(g, j, 0); r.negexp(1); ns.noiseFromRandom(r)
             syn = h.Exp2Syn(cells[g].soma[0](0.5)); syn.tau1 = 0.2; syn.tau2 = 2.0; syn.e = 0.0
-            ncd = h.NetCon(ns, syn); ncd.weight[0] = w; ncd.delay = 0.0
+            ncd = h.NetCon(ns, syn); ncd.weight[0] = w * drive_scale; ncd.delay = 0.0
             keeph += [ns, r, syn, ncd]
 
     # ── 스파이크 기록 (gid 기반, 이 랭크 소유분 전체) ────────────────────────
