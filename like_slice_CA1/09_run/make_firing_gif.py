@@ -26,13 +26,44 @@ from PIL import Image
 plt.rcParams["font.family"] = "Malgun Gothic"
 plt.rcParams["axes.unicode_minus"] = False
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
 CSVDIR = os.path.join(HERE, "spikes"); FIG = os.path.join(HERE, "figures")
+CELLS = os.path.join(ROOT, "05_placement", "slice_cells.npz")
 TYPE_COLOR = {"PC": (0.84, 0.19, 0.15), "PV": (0.13, 0.32, 0.66),
               "cAC": (0.18, 0.55, 0.24), "bAC": (0.95, 0.55, 0.15)}
+LAYER_COLOR = {"SO": (0.42, 0.36, 0.48), "SP": (0.75, 0.22, 0.17),
+               "SR": (0.18, 0.53, 0.76), "SLM": (0.15, 0.68, 0.38)}
+EI_COLOR = {"EXC": (0.87, 0.52, 0.32), "INH": (0.30, 0.45, 0.70)}
 
 
 def argval(flag, default):
     return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else default
+
+
+def hexrgb(h):
+    h = h.lstrip("#"); return tuple(int(h[i:i+2], 16)/255 for i in (0, 2, 4))
+
+
+def build_colors(colorby, N, fallback_type):
+    """관점(colorby)별 (세포별 카테고리, 팔레트dict) 반환. gid=행번호로 slice_cells 조인."""
+    if colorby == "etype":
+        cats = np.array(fallback_type)
+        pal = TYPE_COLOR
+    else:
+        c = np.load(CELLS, allow_pickle=True)
+        cats = c[{"layer": "layer", "mtype": "mtype", "sclass": "sclass"}[colorby]].astype(str)[:N]
+        if colorby == "layer":
+            pal = LAYER_COLOR
+        elif colorby == "sclass":
+            pal = EI_COLOR
+        else:  # mtype: tab20 팔레트
+            uniq = sorted(set(cats))
+            import matplotlib.cm as cm
+            pal = {u: cm.tab20(i % 20)[:3] for i, u in enumerate(uniq)}
+    # 존재하는 카테고리만
+    present = [k for k in pal if (cats == k).any()]
+    pal = {k: pal[k] for k in present}
+    return cats, pal
 
 
 def main():
@@ -44,9 +75,13 @@ def main():
     rot_total = float(argval("--rot", "40"))
     elev = float(argval("--elev", "16"))
 
+    colorby = argval("--colorby", "etype")   # etype|layer|mtype|sclass
     P = np.load(pos_fn, allow_pickle=True)
     xyz = P["xyz"].astype(float); ctype = P["type"].astype(str); N = len(xyz)
-    base_col = np.array([TYPE_COLOR.get(t, (0.5, 0.5, 0.5)) for t in ctype])
+    cats, palette = build_colors(colorby, N, ctype)
+    base_col = np.array([palette.get(cats[i], (0.5, 0.5, 0.5)) for i in range(N)])
+    cat_total = {k: int((cats == k).sum()) for k in palette}   # 카테고리별 전체 세포수
+    cat_mask = {k: (cats == k) for k in palette}
 
     gids = []; times = []
     with open(spk_fn, encoding="utf-8") as f:
@@ -77,7 +112,7 @@ def main():
         col = np.clip(col, 0, 1)
         rgba = np.concatenate([col, (0.20 + 0.80 * inten)[:, None]], axis=1)
         size = 2.2 + 30.0 * inten
-        n_active = int((inten > 0.15).sum())
+        active = inten > 0.15; n_active = int(active.sum())
 
         ax.cla()
         ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], s=size, c=rgba,
@@ -85,12 +120,17 @@ def main():
         ax.set_xlim(lo[0], hi[0]); ax.set_ylim(lo[1], hi[1]); ax.set_zlim(lo[2], hi[2])
         ax.set_xticks([]); ax.set_yticks([]); ax.set_zticks([])
         ax.view_init(elev=elev, azim=-60 + rot_total * fr / max(1, n_frames - 1))
-        ax.set_title(f"슬라이스 전체 발화  t = {tf:6.1f} ms   활성 {n_active}/{N}세포",
+        cb_label = {"etype": "e-type", "layer": "해부학적 층", "mtype": "m-type",
+                    "sclass": "흥분/억제"}.get(colorby, colorby)
+        ax.set_title(f"슬라이스 전체 발화 (색={cb_label})  t = {tf:6.1f} ms   활성 {n_active}/{N}세포",
                      fontsize=12)
-        # 범례(첫 프레임에만 텍스트로)
-        for i, (tn, cc) in enumerate(TYPE_COLOR.items()):
-            ax.text2D(0.02, 0.96 - i * 0.04, f"● {tn}", transform=ax.transAxes,
-                      color=cc, fontsize=9, fontweight="bold")
+        # 범례(관점별 카테고리): 지금 발화중 / 전체 세포수
+        ax.text2D(0.02, 0.985, "범례: ●유형  발화중/전체", transform=ax.transAxes,
+                  fontsize=7, color="#555555")
+        for i, (tn, cc) in enumerate(palette.items()):
+            na = int(active[cat_mask[tn]].sum())
+            ax.text2D(0.02, 0.95 - i * 0.032, f"● {tn}  {na:,}/{cat_total[tn]:,}",
+                      transform=ax.transAxes, color=cc, fontsize=8, fontweight="bold")
         fig.tight_layout()
         fig.canvas.draw()
         buf = np.asarray(fig.canvas.buffer_rgba())
