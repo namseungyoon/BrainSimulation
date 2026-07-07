@@ -101,5 +101,19 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 ## 확장 (E1~E4 이후)
 11) **MEA fEPSP 완성**(세포외 장 LFPy/LSA) · 12) **LTP/LTD**(Graupner 2012 칼슘모델 — `papers/02_Graupner2012...`에 이미 보유 + `demos/02_NEURON/02_STDP.py`를 회로 weight 훅으로 연결) · 13) **실측 MEA 비교**.
 
+## 추가 핵심 실험 명세 (theta·내측중격·ACh — 상세는 Notion "향후 핵심 실험 명세")
+
+> 소스코드·실측데이터·문헌 대조 검증 완료(2026-07). 실행순서 **EXP-2→EXP-1→EXP-3→EXP-4→EXP-5**.
+
+| ID | 실험 | 목표 | 우선순위 |
+|---|---|---|---|
+| EXP-1 | theta변조 SC 입력 + theta-nested gamma(PAC) | CA1 theta 추종·PAC 창발(입력 f_theta=8Hz, r0 0.1–0.4Hz, VecStim/Elephant) | ★★★ |
+| EXP-2 | 전 슬라이스 SC 배치 | 15,723 PC에 Romani 층분포(SR67.9/SO24.7/SP7.1/SLM0.3%) SC 12개/세포, MPI | ★★☆ |
+| EXP-3 | SC I-O + gabazine (Fig4) | 활성 5–100% 스윕→I-O(control 선형 R=0.992, gabazine 포화). `--sc_active`·`--no_inh` 有 | ★★★ |
+| EXP-4 | 내측중격(MS) theta 페이스메이커 | MS 없음→가상 입력원으로 PV-BC/OLM에 8Hz 리듬 억제 주입(탈억제 theta) | ★★☆ |
+| EXP-5 | ACh(무스카린) 신경조절 | 현상론(weight/흥분성 조정) 1차, 기계론(Im/KM mod) 2차 | ★☆☆ |
+
+**slice400 기하 결론(정직):** CA1 전용 횡단-유사 가상슬랩(소마 z~755µm=실험 300–400µm의 약 2배), 4층 정상(방사 ~905µm)·SR 확보로 MEA식 fEPSP엔 기하 부합. 단 **CA3/DG 부재→SC는 외부자극 대체, 물리절단 아님** → fEPSP 정량비교 시 스케일 보정 + 한계 명시 필수. Romani Fig4 규모=300µm 슬라이스·SP 101세포·SC 350축삭.
+
 ## 진행 약속
 각 단계·실험 끝에 ✅검증 그림/수치로 **하나씩 확인** 후 다음으로.
