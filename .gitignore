@@ -64,3 +64,11 @@ Thumbs.db
 _drive_sweep.log
 like_slice_CA1/_drive_sweep.log
 like_slice_CA1/10_analysis/figures/_drive_sweep.npy
+like_slice_CA1/_e3_full.log
+like_slice_CA1/_e3_full.err
+like_slice_CA1/_e3_smoke.log
+like_slice_CA1/_e3_smoke.err
+like_slice_CA1/_e3_tune.log
+like_slice_CA1/_e3_tune.err
+like_slice_CA1/_sc_smoke.log
+like_slice_CA1/11_schaffer/figures/_e3_io.npy
