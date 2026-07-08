@@ -93,15 +93,15 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 ### E2. Schaffer collateral(CA3→CA1) 경로
 **배선 방법론** — CA3 미보유 → 가상 fiber로 모델링(E2·E3·E5·E6 공통).
 
-| 요소 | 값 |
-|---|---|
-| CA1 세포 | 17,647 (PC 15,723 + INT 1,924) |
-| 가상 SC fiber(=CA3 축삭) | 1,000 |
-| SC 시냅스/PC | ~60 (SR68/SO25/SP7/SLM0.3% — Romani 층분포) |
-| SC 시냅스/INT | ~40 (피드포워드 억제) |
-| 전도도(튜닝값) | SC→PC ~1.0nS / SC→INT ~4.0nS |
+| 요소 | 값 | 근거 |
+|---|---|---|
+| CA1 세포 | 17,647 (PC 15,723 + INT 1,924) | **실측**(slice_cells.npz), Romani 아틀라스 slice400 추출. E:I≈89:11(Romani 조성) |
+| 가상 SC fiber(=CA3 축삭) | 1,000 | CA3 미보유→가상 대체. **설계값**(볼리·활성비율 단위). Romani Fig4=350축삭(101세포)의 전슬라이스 확장. ⚠️측정 아님 |
+| SC 시냅스/PC | ~60 (SR68/SO25/SP7/SLM0.3%) | **층분포=Romani 실측**(SLM0.3/SR67.9/SP7.1/SO24.7%). 개수=Romani **~20,878/PC**(±5,867)를 계산 가능하게 **~1/350 축소**(전도도 보정, 개별 EPSP는 E2-1로 보존) |
+| SC 시냅스/INT | ~40 | Romani **INT당 ~12,714**(PC의 ~0.6배) 비율 반영·동일 축소. 피드포워드 억제 |
+| 전도도(튜닝값) | SC→PC ~1.0nS / SC→INT ~4.0nS | **tuned·측정 아님**. 앵커=E2-1(단일 0.6nS→0.15mV). 축소 시냅스 보정 + E3 FFI 게이팅 위해 SC→INT>SC→PC 탐색 |
 
-근거(논문X→우리Y→이유): CA3 267,238세포→가상 fiber 1,000(CA3 미보유); SC ~20,878/PC→~60(계산 가능성+전도도 보정); 전용 SC-PC(0.85nS)→Ecker E2(0.6nS) 대용(EMS 재사용, 크기 근사·kinetics 다름); 층분포 Romani 그대로.
+※ SC 시냅스 종류: 전용 SC-PC(Romani 0.85nS·τ0.4/12·NRRP12) → **Ecker "PC→PC(E2)"(0.6nS) 대용**(검증된 EMS 재사용, EPSP 크기 근사·kinetics 다름).
 - **E2-1** ✅ (`sc_epsp_test.py`): 단일 SC→PC EPSP 근위SR ≈0.15mV. ⚠️ Ecker E2 대용(SC 전용 아님), baseline 오염으로 진값 0.17mV 대비 과소, Use=0.5로 유효 g≈0.30nS → "크기 근사"이지 "SC 구현" 아님.
 - **E2-2** ✅ (`sc_network.py`, subset): 조용한 baseline(PC 0) + SC 볼리 → PC 반응, gabazine 토글. ⚠️ 실행값 80syn·3nS=코드기본(12·0.6) 오버라이드 튜닝, "PC 100%"=과자극.
 - **E2-3** ⬜ 예정: subset 배선을 전체 17,647로 확장(MPI). 검증: 시냅스 층분포 Romani 일치, baseline 조용.
