@@ -90,12 +90,23 @@ def main():
     apic = [s for s in cell.all if ".apic" in s.name()]
     seg_by_dist = sorted([(h.distance(s(0.5)), s) for s in apic], key=lambda t: t[0])
     dmax = seg_by_dist[-1][0]
+    tps = []
     for frac, lab in [(0.25, "근위 SR"), (0.55, "원위 SR"), (0.85, "SLM 부근")]:
         d, s = min(seg_by_dist, key=lambda t: abs(t[0] - frac * dmax))
-        p = seg_xyz(s, 0.5)
+        p = seg_xyz(s, 0.5); tps.append(p)
         ax.scatter(*[[v] for v in p], color=MCOL[lab], s=260, marker="*",
                    edgecolors="k", linewidths=0.6, depthshade=False,
                    label=f"{lab} ({d:.0f}µm) · EPSP {EPSP[lab]:.3f}mV")
+
+    # SC 입력원(가상) + 시냅스로의 모식 화살표 — ⚠️실제 축삭 아님(개념 표현)
+    tps = np.array(tps)
+    sc_src = tps.mean(axis=0) + np.array([0.0, 0.0, 280.0])
+    ax.scatter(*[[v] for v in sc_src], color="#C0392B", s=210, marker="D",
+               edgecolors="k", linewidths=0.6, depthshade=False,
+               label="SC 입력원 (가상·CA3 대용, 모식)")
+    for p in tps:
+        ax.plot([sc_src[0], p[0]], [sc_src[1], p[1]], [sc_src[2], p[2]],
+                ls="--", color="#C0392B", lw=1.3, alpha=0.55)
 
     ax.set_xlabel("x (µm)"); ax.set_ylabel("y (µm)"); ax.set_zlabel("z (µm)")
     try:
@@ -103,8 +114,8 @@ def main():
     except Exception:
         pass
     ax.legend(loc="upper left", fontsize=8.5)
-    title = ("E2-a  단일 SC→PC 시냅스 실제 배치 (대표 추체세포 형태 위)\n"
-             "정단(SR·SLM) 3위치에 시냅스 → 소마 EPSP 거리감쇠 (파형=E2a_sc_epsp.png)")
+    title = ("E2-a  단일 SC→PC 배치 + SC 입력원 모식 (대표 추체세포 형태 위)\n"
+             "SC 입력원(가상·CA3 대용)→정단 3위치 시냅스 (화살표=개념 모식·실제 축삭 아님). 파형=E2a_sc_epsp.png")
     out = os.path.join(FIG, "E2a_sc_epsp_placement.gif")
     # 느린 회전: 프레임 많이·프레임당 길게
     save_rotate_gif(fig, ax, out, n_frames=72, elev=12, duration=130, title=title)
