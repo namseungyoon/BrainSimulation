@@ -29,7 +29,7 @@
 | # | 파일 | 개념 | 논문 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1 | `1_bistable_synapse.py` | ① cubic 항 → 두 안정상태(DOWN/UP)와 경계 ρ*=0.5 | Fig 1D(rest) | ✅ |
-| 2 | `2_calcium_transient.py` | 칼슘 c(t): 점프·감쇠·합산, 문턱 초과 시간(그늘) | Fig 1A | ⬜ |
+| 2 | `2_calcium_transient.py` | 칼슘 c(t): 점프·감쇠·합산, 문턱 초과 시간(그늘) | Fig 1A | ✅ |
 | 3 | `3_time_above_threshold.py` | 칼슘 진폭 → 문턱 초과 시간 → 평균 정착값 ρ̄ | Fig 1B | ⬜ |
 | 4 | `4_state_transitions.py` | 60 스파이크@1Hz + 잡음 → DOWN↔UP 확률적 전이 | Fig 1C | ⬜ |
 | 5 | `5_potential_landscape.py` | 쉴 때 이중우물 vs 자극 중 단일우물(ρ̄), LTP/LTD 기준 | Fig 1D | ⬜ |
