@@ -115,10 +115,10 @@ def main():
     a3.axvline(pcrate.mean(), color="red", ls="--", label=f"우리 평균 {pcrate.mean():.1f}Hz")
     a3.set_xlabel("PC 발화율 (Hz)"); a3.set_ylabel("세포 수"); a3.legend(fontsize=8)
     a3.set_title("(C) 추체세포 발화율 분포")
-    fig.suptitle("E1  baseline 발화율 검증 — in vivo CA1 문헌 대조 (구동 과다 진단)",
+    fig.suptitle("E1-a  baseline 발화율 검증 — in vivo CA1 문헌 대조 (구동 과다 진단)",
                  fontsize=13, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    out = os.path.join(FIG, "E1_firing_baseline.png")
+    out = os.path.join(FIG, "E1a_firing_baseline.png")
     fig.savefig(out, dpi=130); plt.close(fig)
     print("=" * 70)
     print(f"[그림] {out}")

@@ -93,11 +93,11 @@ def main():
     ax.text(250, -70 + ROMANI_EPSP[0], f" Romani SC-PC\n {ROMANI_EPSP[0]}±{ROMANI_EPSP[1]}mV",
             fontsize=8, va="center", color="green")
     ax.set_xlabel("시간 (ms)"); ax.set_ylabel("소마 막전위 (mV)")
-    ax.set_title("E2-1  단일 SC→PC EPSP 검증 (apical 위치별) — 소마에서 측정\n"
+    ax.set_title("E2-a  단일 SC→PC EPSP 검증 (apical 위치별) — 소마에서 측정\n"
                  "정점거리 멀수록 소마 EPSP 감쇠 (Ecker E2 AMPA/NMDA 재사용, 결정적)",
                  fontsize=12, fontweight="bold")
     fig.tight_layout()
-    out = os.path.join(FIG, "E2_1_sc_epsp.png")
+    out = os.path.join(FIG, "E2a_sc_epsp.png")
     fig.savefig(out, dpi=130); plt.close(fig)
     print(f"[그림] {out}", flush=True)
     prox = results[0][2]

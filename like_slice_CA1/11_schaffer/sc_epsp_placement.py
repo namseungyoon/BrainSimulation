@@ -103,9 +103,9 @@ def main():
     except Exception:
         pass
     ax.legend(loc="upper left", fontsize=8.5)
-    title = ("E2-1  단일 SC→PC 시냅스 실제 배치 (대표 추체세포 형태 위)\n"
-             "정단(SR·SLM) 3위치에 시냅스 → 소마 EPSP 거리감쇠 (파형=E2_1_sc_epsp.png)")
-    out = os.path.join(FIG, "E2_1_sc_epsp_placement.gif")
+    title = ("E2-a  단일 SC→PC 시냅스 실제 배치 (대표 추체세포 형태 위)\n"
+             "정단(SR·SLM) 3위치에 시냅스 → 소마 EPSP 거리감쇠 (파형=E2a_sc_epsp.png)")
+    out = os.path.join(FIG, "E2a_sc_epsp_placement.gif")
     # 느린 회전: 프레임 많이·프레임당 길게
     save_rotate_gif(fig, ax, out, n_frames=72, elev=12, duration=130, title=title)
     plt.close(fig)

@@ -185,10 +185,10 @@ def main():
                           ec=("#2f6fb0" if ffi_ok else "#C0392B")))
         ax.set_xlabel("활성 SC 축삭 비율 (%)"); ax.set_ylabel("발화한 PC 비율 (%)")
         title2 = ("Fig.4 재현" if ffi_ok else "예비 — FFI 미작동, Fig.4 미재현")
-        ax.set_title(f"E3  SC 자극 I-O 곡선 + gabazine ({title2})\n"
+        ax.set_title(f"E3-a  SC 자극 I-O 곡선 + gabazine ({title2})\n"
                      f"{N}세포 · 조용한 슬라이스 + SC 볼리 (예비)", fontsize=12, fontweight="bold")
         ax.legend(fontsize=10); ax.grid(alpha=0.3)
-        out = os.path.join(FIG, "E3_sc_io_curve.png")
+        out = os.path.join(FIG, "E3a_sc_io_curve.png")
         fig.savefig(out, dpi=130); plt.close(fig)
         np.save(os.path.join(FIG, "_e3_io.npy"),
                 np.array([(c_, r[0], r[1], r[2]) for c_ in results for r in results[c_]], dtype=object))
