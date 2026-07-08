@@ -130,15 +130,15 @@ def main():
         ns.start = stim_t; ns.interval = 1; ns.noise = 0
         fibers.append(ns); keeph.append(ns)
 
-    # 각 세포에 SC 시냅스 SC_PER_CELL개 → 무작위 fiber 연결(PC는 SR)
-    frng = np.random.RandomState(7)   # fiber 배정용(전 랭크 동일 시드 아님, 세포별 무관)
+    # 각 세포에 SC 시냅스 sc_per_cell개 → 무작위 fiber 연결(PC는 SR)
+    scrng = np.random.RandomState(7000 + RANK)   # SC 배선 전용 RNG(내재연결 rng 오염 방지·재현성)
     prm = P3.CLASSES[SC_CLASS]; n_sc = 0
     for g in my:
         is_pc = gtype[g] == "PC"
         for _ in range(sc_per_cell):
-            seg = sr_or_dend(cells[g], is_pc, rng)
+            seg = sr_or_dend(cells[g], is_pc, scrng)
             syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000, 1, 1), deterministic=False)
-            fib = fibers[rng.randint(N_FIBER)]
+            fib = fibers[scrng.randint(N_FIBER)]
             ncc = h.NetCon(fib, syn); ncc.weight[0] = sc_g; ncc.delay = SYN_DELAY
             keeph += [syn, ncc]; n_sc += 1
     n_sc_all = int(pc.allreduce(n_sc, 1))

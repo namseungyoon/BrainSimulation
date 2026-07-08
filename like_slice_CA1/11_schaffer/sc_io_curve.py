@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-11_schaffer/sc_io_curve.py  —  E3: SC 자극 입출력(I-O) 곡선 + gabazine (Romani Fig.4 재현)
+11_schaffer/sc_io_curve.py  —  E3: SC 자극 입출력(I-O) 곡선 + gabazine 대조 (Romani Fig.4 재현 *시도*)
 
 세포를 **한 번만 구축**하고, 활성 SC fiber 비율(sc_active)을 5→100% 스윕하며 자극 후 발화한 PC 비율을 측정.
 억제 시냅스 NetCon weight를 0으로 토글 = gabazine(GABA 차단) 모사(재구축 불필요).
-  - 정상(control): 피드포워드 억제로 I-O가 완만/선형(Romani R=0.992)
-  - gabazine: 억제 없어 급격히 포화
+  - 목표(Romani Fig.4): control은 FFI로 완만/선형(R≈0.992), gabazine은 급격 포화.
+  - ⚠️ 현재 결과(예비): control ≈ gabazine (두 곡선 겹침) = **피드포워드 억제 미작동**(SC→PC가 억제 압도).
+    FFI가 실제로 나올 때까지 "Fig4 재현"으로 보고 금지. SC→PC↓ / 억제↑ / disynaptic 타이밍 재작업 필요.
+  - ⚠️ SC 시냅스는 Ecker "PC->PC (E2)" 대용(Romani SC-PC 전용 파라미터 아님). g는 튜닝값(측정 아님).
 
 실행: mpiexec -n 10 <python> 11_schaffer/sc_io_curve.py --counts 900,110,95,95 --stim_t 10 --tstop 60
 """
@@ -122,12 +124,13 @@ def main():
         ns.start = stim_t; ns.interval = 1; ns.noise = 0; ns.number = 0
         keeph.append(ns)
     prm = P3.CLASSES[SC_CLASS]; n_sc = 0
+    scrng = np.random.RandomState(7000 + RANK)   # SC 배선 전용 RNG(내재연결 rng 오염 방지·재현성)
     for g in my:
         is_pc = gtype[g] == "PC"
         for _ in range(sc_per_cell):
-            seg = sr_or_dend(cells[g], is_pc, rng)
+            seg = sr_or_dend(cells[g], is_pc, scrng)
             syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000, 1, 1), deterministic=False)
-            ncc = h.NetCon(fibers[rng.randint(N_FIBER)], syn)
+            ncc = h.NetCon(fibers[scrng.randint(N_FIBER)], syn)
             ncc.weight[0] = sc_g_pc if is_pc else sc_g_int; ncc.delay = SYN_DELAY
             keeph += [syn, ncc]; n_sc += 1
     log(f"[SC배선] 랭크0 {n_sc} SC 시냅스")
@@ -170,22 +173,28 @@ def main():
         for cond, col, lab in [("control", "#2f6fb0", "정상(억제 ON)"), ("gabazine", "#C0392B", "gabazine(억제 OFF)")]:
             xs = [r[0] * 100 for r in results[cond]]; ys = [r[2] for r in results[cond]]
             ax.plot(xs, ys, "o-", color=col, lw=2, label=lab)
-        # control 선형성 R
         xc = np.array([r[0] * 100 for r in results["control"]]); yc = np.array([r[2] for r in results["control"]])
-        if yc.std() > 0:
-            R = np.corrcoef(xc, yc)[0, 1]
-            ax.text(0.05, 0.95, f"정상 I-O 선형성 R={R:.3f}\n(Romani R=0.992)", transform=ax.transAxes,
-                    va="top", fontsize=10, bbox=dict(boxstyle="round", fc="#eef", ec="#2f6fb0"))
+        yg = np.array([r[2] for r in results["gabazine"]])
+        R = np.corrcoef(xc, yc)[0, 1] if yc.std() > 0 else float("nan")
+        ffi_gap = float(np.max(np.abs(yg - yc)))   # gabazine vs control 최대 차이(%p) = FFI 효과 크기
+        ffi_ok = ffi_gap >= 10.0                    # 10%p 미만이면 FFI 사실상 미작동
+        note = (f"I-O 선형성 R={R:.3f}\ngabazine 대비(FFI) 최대 {ffi_gap:.1f}%p\n"
+                + ("→ FFI 작동" if ffi_ok else "→ ⚠️FFI 미작동(곡선 겹침)\n= Fig4 재현 아님"))
+        ax.text(0.04, 0.96, note, transform=ax.transAxes, va="top", fontsize=9,
+                bbox=dict(boxstyle="round", fc=("#eef" if ffi_ok else "#fdecea"),
+                          ec=("#2f6fb0" if ffi_ok else "#C0392B")))
         ax.set_xlabel("활성 SC 축삭 비율 (%)"); ax.set_ylabel("발화한 PC 비율 (%)")
-        ax.set_title("E3  SC 자극 입출력(I-O) 곡선 + gabazine (Romani Fig.4 재현)\n"
-                     f"{N}세포 · 조용한 슬라이스 + SC 볼리", fontsize=12, fontweight="bold")
+        title2 = ("Fig.4 재현" if ffi_ok else "예비 — FFI 미작동, Fig.4 미재현")
+        ax.set_title(f"E3  SC 자극 I-O 곡선 + gabazine ({title2})\n"
+                     f"{N}세포 · 조용한 슬라이스 + SC 볼리 (예비)", fontsize=12, fontweight="bold")
         ax.legend(fontsize=10); ax.grid(alpha=0.3)
         out = os.path.join(FIG, "E3_sc_io_curve.png")
         fig.savefig(out, dpi=130); plt.close(fig)
         np.save(os.path.join(FIG, "_e3_io.npy"),
                 np.array([(c_, r[0], r[1], r[2]) for c_ in results for r in results[c_]], dtype=object))
-        print(f"\n[그림] {out}", flush=True)
-        print(f"[판정] 정상 I-O 선형 R={R:.3f} (Romani 0.992), gabazine 포화 여부는 곡선 참조", flush=True)
+        print(f"\n[그림] {out} (N={N}, 예비)", flush=True)
+        print(f"[판정] I-O 선형 R={R:.3f} · gabazine 대비(FFI) 최대 {ffi_gap:.1f}%p → "
+              + ("FFI 작동" if ffi_ok else "⚠️FFI 미작동(control≈gabazine) = Fig4 재현 아님, 재작업 필요"), flush=True)
     pc.barrier(); pc.done(); h.quit()
 
 
