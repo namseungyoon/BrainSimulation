@@ -86,53 +86,79 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 | E8 | LTP/LTD (칼슘 가소성) | ⬜ 예정 |
 | E9 | 실측 MEA 대조 | ⬜ 예정 |
 
-### E1. Baseline 발화율·구동 검증 ✅ (`10_analysis/firing_stats.py`, `drive_sweep.py`)
-- **E1-a**: 완주 데이터(17,647세포×1초, 외부 Poisson 30Hz *가정*) → PC 평균 **18.3Hz**·전세포 발화 → **과활성**(방향성 견고). ⚠️ "몇 배"는 문헌밴드 따라 9~37배(대표 1Hz면 ~18배). "정상상태 20.1Hz"=E+I 혼합(PC 아님). "층별 발화율"=세포조성(SO/SR/SLM 전량 INT, n=24~29).
-- **E1-b**: 구동 weight 스윕(760세포·60ms). 0.30→0.17Hz, ≤0.15→침묵, 1.0→18Hz. ⚠️ 0.30~1.0 미표집 → "bimodal" 미확정. 유효 결론 = **조용한 슬라이스 baseline 채택**.
+> **공통 양식** — 각 실험: 목표 / 방법·입력 / 검증지표 / 결과·상태 / 근거(논문X→우리Y) / 한계·주의.
 
-### E2. Schaffer collateral(CA3→CA1) 경로
-**배선 방법론** — CA3 미보유 → 가상 fiber로 모델링(E2·E3·E5·E6 공통).
+### E1. Baseline 발화율·구동 검증 ✅
+- **목표**: 완주 baseline이 생리적인지 판정 + 외부구동 강도 결정.
+- **방법·입력**: (E1-a) 완주 데이터(17,647세포×1초·외부 Poisson 30Hz) 유형/층별 발화율 집계. (E1-b) 구동 weight 배율 스윕(760세포·60ms창). `10_analysis/firing_stats.py`·`drive_sweep.py`.
+- **검증지표**: 유형별 발화율 vs in vivo 문헌 밴드; 구동↔발화율 관계.
+- **결과·상태**: PC 평균 **18.3Hz**·전세포 발화 = 과활성(E1-a). 배율 0.30→0.17Hz, ≤0.15→침묵, 1.0→18Hz(E1-b). → **조용한 슬라이스 baseline 채택**. 그림 E1-a·E1-b.
+- **근거**: in vivo CA1 PC ~0.3–2Hz(Mizuseki & Buzsáki 2013).
+- **⚠️ 한계·주의**: "몇 배"는 밴드 따라 9~37배(견고X). "정상상태 20.1Hz"=E+I 혼합(PC 아님). "층별 발화율"=세포조성(SO/SR/SLM 전량 INT, n=24~29). 0.30~1.0 미표집→"bimodal" 미확정.
 
-| 요소 | 값 | 근거 |
-|---|---|---|
-| CA1 세포 | 17,647 (PC 15,723 + INT 1,924) | **실측**(slice_cells.npz), Romani 아틀라스 slice400 추출. E:I≈89:11(Romani 조성) |
-| 가상 SC fiber(=CA3 축삭) | **~800** | CA3 미보유→가상 대체. **Romani 수렴비율 보존**: PC가 CA3 풀의 ~7.8% 샘플링(20,878/267,238) → 우리 PC ~60 fiber ÷ 0.078 ≈ 800. divergence도 일관(fiber당 세포 ~7.2% 접촉 ≈ Romani 7.5%). (Fig4의 350은 자극전극 다발·101세포 대상이라 별개) |
-| SC 시냅스/PC | ~60 (SR68/SO25/SP7/SLM0.3%) | **층분포=Romani 실측**(SLM0.3/SR67.9/SP7.1/SO24.7%). 개수=Romani **~20,878/PC**(±5,867)를 계산 가능하게 **~1/350 축소**(전도도 보정, 개별 EPSP는 E2-a로 보존) |
-| SC 시냅스/INT | ~40 | Romani **INT당 ~12,714**(PC의 ~0.6배) 비율 반영·동일 축소. 피드포워드 억제 |
-| 전도도(튜닝값) | SC→PC ~1.0nS / SC→INT ~4.0nS | **tuned·측정 아님**. 앵커=E2-a(단일 0.6nS→0.15mV). 축소 시냅스 보정 + E3 피드포워드 억제 게이팅 위해 SC→INT>SC→PC 탐색 |
+### E2. Schaffer collateral(CA3→CA1) 경로 🔄 (E2-a·E2-b ✅ / E2-c ⬜)
+- **목표**: CA3 SC 입력을 명시적 시냅스로 배선 — 조용한 슬라이스에 자극원 제공.
+- **방법·입력**: 가상 SC fiber **~800**(CA3 축삭 대용) → 세포당 SC 시냅스 PC **~60**(SR68/SO25/SP7/SLM0.3%)·INT **~40**, 무작위 fiber 연결. 시냅스=Ecker "PC→PC(E2)" AMPA/NMDA 대용. 전도도(튜닝) SC→PC~1.0nS/INT~4.0nS. `sc_epsp_test.py`·`sc_network.py`.
+- **검증지표**: 단일 SC→PC EPSP=Romani 0.15±0.12mV; baseline 조용; 시냅스 층분포=Romani.
+- **결과·상태**: **E2-a** ✅ 단일 EPSP 근위SR 0.15mV(그림 E2-a 파형·배치+SC모식). **E2-b** ✅ 조용한 baseline+볼리→PC 반응(subset). **E2-c** ⬜ 전 17,647 배치 예정(MPI).
+- **근거**: Romani PC당 SC ~20,878(±5,867)·INT ~12,714·CA3 267,238세포·층분포(SR67.9/SO24.7/SP7.1/SLM0.3%). fiber ~800=수렴비율 7.8% 보존. 시냅스 ~1/350 축소+전도도 보정.
+- **⚠️ 한계·주의**: SC=Ecker E2 대용(Romani 전용 SC-PC 0.85nS·τ0.4/12·NRRP12 아님, kinetics 다름). E2-a baseline 오염(진값 0.17mV)·Use=0.5로 유효 0.30nS. 전도도·fiber수=튜닝/설계값(측정 아님).
 
-※ SC 시냅스 종류: 전용 SC-PC(Romani 0.85nS·τ0.4/12·NRRP12) → **Ecker "PC→PC(E2)"(0.6nS) 대용**(검증된 EMS 재사용, EPSP 크기 근사·kinetics 다름).
-- **E2-a** ✅ (`sc_epsp_test.py`): 단일 SC→PC EPSP 근위SR ≈0.15mV. ⚠️ Ecker E2 대용(SC 전용 아님), baseline 오염으로 진값 0.17mV 대비 과소, Use=0.5로 유효 g≈0.30nS → "크기 근사"이지 "SC 구현" 아님.
-- **E2-b** ✅ (`sc_network.py`, subset): 조용한 baseline(PC 0) + SC 볼리 → PC 반응, 억제 차단 토글. ⚠️ 실행값 80syn·3nS=코드기본(12·0.6) 오버라이드 튜닝, "PC 100%"=과자극.
-- **E2-c** ⬜ 예정: subset 배선을 전체 17,647로 확장(MPI). 검증: 시냅스 층분포 Romani 일치, baseline 조용.
-
-### E3. SC 자극 I-O + 억제 차단 🔄 진행중·미완 (`sc_io_curve.py`)
-- 예비(108세포): I-O 선형 R=0.962. **그러나 control ≈ 억제 차단 (곡선 겹침) → 피드포워드 억제 미작동.** ⚠️ **Fig4(피드포워드 억제) 재현 아님**. 저장 그림=108세포 예비본, 1,200세포 전체 미완.
-- E3 완성 방향(재작업): SC→PC↓ / SC→INT↑ / disynaptic 타이밍 / perisomatic 억제 강화 → control이 억제 차단보다 확연히 낮게(피드포워드 억제 ≥10%p). 근거: Pouille & Scanziani "window of opportunity".
+### E3. SC 자극 I-O + 억제 차단 🔄 진행중·미완
+- **목표**: SC 세기별 자극→발화 PC I-O 곡선. 정상 vs 억제차단 비교로 피드포워드 억제가 반응을 조절함을 확인(Romani Fig.4).
+- **방법·입력**: 1,200세포 subset(PC900+INT300), SC 볼리 활성비율 5–100% 스윕, 정상(억제 ON)/억제 차단(OFF). 실행 조합: SC→PC 0.5nS·SC→INT 6.0nS·억제 ×3. `sc_io_curve.py`.
+- **검증지표**: 정상 I-O 선형성 R; **피드포워드 억제 gap(억제차단−정상) ≥10%p**.
+- **결과·상태**: 예비(108세포) I-O 선형 R=0.962이나 **정상 ≈ 억제차단(피드포워드 억제 미작동)** → 미완. 1,200세포·조정 파라미터로 재실행 중. 개념도(그림 E3).
+- **근거**: Romani Fig.4(정상 선형 R=0.992·억제차단 포화); Pouille & Scanziani "window of opportunity".
+- **⚠️ 한계·주의**: 예비 그림=108세포. SC→PC↓/SC→INT↑/억제↑=튜닝값. 전 슬라이스 I-O 스윕은 ~56h(비현실적)→subset.
 
 ### E4. 세포외 LFP/fEPSP 계산기 ⬜ 예정 (E2-c·E3 완성 후)
-- 목표/방법: 막전류→가상 MEA 전극전위(SR 음성 fEPSP). use_fast_imem(1)+per-seg i_membrane_ → LFPykit CellGeometry → RecMEAElectrode(슬라이스 3층) → V=M·I → pc.py_allreduce. 대상세포 nseg 세분.
-- 근거: LFPy/LFPykit(Lindén)·Ness2015(슬라이스-MEA)·BlueRecording2025(456k CA1). LFPy 전면이식 회피→LFPykit 코어+우리 글루. 검증: SR 음성 fEPSP+paired-pulse.
+- **목표**: 막전류→가상 MEA 전극전위, SC 자극에 SR층 음성 fEPSP(sink) 재현.
+- **방법·입력**: `use_fast_imem(1)`+per-seg `i_membrane_` 기록 → LFPykit `CellGeometry` → `RecMEAElectrode`(슬라이스 3층) → V=M·I → `pc.py_allreduce`. 대상세포 nseg 세분.
+- **검증지표**: SR 전극 음성 fEPSP(sink) 파형 + paired-pulse 비율.
+- **결과·상태**: 미실행.
+- **근거**: LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·BlueRecording 2025(456k CA1 적용). LFPy 전면이식 회피→LFPykit 코어+우리 글루.
+- **⚠️ 한계·주의**: coarse nseg=1 근거리 왜곡·활성함수 불가 → 대상세포만 세분 필요.
 
 ### E5. theta 변조 SC 입력 + theta-nested gamma(PAC) ⬜ 예정
-- 목표/방법: CA1 theta(8Hz) 추종·gamma PAC. SC fiber 발화율 정현파 변조 r(t)=r0(1+m·sin(2π·8t)), r0≈0.1–0.4Hz → inhomogeneous Poisson(Elephant/numpy) → VecStim.
-- 근거: Romani가 CA3 theta를 정현파 SC로 주입→CA1 추종(생성기 아닌 추종기). gamma는 PING 자발생성. 검증: pop rate 8Hz 피크, gamma의 theta 위상결합(Tort MI).
+- **목표**: CA1이 입력 theta(8Hz) 추종하는지 + gamma의 theta 위상결합(PAC).
+- **방법·입력**: SC fiber 발화율 정현파 변조 r(t)=r0(1+m·sin(2π·8t)), r0≈0.1–0.4Hz → inhomogeneous Poisson(Elephant/numpy) → `h.VecStim`.
+- **검증지표**: population rate 스펙트럼 8Hz 피크; gamma(30–100Hz) 파워의 theta 위상결합(Tort MI).
+- **결과·상태**: 미실행.
+- **근거**: Romani가 CA3 theta를 정현파 SC로 주입→CA1 추종(생성기 아닌 추종기). gamma는 PING 자발생성.
+- **⚠️ 한계·주의**: gamma 자발생성은 억제회로 파라미터 의존(자동 보장 아님).
 
 ### E6. 내측중격(MS) theta 페이스메이커 ⬜ 예정
-- 목표/방법: MS GABA성 리드믹 탈억제로 theta 구동. MS 미보유→가상 입력원, PV-BC/OLM에 8Hz 정현파 억제입력(VecStim)→탈억제로 PC theta 위상 발화.
-- 근거: 생체 theta 페이스메이커=MS-DBB(CA3 대체와 동일 철학). E5와 상보. 검증: PC 발화 theta 위상잠김.
+- **목표**: MS-DBB의 GABA성 리드믹 탈억제로 theta 구동.
+- **방법·입력**: MS 미보유→가상 입력원. PV-BC/OLM에 8Hz 정현파 억제입력(`h.VecStim`)→리듬 탈억제로 PC theta 위상 발화.
+- **검증지표**: PC 발화의 theta 위상잠김(phase-locking); E5와 PAC 패턴 비교.
+- **결과·상태**: 미실행.
+- **근거**: 생체 theta 페이스메이커=MS-DBB(CA3 가상대체와 동일 철학). E5(입력변조)와 상보.
+- **⚠️ 한계·주의**: 가상 입력원(실제 MS 세포 아님).
 
-### E7. ACh(무스카린) 신경조절 ⬜ 예정 (mod 감사 필요)
-- 목표/방법: PC 흥분성↑(M-전류 억제)·SC 전달↓·theta 촉진. 1차 현상론(SC weight↓+흥분성 조정), 2차 기계론(Im/KM+mAChR mod).
-- 근거: Romani ACh Hill 용량반응. 검증: ACh서 PC 발화율↑·theta 파워↑.
+### E7. ACh(무스카린성) 신경조절 ⬜ 예정
+- **목표**: PC 흥분성↑(M-전류 억제)·SC 전달↓·theta 촉진.
+- **방법·입력**: 1차 현상론(SC weight↓+PC 흥분성/배경 조정), 2차 기계론(me-model에 Im/KM+mAChR mod).
+- **검증지표**: ACh 조건 PC 발화율↑·theta 파워↑·SC EPSP 감쇠.
+- **결과·상태**: 미실행.
+- **근거**: Romani ACh Hill 용량반응.
+- **⚠️ 한계·주의**: 기계론(Im/KM mod)은 현 23 me-model 보유 여부 선확인 필요.
 
 ### E8. LTP/LTD (칼슘 기반 가소성) ⬜ 예정
-- 목표/방법: SC 자극(TBS/LFS)에 시냅스 weight 변화. Graupner-Brunel 칼슘모델(papers/02 보유)+STDP 데모를 회로 weight 훅에 연결(단일연결 검증→회로).
-- 근거: Chindemi2022·Ecker2025(네트워크 유발 LTP)·Graupner2012. 검증: TBS후 fEPSP slope↑.
+- **목표**: SC 자극(TBS/LFS)에 시냅스 weight 변화 재현.
+- **방법·입력**: Graupner-Brunel 칼슘모델(`papers/02` 보유)+STDP 데모(`demos/02_NEURON/02_STDP.py`)를 회로 weight 훅에 연결. 단일연결 검증→회로.
+- **검증지표**: TBS 후 fEPSP slope 증가(LTP)·저빈도 후 감소(LTD).
+- **결과·상태**: 미실행.
+- **근거**: Chindemi 2022(상세망 칼슘 가소성)·Ecker 2025(네트워크 유발 LTP)·Graupner 2012.
+- **⚠️ 한계·주의**: 저[Ca]o(1mM) in vitro 조건 필요.
 
 ### E9. 실측 MEA fEPSP 대조 ⬜ 예정 (최종)
-- 목표/방법: in silico fEPSP·LTP를 실측 HD-MEA와 정량 비교. SpikeInterface 로드, 정규화 fEPSP·kCSD 대조.
-- 근거: EvoNES2025(HD-MEA SC 유발 fEPSP+LTP). 검증: 정규화 fEPSP·I-O·LTP가 실측 범위.
+- **목표**: in silico fEPSP·LTP를 실측 HD-MEA와 정량 비교.
+- **방법·입력**: SpikeInterface로 실측 MEA 로드, 정규화 fEPSP·kCSD로 in silico와 대조.
+- **검증지표**: 정규화 fEPSP 파형·I-O·LTP 곡선이 실측 범위 내.
+- **결과·상태**: 미실행.
+- **근거**: EvoNES 2025(HD-CMOS-MEA SC 유발 fEPSP+네트워크 LTP 실측).
+- **⚠️ 한계·주의**: slice400 축소·스케일 보정 반영 필요.
 
 **slice400 기하(정직):** CA1 전용 횡단-유사 가상슬랩(소마 z~755µm=실험 300–400µm의 약 2배), 4층 정상(방사 ~905µm)·SR 확보 → MEA식 fEPSP엔 기하 부합. 단 **CA3/DG 부재→SC 외부자극 대체, 물리절단 아님** → fEPSP 정량비교 시 스케일보정·한계 명시. Romani Fig4 규모=300µm·SP 101세포·SC 350축삭.
 
