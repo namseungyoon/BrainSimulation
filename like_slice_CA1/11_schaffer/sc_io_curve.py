@@ -64,6 +64,7 @@ def main():
     counts = dict(zip(["PC", "PV", "cAC", "bAC"], map(int, argval("--counts", "900,110,95,95").split(","))))
     stim_t = float(argval("--stim_t", "10")); tstop = float(argval("--tstop", "60"))
     sc_per_cell = int(argval("--sc_per_cell", "80")); sc_g = float(argval("--sc_g", "3.0"))
+    inh_scale = float(argval("--inh_scale", "1.0"))   # 내재 억제 NetCon weight 배율(피드포워드 억제 강화용)
     # 피드포워드 억제 게이팅: SC→INT 강하게(빨리 발화→억제 공급), SC→PC 중간(억제가 veto 가능)
     sc_g_pc = float(argval("--sc_g_pc", str(sc_g)))
     sc_g_int = float(argval("--sc_g_int", str(sc_g)))
@@ -154,7 +155,7 @@ def main():
     results = {"control": [], "억제 차단": []}
     for cond in ["control", "억제 차단"]:
         for ncc, bw in inh_ncs:
-            ncc.weight[0] = bw if cond == "control" else 0.0
+            ncc.weight[0] = (bw * inh_scale) if cond == "control" else 0.0
         log(f"\n== {cond} (억제 {'ON' if cond=='control' else 'OFF=억제 차단'}) ==")
         log(f"{'SC%':>6} | {'발화PC':>7} | {'비율%':>6}")
         for sa in SWEEP:

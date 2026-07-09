@@ -108,9 +108,9 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 
 ### E3. SC 자극 I-O + 억제 차단 🔄 진행중·미완 (`sc_io_curve.py`)
 - 예비(108세포): I-O 선형 R=0.962. **그러나 control ≈ 억제 차단 (곡선 겹침) → 피드포워드 억제 미작동.** ⚠️ **Fig4(피드포워드 억제) 재현 아님**. 저장 그림=108세포 예비본, 1,200세포 전체 미완.
-- 재작업(E3′): SC→PC↓ / SC→INT↑ / disynaptic 타이밍 / perisomatic 억제 강화 → control이 억제 차단보다 확연히 낮게(피드포워드 억제 ≥10%p). 근거: Pouille & Scanziani "window of opportunity".
+- E3 완성 방향(재작업): SC→PC↓ / SC→INT↑ / disynaptic 타이밍 / perisomatic 억제 강화 → control이 억제 차단보다 확연히 낮게(피드포워드 억제 ≥10%p). 근거: Pouille & Scanziani "window of opportunity".
 
-### E4. 세포외 LFP/fEPSP 계산기 ⬜ 예정 (E2-c·E3′ 후)
+### E4. 세포외 LFP/fEPSP 계산기 ⬜ 예정 (E2-c·E3 완성 후)
 - 목표/방법: 막전류→가상 MEA 전극전위(SR 음성 fEPSP). use_fast_imem(1)+per-seg i_membrane_ → LFPykit CellGeometry → RecMEAElectrode(슬라이스 3층) → V=M·I → pc.py_allreduce. 대상세포 nseg 세분.
 - 근거: LFPy/LFPykit(Lindén)·Ness2015(슬라이스-MEA)·BlueRecording2025(456k CA1). LFPy 전면이식 회피→LFPykit 코어+우리 글루. 검증: SR 음성 fEPSP+paired-pulse.
 
