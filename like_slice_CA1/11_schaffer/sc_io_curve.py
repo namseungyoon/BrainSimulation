@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-11_schaffer/sc_io_curve.py  —  E3: SC 자극 입출력(I-O) 곡선 + gabazine 대조 (Romani Fig.4 재현 *시도*)
+11_schaffer/sc_io_curve.py  —  E3: SC 자극 입출력(I-O) 곡선 + 억제 차단 대조 (Romani Fig.4 재현 *시도*)
 
 세포를 **한 번만 구축**하고, 활성 SC fiber 비율(sc_active)을 5→100% 스윕하며 자극 후 발화한 PC 비율을 측정.
-억제 시냅스 NetCon weight를 0으로 토글 = gabazine(GABA 차단) 모사(재구축 불필요).
-  - 목표(Romani Fig.4): control은 FFI로 완만/선형(R≈0.992), gabazine은 급격 포화.
-  - ⚠️ 현재 결과(예비): control ≈ gabazine (두 곡선 겹침) = **피드포워드 억제 미작동**(SC→PC가 억제 압도).
-    FFI가 실제로 나올 때까지 "Fig4 재현"으로 보고 금지. SC→PC↓ / 억제↑ / disynaptic 타이밍 재작업 필요.
+억제 시냅스 NetCon weight를 0으로 토글 = 억제 차단(GABA 차단) 모사(재구축 불필요).
+  - 목표(Romani Fig.4): control은 피드포워드 억제로 완만/선형(R≈0.992), 억제 차단은 급격 포화.
+  - ⚠️ 현재 결과(예비): control ≈ 억제 차단 (두 곡선 겹침) = **피드포워드 억제 미작동**(SC→PC가 억제 압도).
+    피드포워드 억제가 실제로 나올 때까지 "Fig4 재현"으로 보고 금지. SC→PC↓ / 억제↑ / disynaptic 타이밍 재작업 필요.
   - ⚠️ SC 시냅스는 Ecker "PC->PC (E2)" 대용(Romani SC-PC 전용 파라미터 아님). g는 튜닝값(측정 아님).
 
 실행: mpiexec -n 10 <python> 11_schaffer/sc_io_curve.py --counts 900,110,95,95 --stim_t 10 --tstop 60
@@ -92,7 +92,7 @@ def main():
         pc.set_gid2node(g, RANK); pc.cell(g, nc); keeph.append(nc)
     pc.barrier(); log("[구축] 완료(조용한 슬라이스: 배경 Poisson OFF)")
 
-    # 내재연결 — 억제 NetCon은 (ncc, base_w)로 보관(gabazine 토글용)
+    # 내재연결 — 억제 NetCon은 (ncc, base_w)로 보관(억제 차단 토글용)
     p = np.load(PRUNED, allow_pickle=True)
     pre = p["pre"]; post = p["post"]; cid = p["cls"]; classes = list(p["classes"].astype(str))
     inh_cls = set(i for i, cl in enumerate(classes) if not cl.startswith("PC->"))
@@ -151,11 +151,11 @@ def main():
         fired = set(int(gi) for gi in gg[m] if is_pc_arr[gi])
         return int(pc.allreduce(len(fired), 1))
 
-    results = {"control": [], "gabazine": []}
-    for cond in ["control", "gabazine"]:
+    results = {"control": [], "억제 차단": []}
+    for cond in ["control", "억제 차단"]:
         for ncc, bw in inh_ncs:
             ncc.weight[0] = bw if cond == "control" else 0.0
-        log(f"\n== {cond} (억제 {'ON' if cond=='control' else 'OFF=gabazine'}) ==")
+        log(f"\n== {cond} (억제 {'ON' if cond=='control' else 'OFF=억제 차단'}) ==")
         log(f"{'SC%':>6} | {'발화PC':>7} | {'비율%':>6}")
         for sa in SWEEP:
             fired = run_point(sa)
@@ -170,22 +170,22 @@ def main():
         plt.rcParams["font.family"] = "Malgun Gothic"; plt.rcParams["axes.unicode_minus"] = False
         os.makedirs(FIG, exist_ok=True)
         fig, ax = plt.subplots(figsize=(8, 6))
-        for cond, col, lab in [("control", "#2f6fb0", "정상(억제 ON)"), ("gabazine", "#C0392B", "gabazine(억제 OFF)")]:
+        for cond, col, lab in [("control", "#2f6fb0", "정상(억제 ON)"), ("억제 차단", "#C0392B", "억제 차단(억제 OFF)")]:
             xs = [r[0] * 100 for r in results[cond]]; ys = [r[2] for r in results[cond]]
             ax.plot(xs, ys, "o-", color=col, lw=2, label=lab)
         xc = np.array([r[0] * 100 for r in results["control"]]); yc = np.array([r[2] for r in results["control"]])
-        yg = np.array([r[2] for r in results["gabazine"]])
+        yg = np.array([r[2] for r in results["억제 차단"]])
         R = np.corrcoef(xc, yc)[0, 1] if yc.std() > 0 else float("nan")
-        ffi_gap = float(np.max(np.abs(yg - yc)))   # gabazine vs control 최대 차이(%p) = FFI 효과 크기
-        ffi_ok = ffi_gap >= 10.0                    # 10%p 미만이면 FFI 사실상 미작동
-        note = (f"I-O 선형성 R={R:.3f}\ngabazine 대비(FFI) 최대 {ffi_gap:.1f}%p\n"
-                + ("→ FFI 작동" if ffi_ok else "→ ⚠️FFI 미작동(곡선 겹침)\n= Fig4 재현 아님"))
+        ffi_gap = float(np.max(np.abs(yg - yc)))   # 억제 차단 vs control 최대 차이(%p) = 피드포워드 억제 효과 크기
+        ffi_ok = ffi_gap >= 10.0                    # 10%p 미만이면 피드포워드 억제 사실상 미작동
+        note = (f"I-O 선형성 R={R:.3f}\n억제 차단 대비(피드포워드 억제) 최대 {ffi_gap:.1f}%p\n"
+                + ("→ 피드포워드 억제 작동" if ffi_ok else "→ ⚠️피드포워드 억제 미작동(곡선 겹침)\n= Fig4 재현 아님"))
         ax.text(0.04, 0.96, note, transform=ax.transAxes, va="top", fontsize=9,
                 bbox=dict(boxstyle="round", fc=("#eef" if ffi_ok else "#fdecea"),
                           ec=("#2f6fb0" if ffi_ok else "#C0392B")))
         ax.set_xlabel("활성 SC 축삭 비율 (%)"); ax.set_ylabel("발화한 PC 비율 (%)")
-        title2 = ("Fig.4 재현" if ffi_ok else "예비 — FFI 미작동, Fig.4 미재현")
-        ax.set_title(f"E3-a  SC 자극 I-O 곡선 + gabazine ({title2})\n"
+        title2 = ("Fig.4 재현" if ffi_ok else "예비 — 피드포워드 억제 미작동, Fig.4 미재현")
+        ax.set_title(f"E3-a  SC 자극 I-O 곡선 + 억제 차단 ({title2})\n"
                      f"{N}세포 · 조용한 슬라이스 + SC 볼리 (예비)", fontsize=12, fontweight="bold")
         ax.legend(fontsize=10); ax.grid(alpha=0.3)
         out = os.path.join(FIG, "E3a_sc_io_curve.png")
@@ -193,8 +193,8 @@ def main():
         np.save(os.path.join(FIG, "_e3_io.npy"),
                 np.array([(c_, r[0], r[1], r[2]) for c_ in results for r in results[c_]], dtype=object))
         print(f"\n[그림] {out} (N={N}, 예비)", flush=True)
-        print(f"[판정] I-O 선형 R={R:.3f} · gabazine 대비(FFI) 최대 {ffi_gap:.1f}%p → "
-              + ("FFI 작동" if ffi_ok else "⚠️FFI 미작동(control≈gabazine) = Fig4 재현 아님, 재작업 필요"), flush=True)
+        print(f"[판정] I-O 선형 R={R:.3f} · 억제 차단 대비(피드포워드 억제) 최대 {ffi_gap:.1f}%p → "
+              + ("피드포워드 억제 작동" if ffi_ok else "⚠️피드포워드 억제 미작동(control≈억제 차단) = Fig4 재현 아님, 재작업 필요"), flush=True)
     pc.barrier(); pc.done(); h.quit()
 
 

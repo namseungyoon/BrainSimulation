@@ -36,7 +36,7 @@ like_slice_CA1/
 - `.../03_synapses/params_table3.py` : `CLASSES`(9클래스 시냅스 파라미터).
 
 ## 환경 / 도구
-ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip install pynrrd`(atlas NRRD). 전체경로 `C:\Users\SYNAM-OFFICE\.conda\envs\ca1sim\python.exe`.
+ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip install pynrrd`(atlas NRRD). 전체경로 `C:\Users\SYNAM-O피드포워드 억제CE\.conda\envs\ca1sim\python.exe`.
 
 ---
 
@@ -72,13 +72,13 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 
 ## 11. 실험 및 검증 (MEA fEPSP → LTP/LTD)
 
-> 규칙: 하나씩 구현→보고→✅검증. ID 단일체계 **E1~E9**. **완료는 결과까지, 미실행은 계획·근거만**(결과 날조 금지). 정직성 감사(2026-07) 반영 — 튜닝값≠측정값, "Fig4 재현"은 FFI 실작동 시에만.
+> 규칙: 하나씩 구현→보고→✅검증. ID 단일체계 **E1~E9**. **완료는 결과까지, 미실행은 계획·근거만**(결과 날조 금지). 정직성 감사(2026-07) 반영 — 튜닝값≠측정값, "Fig4 재현"은 피드포워드 억제 실작동 시에만.
 
 | ID | 실험 | 상태 |
 |---|---|---|
 | E1 | Baseline 발화율·구동 검증 | ✅ 완료 |
 | E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c ⬜ |
-| E3 | SC 자극 I-O + gabazine | 🔄 진행중·미완(FFI 미작동) |
+| E3 | SC 자극 I-O + 억제 차단 | 🔄 진행중·미완(피드포워드 억제 미작동) |
 | E4 | 세포외 LFP/fEPSP 계산기 | ⬜ 예정 |
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
 | E6 | 내측중격(MS) theta | ⬜ 예정 |
@@ -99,16 +99,16 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 | 가상 SC fiber(=CA3 축삭) | **~800** | CA3 미보유→가상 대체. **Romani 수렴비율 보존**: PC가 CA3 풀의 ~7.8% 샘플링(20,878/267,238) → 우리 PC ~60 fiber ÷ 0.078 ≈ 800. divergence도 일관(fiber당 세포 ~7.2% 접촉 ≈ Romani 7.5%). (Fig4의 350은 자극전극 다발·101세포 대상이라 별개) |
 | SC 시냅스/PC | ~60 (SR68/SO25/SP7/SLM0.3%) | **층분포=Romani 실측**(SLM0.3/SR67.9/SP7.1/SO24.7%). 개수=Romani **~20,878/PC**(±5,867)를 계산 가능하게 **~1/350 축소**(전도도 보정, 개별 EPSP는 E2-a로 보존) |
 | SC 시냅스/INT | ~40 | Romani **INT당 ~12,714**(PC의 ~0.6배) 비율 반영·동일 축소. 피드포워드 억제 |
-| 전도도(튜닝값) | SC→PC ~1.0nS / SC→INT ~4.0nS | **tuned·측정 아님**. 앵커=E2-a(단일 0.6nS→0.15mV). 축소 시냅스 보정 + E3 FFI 게이팅 위해 SC→INT>SC→PC 탐색 |
+| 전도도(튜닝값) | SC→PC ~1.0nS / SC→INT ~4.0nS | **tuned·측정 아님**. 앵커=E2-a(단일 0.6nS→0.15mV). 축소 시냅스 보정 + E3 피드포워드 억제 게이팅 위해 SC→INT>SC→PC 탐색 |
 
 ※ SC 시냅스 종류: 전용 SC-PC(Romani 0.85nS·τ0.4/12·NRRP12) → **Ecker "PC→PC(E2)"(0.6nS) 대용**(검증된 EMS 재사용, EPSP 크기 근사·kinetics 다름).
 - **E2-a** ✅ (`sc_epsp_test.py`): 단일 SC→PC EPSP 근위SR ≈0.15mV. ⚠️ Ecker E2 대용(SC 전용 아님), baseline 오염으로 진값 0.17mV 대비 과소, Use=0.5로 유효 g≈0.30nS → "크기 근사"이지 "SC 구현" 아님.
-- **E2-b** ✅ (`sc_network.py`, subset): 조용한 baseline(PC 0) + SC 볼리 → PC 반응, gabazine 토글. ⚠️ 실행값 80syn·3nS=코드기본(12·0.6) 오버라이드 튜닝, "PC 100%"=과자극.
+- **E2-b** ✅ (`sc_network.py`, subset): 조용한 baseline(PC 0) + SC 볼리 → PC 반응, 억제 차단 토글. ⚠️ 실행값 80syn·3nS=코드기본(12·0.6) 오버라이드 튜닝, "PC 100%"=과자극.
 - **E2-c** ⬜ 예정: subset 배선을 전체 17,647로 확장(MPI). 검증: 시냅스 층분포 Romani 일치, baseline 조용.
 
-### E3. SC 자극 I-O + gabazine 🔄 진행중·미완 (`sc_io_curve.py`)
-- 예비(108세포): I-O 선형 R=0.962. **그러나 control ≈ gabazine (곡선 겹침) → 피드포워드 억제 미작동.** ⚠️ **Fig4(FFI) 재현 아님**. 저장 그림=108세포 예비본, 1,200세포 전체 미완.
-- 재작업(E3′): SC→PC↓ / SC→INT↑ / disynaptic 타이밍 / perisomatic 억제 강화 → control이 gabazine보다 확연히 낮게(FFI ≥10%p). 근거: Pouille & Scanziani "window of opportunity".
+### E3. SC 자극 I-O + 억제 차단 🔄 진행중·미완 (`sc_io_curve.py`)
+- 예비(108세포): I-O 선형 R=0.962. **그러나 control ≈ 억제 차단 (곡선 겹침) → 피드포워드 억제 미작동.** ⚠️ **Fig4(피드포워드 억제) 재현 아님**. 저장 그림=108세포 예비본, 1,200세포 전체 미완.
+- 재작업(E3′): SC→PC↓ / SC→INT↑ / disynaptic 타이밍 / perisomatic 억제 강화 → control이 억제 차단보다 확연히 낮게(피드포워드 억제 ≥10%p). 근거: Pouille & Scanziani "window of opportunity".
 
 ### E4. 세포외 LFP/fEPSP 계산기 ⬜ 예정 (E2-c·E3′ 후)
 - 목표/방법: 막전류→가상 MEA 전극전위(SR 음성 fEPSP). use_fast_imem(1)+per-seg i_membrane_ → LFPykit CellGeometry → RecMEAElectrode(슬라이스 3층) → V=M·I → pc.py_allreduce. 대상세포 nseg 세분.

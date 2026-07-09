@@ -3,9 +3,9 @@
 11_schaffer/e3_concept.py  —  E3 개념도 (피드포워드 억제 회로 + I-O 곡선)
 
 교육용 모식도(시뮬 데이터 아님):
-  (A) 회로: SC→PC 직접 흥분(1단계·빠름) + SC→인터뉴런→PC 억제(2단계·늦음) = 피드포워드 억제(FFI)
-  (B) I-O 곡선 개념: 정상(억제 ON)=완만·선형 vs gabazine(억제 OFF)=급포화
-⚠️ 이건 Romani Fig.4 '기대형' 개념도. 우리 현재 예비결과는 control≈gabazine(FFI 미작동)→E3' 재작업.
+  (A) 회로: SC→PC 직접 흥분(1단계·빠름) + SC→인터뉴런→PC 억제(2단계·늦음) = 피드포워드 억제
+  (B) I-O 곡선 개념: 정상(억제 있음)=완만·선형 vs 억제 차단(억제 없음)=급포화
+주의: 이건 Romani Fig.4 '기대형' 개념도. 우리 현재 예비결과는 정상~억제차단 곡선 겹침(피드포워드 억제 미작동)→E3' 재작업.
 실행: python 11_schaffer/e3_concept.py
 """
 import os
@@ -47,7 +47,7 @@ def main():
     arrow((0.13, 0.58), (0.83, 0.70), "#2E8B57", "직접 흥분(+)\n1단계·빠름", 0.18, 0.06)
     arrow((0.13, 0.58), (0.46, 0.20), "#2E8B57", "흥분(+)", -0.12, -0.02)
     arrow((0.46, 0.20), (0.83, 0.70), "#C0392B", "억제(-)\n2단계·늦음", -0.18, -0.05)
-    axA.text(0.5, 0.96, "(A) 피드포워드 억제(FFI) 회로", ha="center",
+    axA.text(0.5, 0.96, "(A) 피드포워드 억제 회로", ha="center",
              fontsize=12, fontweight="bold")
     axA.text(0.5, 0.03,
              "[비유] 가속페달(SC→PC) + 브레이크(SC→인터뉴런→PC)\n"
@@ -58,14 +58,14 @@ def main():
     # ── (B) I-O 곡선 개념 ─────────────────────────────────────────
     x = np.linspace(0, 100, 200)
     y_ctrl = x                                   # 정상: 완만·선형(Romani R=0.992)
-    y_gaba = 100.0 / (1.0 + np.exp(-(x - 15) / 4.0))   # gabazine: 급포화
-    axB.plot(x, y_ctrl, color="#2f6fb0", lw=2.8, label="정상(억제 ON) — 완만·선형")
-    axB.plot(x, y_gaba, color="#C0392B", lw=2.8, label="gabazine(억제 OFF) — 급포화")
+    y_gaba = 100.0 / (1.0 + np.exp(-(x - 15) / 4.0))   # 억제 차단: 급포화
+    axB.plot(x, y_ctrl, color="#2f6fb0", lw=2.8, label="정상 (억제 있음) — 완만·선형")
+    axB.plot(x, y_gaba, color="#C0392B", lw=2.8, label="억제 차단 (억제 없음) — 급포화")
     axB.fill_between(x, y_ctrl, y_gaba, where=(y_gaba > y_ctrl), color="#C0392B", alpha=0.08)
     axB.annotate("억제가 반응을\n완만하게 조절", (70, 70), (40, 88),
                  fontsize=9, color="#2f6fb0",
                  arrowprops=dict(arrowstyle="->", color="#2f6fb0"))
-    axB.annotate("브레이크 없어\n조금만 자극해도 포화", (25, 96), (33, 55),
+    axB.annotate("억제 차단 시\n조금만 자극해도 포화", (25, 96), (33, 55),
                  fontsize=9, color="#C0392B",
                  arrowprops=dict(arrowstyle="->", color="#C0392B"))
     axB.set_xlabel("활성 SC 축삭 (%)  = 입력 세기"); axB.set_ylabel("발화 PC (%)  = 출력")
@@ -73,8 +73,8 @@ def main():
     axB.legend(fontsize=9, loc="lower right"); axB.grid(alpha=0.3)
     axB.set_xlim(0, 100); axB.set_ylim(0, 105)
 
-    fig.suptitle("E3 개념 — Schaffer collateral 자극에 대한 피드포워드 억제(FFI)와 I-O 곡선\n"
-                 "개념도(Romani Fig.4 기대형) · 우리 현재 예비: control ~ gabazine(FFI 미작동) → E3' 재작업 필요",
+    fig.suptitle("E3 개념 — Schaffer collateral 자극에 대한 피드포워드 억제와 I-O 곡선\n"
+                 "개념도(Romani Fig.4 기대형) · 우리 현재 예비: 정상 ~ 억제차단 곡선 겹침(피드포워드 억제 미작동) → E3' 재작업 필요",
                  fontsize=12.5, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     out = os.path.join(FIG, "E3_concept.png")
