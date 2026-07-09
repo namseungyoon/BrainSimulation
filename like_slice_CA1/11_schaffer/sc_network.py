@@ -8,7 +8,7 @@
   - 볼리: 활성 fiber 비율(sc_active)만 t=stim_t 에 1회 동기 발화 → 유발 반응.
   - 측정: 자극 후 발화한 세포 수(=Romani Fig4 I-O 지표) + baseline 정적 확인.
 
-이 스크립트가 E3(I-O + gabazine)의 토대. --no_inh 로 억제연결 차단(gabazine 모사) 지원.
+이 스크립트가 E3(I-O + 억제 차단)의 토대. --no_inh 로 억제연결 차단(억제 차단 모사) 지원.
 실행: mpiexec -n 10 <python> 11_schaffer/sc_network.py --counts 1000,110,70,70 --sc_active 1.0 --stim_t 100 --tstop 200
 """
 import os
@@ -68,7 +68,7 @@ def main():
     sc_active = float(argval("--sc_active", "1.0"))
     stim_t = float(argval("--stim_t", "100"))
     tstop = float(argval("--tstop", "200"))
-    no_inh = "--no_inh" in sys.argv      # gabazine 모사(억제 연결 차단)
+    no_inh = "--no_inh" in sys.argv      # 억제 차단 모사(억제 연결 차단)
     sc_g = float(argval("--sc_g", str(P3.CLASSES[SC_CLASS]["g_nS"])))
     sc_per_cell = int(argval("--sc_per_cell", str(SC_PER_CELL)))  # 세포당 SC 시냅스 수(볼리 세기)
 
@@ -83,7 +83,7 @@ def main():
     orig2gid = {int(o): g for g, o in enumerate(keep)}
     gtype = [t4[o] for o in keep]
     log(f"[E2-2] {N}세포 · SC fiber {N_FIBER}(활성 {sc_active:.0%}) · 자극 t={stim_t}ms · "
-        f"no_inh(gabazine)={no_inh} · SC g={sc_g}nS")
+        f"no_inh(억제 차단)={no_inh} · SC g={sc_g}nS")
 
     type_dir = net.load_representatives(MODELS)
     my = [g for g in range(N) if g % NHOST == RANK]
@@ -97,7 +97,7 @@ def main():
         pc.set_gid2node(g, RANK); pc.cell(g, nc); keeph.append(nc)
     pc.barrier(); log("[구축] 완료 (외부 Poisson 구동 OFF = 조용한 슬라이스)")
 
-    # 내재 커넥텀 (no_inh 면 억제 연결 skip = gabazine)
+    # 내재 커넥텀 (no_inh 면 억제 연결 skip = 억제 차단)
     p = np.load(PRUNED, allow_pickle=True)
     pre = p["pre"]; post = p["post"]; cid = p["cls"]; classes = list(p["classes"].astype(str))
     inh_cls = set(i for i, cl in enumerate(classes) if not cl.startswith("PC->"))
@@ -120,7 +120,7 @@ def main():
             keeph += [syn, ncc]; n_syn += 1
         except Exception:
             pass
-    log(f"[내재연결] 랭크0 {n_syn} 시냅스" + (f" (억제 {n_skip_inh} 차단=gabazine)" if no_inh else ""))
+    log(f"[내재연결] 랭크0 {n_syn} 시냅스" + (f" (억제 {n_skip_inh} 차단=억제 차단)" if no_inh else ""))
 
     # SC fiber(NetStim) — 전 랭크 동일 패턴(볼리 동기). 활성 fiber = 앞쪽 int(sc_active*N)
     n_act = int(round(sc_active * N_FIBER))
