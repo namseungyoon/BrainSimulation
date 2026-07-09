@@ -5,7 +5,7 @@
 교육용 모식도(시뮬 데이터 아님):
   (A) 회로: SC→PC 직접 흥분(1단계·빠름) + SC→인터뉴런→PC 억제(2단계·늦음) = 피드포워드 억제
   (B) I-O 곡선 개념: 정상(억제 있음)=완만·선형 vs 억제 차단(억제 없음)=급포화
-주의: 이건 Romani Fig.4 '기대형' 개념도. 우리 현재 예비결과는 정상~억제차단 곡선 겹침(피드포워드 억제 미작동)→E3 재작업(완성).
+주의: 이건 Romani Fig.4 '기대형' 개념도. 실제 subset 결과(그림 E3-a)에서 피드포워드 억제 작동 확인(gap 71%p).
 실행: python 11_schaffer/e3_concept.py
 """
 import os
@@ -74,7 +74,7 @@ def main():
     axB.set_xlim(0, 100); axB.set_ylim(0, 105)
 
     fig.suptitle("E3 개념 — Schaffer collateral 자극에 대한 피드포워드 억제와 I-O 곡선\n"
-                 "개념도(Romani Fig.4 기대형) · 우리 현재 예비: 정상 ~ 억제차단 곡선 겹침(피드포워드 억제 미작동) → E3 재작업(완성) 필요",
+                 "개념도(Romani Fig.4 기대형) · subset 결과(그림 E3-a): 정상 100%→60.7% vs 억제차단 100%→100%, gap 71%p → 피드포워드 억제 작동",
                  fontsize=12.5, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     out = os.path.join(FIG, "E3_concept.png")
