@@ -5,11 +5,13 @@
 세포를 **한 번만 구축**하고, 활성 SC fiber 비율(sc_active)을 5→100% 스윕하며 자극 후 발화한 PC 비율을 측정.
 억제 시냅스 NetCon weight를 0으로 토글 = 억제 차단(GABA 차단) 모사(재구축 불필요).
   - 목표(Romani Fig.4): control은 피드포워드 억제로 완만/선형(R≈0.992), 억제 차단은 급격 포화.
-  - ⚠️ 현재 결과(예비): control ≈ 억제 차단 (두 곡선 겹침) = **피드포워드 억제 미작동**(SC→PC가 억제 압도).
-    피드포워드 억제가 실제로 나올 때까지 "Fig4 재현"으로 보고 금지. SC→PC↓ / 억제↑ / disynaptic 타이밍 재작업 필요.
-  - ⚠️ SC 시냅스는 Ecker "PC->PC (E2)" 대용(Romani SC-PC 전용 파라미터 아님). g는 튜닝값(측정 아님).
+  - ✅ subset(1,200세포) 결과: SC→PC 1.0nS·SC→INT 6.0nS·억제 ×3(--inh_scale 3.0)에서
+    정상 100%→60.7%(단계적) vs 억제 차단 100%→100%(급포화), gap 71%p → 피드포워드 억제 작동(그림 E3-a).
+  - 튜닝 창(Goldilocks): SC→PC가 억제 대비 과다(3.0nS,×1)→곡선 겹침(억제 무력);
+    과소(0.5nS,×3)→정상 전구간 0%(전멸); 적정(1.0nS,×3)→단계적 I-O. 전/후 비교=그림 E3-b(e3_tuning_compare.py).
+  - ⚠️ SC 시냅스는 Ecker "PC->PC (E2)" 대용(Romani SC-PC 전용 파라미터 아님). g·배율은 튜닝값(측정 아님).
 
-실행: mpiexec -n 10 <python> 11_schaffer/sc_io_curve.py --counts 900,110,95,95 --stim_t 10 --tstop 60
+실행: mpiexec -n 10 <python> 11_schaffer/sc_io_curve.py --counts 900,110,95,95 --stim_t 10 --tstop 60 --sc_g_pc 1.0 --sc_g_int 6.0 --inh_scale 3.0
 """
 import os
 import sys
