@@ -72,7 +72,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 
 ## 11. 실험 및 검증 (MEA fEPSP → LTP/LTD)
 
-> 규칙: 하나씩 구현→보고→✅검증. ID 단일체계 **E1~E9**. **완료는 결과까지, 미실행은 계획·근거만**(결과 날조 금지). 정직성 감사(2026-07) 반영 — 튜닝값≠측정값, "Fig4 재현"은 피드포워드 억제 실작동 시에만.
+> 규칙: 하나씩 구현→보고→✅검증. ID 단일체계 **E1~E10**. **완료는 결과까지, 미실행은 계획·근거만**(결과 날조 금지). 정직성 감사(2026-07) 반영 — 튜닝값≠측정값, "Fig4 재현"은 피드포워드 억제 실작동 시에만.
 
 | ID | 실험 | 상태 |
 |---|---|---|
@@ -85,6 +85,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 | E7 | ACh 신경조절 | ⬜ 예정 |
 | E8 | LTP/LTD (칼슘 가소성) | ⬜ 예정 |
 | E9 | 실측 MEA 대조 | ⬜ 예정 |
+| E10 | STDP 곡선 malleability (Wittenberg&Wang 2006) | ⬜ 예정 |
 
 > **공통 양식** — 각 실험: 목표 / 방법·입력 / 검증지표 / 결과·상태 / 근거(논문X→우리Y) / 한계·주의.
 
@@ -159,6 +160,14 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **결과·상태**: 미실행.
 - **근거**: EvoNES 2025(HD-CMOS-MEA SC 유발 fEPSP+네트워크 LTP 실측).
 - **⚠️ 한계·주의**: slice400 축소·스케일 보정 반영 필요.
+
+### E10. STDP 곡선 malleability 재현 (Wittenberg & Wang 2006) ⬜ 예정
+- **목표**: CA3→CA1(SC) 시냅스의 스파이크-타이밍 의존 가소성(STDP, spike-timing-dependent plasticity) 곡선 재현. 특히 **후시냅스 활동 형태**(단일 스파이크 vs 2-스파이크 버스트=doublet)와 **페어링 빈도(theta 5Hz)·횟수**에 따라 동일 시냅스가 **① LTD-only · ② 양방향(sombrero) · ③ LTP-only** 세 규칙을 모두 보이는 "malleability(가변성)"를 그대로 재현.
+- **방법·입력**: Graupner-Brunel 칼슘 가소성 모델(`papers/02/plasticity_model.py`)의 **Wittenberg2006 피팅 파라미터**(`PARAM_SETS["hippo_slice_Wittenberg2006"]`, 논문 Fig3/S10 fit — 이미 코드 내장)로 오프라인 재현. Δt(−100~+100ms) 스윕마다 pre/post 스파이크열 → `calcium_trace` → `integrate_rho`(활동의존 잡음 포함) → `strength_change_ratio`로 세기비 산출. 세 조건(논문 그대로): **E10-a** 단일 스파이크 페어링 70~100회@0.1~0.5Hz; **E10-b** 후시냅스 doublet(스파이크 2개·간격~10ms) 페어링 5Hz×70~100회; **E10-c** doublet 페어링 5Hz×20~30회. **E10-d**(향후) 단일 SC→PC NEURON 배선(`sc_epsp_test.py`)에 `Synapse.step` 훅 결합 → theta-burst 전후 EPSP slope 변화(→E8 회로 가소성의 토대).
+- **검증지표**: (a) LTD-only 넓은 창(~0.84×baseline, 반치폭~113ms); (b) sombrero — 인과 LTP 창(Δt≈+10~+25ms, 정점~1.58×)을 anti-causal(Δt≈−20~−3ms, ~0.74×)·원거리 인과(Δt≈+25~+40ms, ~0.71×) LTD 창이 협공; (c) LTP-only(중심 Δt≈+4ms, 정점~1.29×). 곡선 **모양·부호가 논문 Fig1D/Fig3E와 정성 일치**.
+- **결과·상태**: ⬜ 미실행(설계·근거 확정. 웹 1차출처 교차검증 완료).
+- **근거**: Wittenberg & Wang 2006 *J Neurosci* 26(24):6610-6617 (DOI 10.1523/JNEUROSCI.5388-05.2006). P14–21 SD rat 급성 슬라이스·whole-cell·SR의 SC 자극; doublet 간격 **10.3±0.9ms**; **5Hz(theta) 반복이 LTP 필수**(0.5Hz는 LTP 소실 ~0.80×); LTP는 **20~30회**·LTD는 **수백 회** 페어링 요구. 결론: "단일 STDP 규칙 하나로 활동→시냅스강도 매핑을 온전히 기술 불가". **우리(like-slice)**: NEURON 세포 시뮬이 아닌 **Graupner 칼슘모델로 1단계 재현** — 이 파라미터가 **바로 이 논문 데이터에 피팅된 값**이라 재현 근거가 코드에 내장됨. 2단계에서 단일 시냅스 NEURON 결합.
+- **⚠️ 한계·주의**: 오프라인 칼슘모델은 형태학·역전파 활동전위(bAP)·NMDA 칼슘유입을 명시적으로 풀지 않는 **현상론적 칼슘 트레이스**(pre=지연 D 후 C_pre 점프, post=C_post 점프, τ_ca 감쇠). 파라미터=Graupner **피팅값(측정 아님)**. 논문 doublet은 전류주입 유발(실측), 우리는 스파이크 시각 리스트로 모사. **정성 재현이 목표**(정량 오차·소수자리는 원문 PDF 대조 권장). E8(회로 TBS/LFS→fEPSP slope)과 구분: **E10 = 단일 시냅스 STDP Δt 곡선**, E8 = 회로 fEPSP. 저장소에 장기가소성 시냅스 mod(GluSynapse류) 없음 → E10-d/E8는 Python 훅 또는 신규 mod 필요.
 
 **slice400 기하(정직):** CA1 전용 횡단-유사 가상슬랩(소마 z~755µm=실험 300–400µm의 약 2배), 4층 정상(방사 ~905µm)·SR 확보 → MEA식 fEPSP엔 기하 부합. 단 **CA3/DG 부재→SC 외부자극 대체, 물리절단 아님** → fEPSP 정량비교 시 스케일보정·한계 명시. Romani Fig4 규모=300µm·SP 101세포·SC 350축삭.
 
