@@ -42,6 +42,10 @@ x86_64/
 
 # like-slice 09_run 대용량 산출물(스파이크 CSV·20kHz 막전위 npy) — 재생성 가능, git 제외
 like_slice_CA1/09_run/spikes/
+# like-slice 11_schaffer E2-c 대용량 산출물(스파이크 CSV·막전위 npy) — 재생성 가능, git 제외
+like_slice_CA1/11_schaffer/sc_full_spikes/
+like_slice_CA1/_scfs_run.log
+like_slice_CA1/_scfs_run.err
 # like-slice 실행 로그·임시·테스트 파일
 like_slice_CA1/_full_run.log
 like_slice_CA1/_full_run.err

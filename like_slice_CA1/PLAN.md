@@ -77,7 +77,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 | ID | 실험 | 상태 |
 |---|---|---|
 | E1 | Baseline 발화율·구동 검증 | ✅ 완료 |
-| E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c ⬜ |
+| E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c subset 검증✅·전슬라이스⬜ |
 | E3 | SC 자극 I-O + 억제 차단 | ✅ subset 완료(피드포워드 억제 작동, gap 71%p) |
 | E4 | 세포외 LFP/fEPSP 계산기 | ⬜ 예정 |
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
@@ -101,9 +101,9 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **목표**: CA3 SC 입력을 명시적 시냅스로 배선 — 조용한 슬라이스에 자극원 제공.
 - **방법·입력**: 가상 SC fiber **~800**(CA3 축삭 대용) → 세포당 SC 시냅스 PC **~60**(SR68/SO25/SP7/SLM0.3%)·INT **~40**, 무작위 fiber 연결. 시냅스=Ecker "PC→PC(E2)" AMPA/NMDA 대용. 전도도(튜닝) SC→PC~1.0nS/INT~4.0nS. `sc_epsp_test.py`·`sc_network.py`.
 - **검증지표**: 단일 SC→PC EPSP=Romani 0.15±0.12mV; baseline 조용; 시냅스 층분포=Romani.
-- **결과·상태**: **E2-a** ✅ 단일 EPSP 근위SR 0.15mV(그림 E2-a 파형·배치+SC모식). **E2-b** ✅ 조용한 baseline+볼리→PC 반응(subset). **E2-c** ⬜ 전 17,647 배치 예정(MPI).
+- **결과·상태**: **E2-a** ✅ 단일 EPSP 근위SR 0.15mV(그림 E2-a 파형·배치+SC모식). **E2-b** ✅ 조용한 baseline+볼리→PC 반응(subset). **E2-c** 🔄 **subset 2,000세포 SC 포아송 지속구동 9초 검증 완료**(dt 0.025·`sc_full_slice.py`): PC **10.6Hz 9초 내내 지속**·98% 발화·INT 0.2Hz, 그림 E2-c(발화율·raster·20kHz 막전위). **전 17,647 배치는 dt 0.025서 ~1초/실행 제약(약 64h/1초)→GPU 필요**.
 - **근거**: Romani PC당 SC ~20,878(±5,867)·INT ~12,714·CA3 267,238세포·층분포(SR67.9/SO24.7/SP7.1/SLM0.3%). fiber ~800=수렴비율 7.8% 보존. 시냅스 ~1/350 축소+전도도 보정.
-- **⚠️ 한계·주의**: SC=Ecker E2 대용(Romani 전용 SC-PC 0.85nS·τ0.4/12·NRRP12 아님, kinetics 다름). E2-a baseline 오염(진값 0.17mV)·Use=0.5로 유효 0.30nS. 전도도·fiber수=튜닝/설계값(측정 아님).
+- **⚠️ 한계·주의**: SC=Ecker E2 대용(Romani 전용 SC-PC 0.85nS·τ0.4/12·NRRP12 아님, kinetics 다름). E2-a baseline 오염(진값 0.17mV)·Use=0.5로 유효 0.30nS. 전도도·fiber수=튜닝/설계값(측정 아님). **E2-c 지속구동은 감소 보정값**: SC 60시냅스(실제 ~20,000의 1/350)로 지속 발화시키려 fiber 150Hz·SC→PC 10nS로 세게 몲 → PC 10.6Hz는 **in-vivo(~1–2Hz)보다 높음**(검증용). SC→INT 3nS는 약해 정상상태 INT 0.2Hz(피드포워드 억제 미미). subset 2,000세포(전 슬라이스 아님).
 
 ### E3. SC 자극 I-O + 억제 차단 ✅ subset 완료(피드포워드 억제 작동)
 - **목표**: SC 세기별 자극→발화 PC I-O 곡선. 정상 vs 억제차단 비교로 피드포워드 억제가 반응을 조절함을 확인(Romani Fig.4).
