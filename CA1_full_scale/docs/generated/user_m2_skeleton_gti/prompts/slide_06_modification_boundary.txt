@@ -1,0 +1,43 @@
+Create one complete 16:9 academic technical PowerPoint slide image. White background, black typography, muted green/blue/orange/red accents, panel labels A-D. No decorative art.
+
+TITLE: What can be changed without changing user_m2, and what requires a rebuild?
+SUBTITLE: CA1 프로젝트 파라미터 계층과 NEST-GPU CUDA 커널 계층의 경계
+
+Panel A: Change without rebuilding kernel
+Draw green checklist:
+cell-type scalar parameters via SetStatus
+receptor port table: E_rev, tau_rise, tau_decay
+connection weights and delays
+post-cell compartment routing array
+source-location transfer table
+validation/provenance metadata
+
+Panel B: Requires kernel edit/rebuild
+Draw orange/red checklist:
+new state variables
+new ODE terms
+different reset/spike rule
+STP state inside model kernel
+E-GLIF current architecture
+more than compiled port budget
+different compartment topology beyond soma/prox/dist
+
+Panel C: If implementing E-GLIF or another user model
+Draw pipeline:
+specification -> edit Derivatives() and ExternalUpdate() -> rebuild NEST-GPU -> expose status names -> update NetworkSpec lowering -> validation gates
+Add note:
+NESTML is not the current NEST-GPU definition path here; this project uses CUDA user-model headers/kernels.
+
+Panel D: Design rule for this CA1 project
+Draw decision ladder:
+use built-in model if it expresses the needed dynamics
+use user_m1/user_m2 if GPU-compatible custom ODE is needed
+do not silently change biological interpretation of a user slot
+every reinterpretation needs provenance and network-level validation
+
+Bottom statement:
+"user_m2 is a modifiable execution hook, but once used in a paper-scale model it must be treated as a versioned biological contract."
+
+Accuracy constraints:
+Do not claim kernel rebuild is needed for ordinary receptor parameter changes.
+Do not claim NESTML currently defines the NEST-GPU user_m2 kernel.

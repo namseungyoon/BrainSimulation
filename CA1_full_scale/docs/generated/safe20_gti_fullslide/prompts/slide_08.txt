@@ -1,0 +1,7 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Memory and compute intuition
+VISUAL: split slide with two pipelines.
+LEFT BAD PIPELINE: every connection loads E_rev, tau_rise, tau_decay, compartment metadata repeatedly.
+RIGHT SAFE20 PIPELINE: receptor_type id selects fixed port; only spike events add weight to conductance accumulator.
+LABELS: fewer dynamic parameters, better reuse, smaller event payload, stable GPU kernels.
+NOTE TEXT: The ODE is still solved, but its kinetic constants live in the model's port table instead of every synapse instance.

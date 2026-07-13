@@ -1,0 +1,40 @@
+{
+  "title": "Efficient full-spec emulation strategy for the CA1 NEST-GPU model",
+  "generated_for": "CA1 bsb-test HITL review",
+  "date": "2026-07-09",
+  "generator": "gti 0.3.1",
+  "slide_count": 7,
+  "canonical_config": {
+    "network_scale": 1.0,
+    "cell_count": 338740,
+    "pyramidal_count": 311500,
+    "backend": "gpu",
+    "neuron_model": "aglif_dend_cond_beta",
+    "nestgpu_lowering": "aglif_dend_cond_beta -> user_m2",
+    "afferent_topology": "literal_source_graph",
+    "recurrent_topology": "modeldb_fastconn_binned",
+    "receptor_port_strategy": "budget_weighted",
+    "syndata_variant": 120,
+    "cellnumbers_index": 101,
+    "conndata_index": 430,
+    "conndata_count_mode": "per_cell",
+    "external_drive_hz": 0.65,
+    "source_location_transfer_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+  },
+  "source_evidence": [
+    "configs/full_scale.yaml",
+    "src/ca1/types.py",
+    "src/ca1/sim/gpu_backend.py",
+    "src/ca1/sim/aglif_dend.py",
+    "src/ca1/params/provenance.py",
+    "src/ca1/validation/network_provenance.py",
+    "docs/modeldb_dataset_notes.md",
+    "docs/safe20_synaptic_port_model_ppt.md"
+  ],
+  "non_claims": [
+    "The final network is not a full multicompartment NEURON simulation.",
+    "STP is not currently promoted as implemented; the canonical rule is static_exp2syn_no_stp.",
+    "3-GPU recurrent sharding is not claimed final-equivalent; single-A40 canonical full-scale validation remains the conservative path.",
+    "utility_weighted_medoids is an experimental candidate, not the current canonical full-scale port table."
+  ]
+}

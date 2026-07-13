@@ -1,0 +1,7 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Why not one generic parameterized synapse module?
+COMPARISON TABLE:
+Option A: generic per-connection ODE params | flexible | high memory traffic | hard GPU coalescing | not NEST-GPU built-in path
+Option B: safe20 reusable ports | 20 ODE channels per neuron | connections store receptor index + weight + delay | GPU-friendly | biologically traceable
+BIG EQUATION-LIKE BLOCK: many connections -> same port accumulator -> one conductance ODE per port
+BOTTOM CONCLUSION: safe20 reduces parameter loading, not biological synapse count.

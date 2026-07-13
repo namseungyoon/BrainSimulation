@@ -1,0 +1,39 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense but readable. Style: paper supplement / neuroscience methods figure, white background, black text, thin vector arrows, muted blue/teal/orange highlights, panel labels A-D, no decorative icons, no stock art, no watermark.
+
+TITLE: Receptor-port codebook compression
+SUBTITLE: 39 original compartment-aware synaptic kinetics -> 20 NEST-GPU receptor-port prototypes + exact assignment table
+
+Panel A, left, formal object:
+Show two mathematical sets:
+Original set K = {k1,...,k39}
+k = (receptor, E_rev, tau_rise, tau_decay, compartment)
+Codebook C = {c1,...,c20}
+c = (receptor, E_rev, tau_rise, tau_decay)
+Draw 39 small source dots flowing into 20 small codebook boxes.
+
+Panel B, center, assignment table:
+Draw a bipartite mapping table q: K -> C.
+Show selected examples:
+k_1 -> c_3
+k_2 -> c_3
+k_17 -> c_12
+k_39 -> c_20
+Caption: selected ports alone are insufficient; q is part of the compression artifact.
+
+Panel C, right, GPU runtime:
+Draw the runtime graph:
+pre spike event -> receptor id q(k) -> port ODE state -> synaptic current -> membrane update
+Label: one event, one receptor id, one port ODE channel.
+Show per-port arrays: E_rev[20], tau_rise[20], tau_decay[20].
+
+Panel D, bottom, artifact definition:
+Show one boxed equation:
+compression artifact = C + q + provenance hash
+Then a second boxed equation:
+hard runtime decode: g_hat_k(t) = g_{q(k)}(t)
+
+IMPORTANT TEXT CONSTRAINTS:
+Use the term "codebook compression".
+Do not call sparse2 deployed here.
+Do not imply GPU reconstructs 39 kernels dynamically.
+Do not invent any additional counts; use exactly 39 and 20.

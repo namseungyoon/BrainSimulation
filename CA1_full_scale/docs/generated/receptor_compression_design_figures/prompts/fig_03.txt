@@ -1,0 +1,35 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Clean technical presentation style, light background, strong hierarchy, readable typography. This slide explains why "reconstruction fidelity" alone is not enough. Use a layered decision funnel or Venn-like comparison, not decorative art.
+
+TITLE TEXT: Why metrics beyond reconstruction are needed
+SUBTITLE TEXT: A waveform can be recoverable but still be the wrong runtime decision
+
+MAIN VISUAL:
+Five horizontal lanes from left to right:
+1. Reconstruction fidelity: can the 20-port approximation match the original kernel waveform?
+2. Utility weighting: does the mismatch matter for network current at V = -55 mV?
+3. Target priority: is the affected postsynaptic cell important for theta and stability?
+4. Runtime efficiency: does each synapse still route to one receptor port?
+5. Safety/provenance: can the exact assignment be audited and rejected loudly if context is wrong?
+
+LEFT CALLOUT:
+Sparse2 shows the best possible two-port waveform reconstruction.
+It answers: "Could two selected ports approximate this kernel?"
+
+RIGHT CALLOUT:
+Hard medoids answer the deployment question.
+They answer: "Can one event carry one receptor id on NEST-GPU without hidden work?"
+
+BOTTOM CONTRAST TABLE:
+Metric | Answers | Why needed
+response_loss | waveform error | preserves tau_rise / tau_decay / peak timing
+utility_loss | weighted current relevance | avoids spending ports on low-impact kernels
+effective_ports | runtime cost | penalizes two-port mixtures
+max_item_loss | worst damaged source | catches hidden outlier damage
+provenance hash | reproducibility | prevents silent canonical replacement
+
+BOTTOM DECISION LINE:
+The chosen runtime strategy must satisfy all five lanes, not just the first lane.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not say reconstruction is unimportant.
+Do not say sparse2 is bad; label it as an upper-bound diagnostic.

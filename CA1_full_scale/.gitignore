@@ -1,0 +1,67 @@
+# Generated network/simulation artifacts (regenerable from configs + seed; tracked in manifest.json)
+*.hdf5
+*.h5
+output/
+results/
+*.npz
+*.gdf
+*.dat.gz
+*.pkl
+
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments / tooling
+.venv/
+.uv/
+
+# Native simulator build trees (rebuilt by install script; pin via submodule if exact repro needed)
+nest-build/
+nest-simulator/
+nest-gpu/
+nest-gpu-build/
+
+# Node / web frontend
+node_modules/
+web/**/dist/
+
+# OS / editor noise
+.DS_Store
+*.swp
+.vscode/
+
+# Large reference PDF (kept locally, not committed)
+*.pdf
+
+# OMC tooling state
+.omc/
+tasks/*.output
+.omx/
+.omo/
+.gjc/
+
+# Runtime crash/backtrace logs
+python.80s-*.btr
+
+# Ephemeral agent scratch + stray design logs (figures under docs/generated stay tracked)
+scratchpad/
+docs/generated/*.log
+docs/generated/**/debug/
+
+# Large all-figures presentation (regenerable via scratchpad/build_pptx.py)
+docs/generated/CA1_all_figures_ko.pptx
+
+docs/generated/CA1_technical_story_ko.pptx
+
+# Large generated presentation decks + interactive topology viz (regenerable; kept local, per project policy: repo = code + result PNGs only)
+*.pptx
+docs/generated/**/*.html

@@ -1,0 +1,3 @@
+strategy,rank_objective,utility_loss,conductance_loss,uniform_loss,max_item_loss,n_ports,code_bits,max_codewords_per_group,effective_inputs_per_item,decoder_parameter_count,worst_original,worst_decoded
+event_select2_mix,0.00026065117514035636,0.00026059672089977974,0.003093265440034187,0.14448141965320616,0.9412537862714208,20,4,16,1.0010447990363929,118,GABA_A_slow:E-60:tr9:td39:dend,GABA_A_slow:E-60:tr0.728:td20.2:dend+GABA_A_slow:E-60:tr2.9:td3.1:dend
+binary4_cdm,0.026562725604947317,0.02634643643187103,0.03131313414952489,0.19323434316956384,1.0776602405454698,18,4,16,1.0410471400251011,36,GABA_A_slow:E-60:tr9:td39:dend,GABA_A_slow:E-60:tr0.728:td20.2:dend

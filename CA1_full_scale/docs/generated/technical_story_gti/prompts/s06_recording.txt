@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 1.5 -- LFP recording was 68% of the run
+Band WHY: profiling showed LFP recording consumed 68% of run() (108.8 s on vs 35.1 s off @0.125). Cause: NEST-GPU multimeter copied 128 cells x variables to host EVERY step via blocking cudaMemcpy.
+Band HOW: rejected a chunked-Python attempt (it zeroed spikes via a chunk-local update index). Instead added a NATIVE multimeter sampling STRIDE (single Simulate, record every N steps; CA1_LFP_RECORD_EVERY default 10 = 1 ms). Required a nest-gpu rebuild (NESTGPU_SetRecordStride).
+Band RESULT: recording 84 s -> ~7 s; spikes 308826 IDENTICAL off/stride1/stride10. Recording is no longer the bottleneck. Draw per-step copy (red, dense) vs every-N-step copy (green, sparse).

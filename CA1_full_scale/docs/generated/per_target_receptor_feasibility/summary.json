@@ -1,0 +1,222 @@
+{
+  "120": {
+    "all_syndata_component_rows": 105,
+    "all_syndata_global_unique_ports": 39,
+    "input_files": {
+      "cellnumbers": "bezaire_modeldb/datasets/cellnumbers_101.dat",
+      "conndata": "bezaire_modeldb/datasets/conndata_430.dat",
+      "syndata": "src/ca1/params/syndata_120.json"
+    },
+    "max_used_ports_per_post": 13,
+    "per_post": {
+      "all_syndata": {
+        "Axo": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Bistratified": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "CCK_Basket": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Ivy": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Neurogliaform": {
+          "component_rows": 11,
+          "unique_ports": 11,
+          "within_user_m2_20_port_limit": true
+        },
+        "O_LM": {
+          "component_rows": 9,
+          "unique_ports": 7,
+          "within_user_m2_20_port_limit": true
+        },
+        "PV_Basket": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Pyramidal": {
+          "component_rows": 13,
+          "unique_ports": 13,
+          "within_user_m2_20_port_limit": true
+        },
+        "SCA": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        }
+      },
+      "paper_used_conndata430": {
+        "Axo": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        },
+        "Bistratified": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        },
+        "CCK_Basket": {
+          "component_rows": 9,
+          "unique_ports": 9,
+          "within_user_m2_20_port_limit": true
+        },
+        "Ivy": {
+          "component_rows": 8,
+          "unique_ports": 8,
+          "within_user_m2_20_port_limit": true
+        },
+        "Neurogliaform": {
+          "component_rows": 5,
+          "unique_ports": 5,
+          "within_user_m2_20_port_limit": true
+        },
+        "O_LM": {
+          "component_rows": 7,
+          "unique_ports": 5,
+          "within_user_m2_20_port_limit": true
+        },
+        "PV_Basket": {
+          "component_rows": 9,
+          "unique_ports": 9,
+          "within_user_m2_20_port_limit": true
+        },
+        "Pyramidal": {
+          "component_rows": 13,
+          "unique_ports": 13,
+          "within_user_m2_20_port_limit": true
+        },
+        "SCA": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        }
+      }
+    },
+    "per_target_exact_feasible": true,
+    "used_component_rows": 81,
+    "used_global_unique_ports": 36,
+    "used_pair_count": 71
+  },
+  "137": {
+    "all_syndata_component_rows": 105,
+    "all_syndata_global_unique_ports": 39,
+    "input_files": {
+      "cellnumbers": "bezaire_modeldb/datasets/cellnumbers_101.dat",
+      "conndata": "bezaire_modeldb/datasets/conndata_430.dat",
+      "syndata": "src/ca1/params/syndata_137.json"
+    },
+    "max_used_ports_per_post": 13,
+    "per_post": {
+      "all_syndata": {
+        "Axo": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Bistratified": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "CCK_Basket": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Ivy": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Neurogliaform": {
+          "component_rows": 11,
+          "unique_ports": 11,
+          "within_user_m2_20_port_limit": true
+        },
+        "O_LM": {
+          "component_rows": 9,
+          "unique_ports": 7,
+          "within_user_m2_20_port_limit": true
+        },
+        "PV_Basket": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        },
+        "Pyramidal": {
+          "component_rows": 13,
+          "unique_ports": 13,
+          "within_user_m2_20_port_limit": true
+        },
+        "SCA": {
+          "component_rows": 12,
+          "unique_ports": 12,
+          "within_user_m2_20_port_limit": true
+        }
+      },
+      "paper_used_conndata430": {
+        "Axo": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        },
+        "Bistratified": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        },
+        "CCK_Basket": {
+          "component_rows": 9,
+          "unique_ports": 9,
+          "within_user_m2_20_port_limit": true
+        },
+        "Ivy": {
+          "component_rows": 8,
+          "unique_ports": 8,
+          "within_user_m2_20_port_limit": true
+        },
+        "Neurogliaform": {
+          "component_rows": 5,
+          "unique_ports": 5,
+          "within_user_m2_20_port_limit": true
+        },
+        "O_LM": {
+          "component_rows": 7,
+          "unique_ports": 5,
+          "within_user_m2_20_port_limit": true
+        },
+        "PV_Basket": {
+          "component_rows": 9,
+          "unique_ports": 9,
+          "within_user_m2_20_port_limit": true
+        },
+        "Pyramidal": {
+          "component_rows": 13,
+          "unique_ports": 13,
+          "within_user_m2_20_port_limit": true
+        },
+        "SCA": {
+          "component_rows": 10,
+          "unique_ports": 10,
+          "within_user_m2_20_port_limit": true
+        }
+      }
+    },
+    "per_target_exact_feasible": true,
+    "used_component_rows": 81,
+    "used_global_unique_ports": 36,
+    "used_pair_count": 71
+  }
+}

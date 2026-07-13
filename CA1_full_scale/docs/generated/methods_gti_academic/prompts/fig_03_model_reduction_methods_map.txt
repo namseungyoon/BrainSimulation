@@ -1,0 +1,47 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense, paper-methods style. White background, black text, muted colors, panel labels A-D. The purpose is to show the paper/project method stack beyond receptor compression: single-cell reduction, synapse/source-location reduction, network scaling, and validation.
+
+TITLE: Model-reduction method stack for the CA1 NEST-GPU network
+SUBTITLE: preserving paper-relevant structure while avoiding full multicompartment simulation
+
+Panel A, upper left, original biological/model sources:
+Show source boxes:
+Bezaire / ModelDB morphology and mechanisms
+conndata430 connectivity budgets
+syndata120 synaptic kinetics
+external CA3 / EC Poisson afferents
+cell type counts and cell class definitions
+Arrow into reduction stack.
+
+Panel B, upper middle, reduction modules:
+Four vertically stacked modules:
+1. Single-cell parameter fitting: NEURON features -> A-GLIF / Izhikevich / AdEx parameters
+2. Receptor codebook compression: 39 kinetics -> 20 receptor ports + assignment table
+3. Source-location / dendritic transfer: morphology EPSP effects -> user_m2 transfer parameters
+4. Connectivity scaling: per-cell indegree and conductance budgets -> full-scale or diagnostic-scale network
+
+Panel C, upper right, GPU execution model:
+Draw:
+NEST-GPU user models
+20 receptor ports
+positive synaptic weights, inhibition by E_rev
+Poisson afferents and recurrent projections
+single-GPU canonical full-scale validation
+multi-GPU used for parameter sweeps or explicit sharding benchmark
+Add caution:
+MPI recurrent sharding is benchmark/diagnostic unless final-equivalence is proven.
+
+Panel D, bottom, validation/provenance gates:
+Draw a gate pipeline:
+single-cell validation
+receptor-port provenance hash
+dendritic-transfer validation
+source-location row-level response fidelity
+network rates / theta / LFP harness
+full-tier provenance blockers
+Final note:
+promotion to canonical requires network-level A/B, not only better single-module score.
+
+IMPORTANT CONSTRAINTS:
+Use "canonical full-scale config: budget_weighted" and "experimental hard codebook candidate: utility_weighted_medoids".
+Do not imply multi-compartment final network.
+Do not claim 3-GPU recurrent sharding is final-equivalent.

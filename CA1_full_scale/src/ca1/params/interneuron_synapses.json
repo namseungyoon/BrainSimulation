@@ -1,0 +1,267 @@
+{
+  "PV_Basket": {
+    "count": 5530,
+    "intrinsic": {
+      "RMP_mV": -65.0,
+      "Rin_MOhm": 52.1,
+      "tau_m_ms": 7.0,
+      "rheobase_pA": 300.0,
+      "AP_threshold_mV": -36.7,
+      "spike_amplitude_mV": 90.7,
+      "sAHP_mV": 41.4,
+      "ISI_ms": 151.4
+    },
+    "synapses": {
+      "incoming": {
+        "Axo": {"E_rev_mV": -60.0, "g_max_nS": 1.200e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 9.000e-03, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 9.000e-03, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 1.100e-03, "tau_rise_ms": 0.25, "tau_decay_ms": 7.50},
+        "Pyr": {"E_rev_mV": 0.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 0.07, "tau_decay_ms": 0.20},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 1.600e-03, "tau_rise_ms": 0.08, "tau_decay_ms": 4.80},
+        "SCA": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CA3": {"E_rev_mV": 0.0, "g_max_nS": 2.200e-04, "tau_rise_ms": 2.00, "tau_decay_ms": 6.30}
+      },
+      "outgoing": {
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 2.900e-03, "tau_rise_ms": 0.18, "tau_decay_ms": 0.45},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 1.200e-03, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 1.600e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "Pyr": {"E_rev_mV": -60.0, "g_max_nS": 2.000e-04, "tau_rise_ms": 0.30, "tau_decay_ms": 6.20},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 1.600e-03, "tau_rise_ms": 0.08, "tau_decay_ms": 4.80}
+      }
+    },
+    "structure": {
+      "incoming": {
+        "Axo": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "apical dendrite"},
+        "Pyr": {"synapses_per_pair": 3, "target_compartment": "apical dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "SCA": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "CA3": {"synapses_per_pair": 2, "target_compartment": "any dendrite"}
+      },
+      "outgoing": {
+        "Bistratified": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "CCK_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "Ivy": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "Pyr": {"synapses_per_pair": 11, "target_compartment": "soma"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"}
+      }
+    }
+  },
+  "CCK_Basket": {
+    "count": 3600,
+    "intrinsic": {
+      "RMP_mV": -70.6,
+      "Rin_MOhm": 222.4,
+      "tau_m_ms": 25.5,
+      "rheobase_pA": 80.0,
+      "AP_threshold_mV": -38.0,
+      "spike_amplitude_mV": 65.9,
+      "sAHP_mV": 32.1,
+      "Sag_Amplitude_mV": 9.2,
+      "Sag_Tau_ms": 45.6,
+      "ISI_ms": 180.8
+    },
+    "synapses": {
+      "incoming": {
+        "Axo": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 8.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 4.500e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 3.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 1.200e-03, "tau_rise_ms": 0.73, "tau_decay_ms": 20.20},
+        "Pyr": {"E_rev_mV": -60.0, "g_max_nS": 5.200e-04, "tau_rise_ms": 0.20, "tau_decay_ms": 4.20},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 1.200e-03, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "SCA": {"E_rev_mV": -60.0, "g_max_nS": 8.500e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99}
+      },
+      "outgoing": {
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 4.500e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 3.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 1.00, "tau_decay_ms": 8.00},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 9.000e-03, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49}
+      }
+    },
+    "structure": {
+      "incoming": {
+        "Axo": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "apical dendrite"},
+        "Pyr": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "SCA": {"synapses_per_pair": 6, "target_compartment": "any dendrite"},
+        "CA3": {"synapses_per_pair": 2, "target_compartment": "any dendrite"}
+      },
+      "outgoing": {
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "apical dendrite"},
+        "Pyr": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "any dendrite"},
+        "SCA": {"synapses_per_pair": 8, "target_compartment": "any dendrite"}
+      }
+    }
+  },
+  "Bistratified": {
+    "count": 2210,
+    "intrinsic": {
+      "RMP_mV": -67.0,
+      "Rin_MOhm": 98.8,
+      "tau_m_ms": 14.7,
+      "rheobase_pA": 350.0,
+      "AP_threshold_mV": -28.1,
+      "spike_amplitude_mV": 51.2,
+      "sAHP_mV": 48.8,
+      "ISI_ms": 39.0
+    },
+    "synapses": {
+      "incoming": {
+        "Axo": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 5.100e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 7.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 1.100e-04, "tau_rise_ms": 0.60, "tau_decay_ms": 15.00},
+        "Pyr": {"E_rev_mV": 0.0, "g_max_nS": 1.900e-03, "tau_rise_ms": 0.11, "tau_decay_ms": 0.25},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 2.900e-03, "tau_rise_ms": 0.18, "tau_decay_ms": 0.45}
+      },
+      "outgoing": {
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 5.100e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 8.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 5.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 2.000e-05, "tau_rise_ms": 1.00, "tau_decay_ms": 8.00},
+        "Pyr": {"E_rev_mV": -60.0, "g_max_nS": 5.100e-04, "tau_rise_ms": 0.11, "tau_decay_ms": 9.70},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 9.000e-03, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "SCA": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99}
+      }
+    },
+    "structure": {
+      "incoming": {
+        "Axo": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "apical dendrite"},
+        "Pyr": {"synapses_per_pair": 3, "target_compartment": "apical dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "SCA": {"synapses_per_pair": 6, "target_compartment": "any dendrite"}
+      },
+      "outgoing": {
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Pyr": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "PV_Basket": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "SCA": {"synapses_per_pair": 10, "target_compartment": "any dendrite"}
+      }
+    }
+  },
+  "Ivy": {
+    "count": 8810,
+    "intrinsic": {
+      "RMP_mV": -60.0,
+      "Rin_MOhm": 100.7,
+      "tau_m_ms": 21.3,
+      "rheobase_pA": 160.0,
+      "AP_threshold_mV": -27.7,
+      "spike_amplitude_mV": 54.6,
+      "sAHP_mV": 20.9,
+      "ISI_ms": 305.5
+    },
+    "synapses": {
+      "incoming": {
+        "Axo": {"E_rev_mV": -60.0, "g_max_nS": 5.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 5.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 3.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 5.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 5.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "Pyr": {"E_rev_mV": 0.0, "g_max_nS": 4.050e-04, "tau_rise_ms": 0.30, "tau_decay_ms": 0.60},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 1.600e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67}
+      },
+      "outgoing": {
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 7.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 3.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 5.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "Pyr": {"E_rev_mV": -60.0, "g_max_nS": 4.100e-05, "tau_rise_ms": 1.10, "tau_decay_ms": 11.00},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10}
+      }
+    },
+    "structure": {
+      "incoming": {
+        "Axo": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Pyr": {"synapses_per_pair": 3, "target_compartment": "apical dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "SCA": {"synapses_per_pair": 6, "target_compartment": "any dendrite"}
+      },
+      "outgoing": {
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "Pyr": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "PV_Basket": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "SCA": {"synapses_per_pair": 10, "target_compartment": "any dendrite"}
+      }
+    }
+  },
+  "SCA": {
+    "count": 400,
+    "intrinsic": {
+      "RMP_mV": -70.5,
+      "Rin_MOhm": 300.0,
+      "tau_m_ms": 28.9,
+      "rheobase_pA": 60.0,
+      "AP_threshold_mV": -36.6,
+      "spike_amplitude_mV": 80.3,
+      "sAHP_mV": 35.2,
+      "Sag_Amplitude_mV": 12.9,
+      "Sag_Tau_ms": 41.7,
+      "ISI_ms": 115.9
+    },
+    "synapses": {
+      "incoming": {
+        "Axo": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99},
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 8.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 7.000e-04, "tau_rise_ms": 0.43, "tau_decay_ms": 4.49},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 3.700e-05, "tau_rise_ms": 2.90, "tau_decay_ms": 3.10},
+        "O_LM": {"E_rev_mV": -60.0, "g_max_nS": 1.500e-04, "tau_rise_ms": 0.07, "tau_decay_ms": 29.00},
+        "Pyr": {"E_rev_mV": 0.0, "g_max_nS": 4.050e-04, "tau_rise_ms": 0.30, "tau_decay_ms": 0.60},
+        "PV_Basket": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.29, "tau_decay_ms": 2.67},
+        "CA3": {"E_rev_mV": 0.0, "g_max_nS": 3.000e-04, "tau_rise_ms": 2.00, "tau_decay_ms": 6.30},
+        "ECIII": {"E_rev_mV": 0.0, "g_max_nS": 4.500e-04, "tau_rise_ms": 2.00, "tau_decay_ms": 6.30}
+      },
+      "outgoing": {
+        "Bistratified": {"E_rev_mV": -60.0, "g_max_nS": 6.000e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99},
+        "CCK_Basket": {"E_rev_mV": -60.0, "g_max_nS": 8.500e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99},
+        "Ivy": {"E_rev_mV": -60.0, "g_max_nS": 8.500e-04, "tau_rise_ms": 0.42, "tau_decay_ms": 4.99}
+      }
+    },
+    "structure": {
+      "incoming": {
+        "Axo": {"synapses_per_pair": 6, "target_compartment": "any dendrite"},
+        "Bistratified": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 8, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 10, "target_compartment": "any dendrite"},
+        "O_LM": {"synapses_per_pair": 10, "target_compartment": "apical dendrite"},
+        "Pyr": {"synapses_per_pair": 3, "target_compartment": "apical dendrite"},
+        "PV_Basket": {"synapses_per_pair": 1, "target_compartment": "soma"},
+        "CA3": {"synapses_per_pair": 2, "target_compartment": "any dendrite"},
+        "ECIII": {"synapses_per_pair": 2, "target_compartment": "any dendrite"}
+      },
+      "outgoing": {
+        "Bistratified": {"synapses_per_pair": 6, "target_compartment": "any dendrite"},
+        "CCK_Basket": {"synapses_per_pair": 6, "target_compartment": "any dendrite"},
+        "Ivy": {"synapses_per_pair": 6, "target_compartment": "any dendrite"}
+      }
+    }
+  }
+}

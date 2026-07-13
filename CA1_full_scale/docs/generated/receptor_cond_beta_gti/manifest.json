@@ -1,0 +1,29 @@
+{
+  "title": "NEST-GPU receptor ports and cond_beta computation",
+  "generated_for": "CA1 bsb-test HITL explanation",
+  "date": "2026-07-09",
+  "generator": "gti 0.3.1",
+  "slide_count": 6,
+  "core_claims": [
+    "A receptor id is a connection-carried selector for a postsynaptic input port.",
+    "cond_beta computes conductance dynamics on the postsynaptic input side.",
+    "The resulting synaptic current enters the neuron's membrane ODE.",
+    "The 20-port limit is shared by NEST-GPU multi-port CUDA models such as user_m1/user_m2, aeif_cond_beta_multisynapse, and izhikevich_cond_beta.",
+    "Current canonical project semantics use positive weights and encode inhibition through E_rev."
+  ],
+  "source_evidence": [
+    ".venv/include/nestgpu/aeif_cond_beta_multisynapse.h",
+    ".venv/include/nestgpu/aeif_cond_beta_multisynapse_kernel.h",
+    ".venv/include/nestgpu/izhikevich_cond_beta.h",
+    ".venv/include/nestgpu/user_m1.h",
+    ".venv/include/nestgpu/user_m2.h",
+    ".venv/lib/python3.12/site-packages/nestgpu.py",
+    "src/ca1/sim/gpu_backend.py"
+  ],
+  "accuracy_constraints": [
+    "Do not describe receptor as an output-side synapse object.",
+    "Do not claim every NEST-GPU built-in model supports arbitrary receptor arrays.",
+    "Do not claim STP is currently implemented in the canonical CA1 path.",
+    "Use NEST-GPU 0-based receptor indices."
+  ]
+}

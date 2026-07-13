@@ -1,0 +1,40 @@
+Create one complete 16:9 academic PowerPoint slide image. White background, black readable text, muted blue/teal/orange/red, panel labels A-D. No decorative art.
+
+TITLE: Where STP would enter the pipeline
+SUBTITLE: 현재 receptor/cond_beta path는 static conductance event semantics이고, STP는 event weight를 동적으로 바꾸는 추가 계층
+
+Panel A: Current canonical path
+Draw:
+pre spike -> static connection weight -> receptor port -> cond_beta g_p(t) -> I_syn -> V_m
+Label:
+static_exp2syn_no_stp
+weight is fixed per connection/event rule
+
+Panel B: STP concept
+Draw Tsodyks-Markram style state before event injection:
+pre spike -> update u,x states -> effective weight = base_weight * u * x -> receptor port
+Labels:
+facilitation changes release probability
+depression changes available resources
+STP is event-side dynamic modulation, not a new receptor ODE by itself
+
+Panel C: Why receptor still matters with STP
+Draw parallel lanes:
+STP layer decides how much conductance to inject
+receptor port decides which conductance ODE and E_rev receive it
+cond_beta decides time course after injection
+membrane ODE decides voltage response
+
+Panel D: Current project boundary
+Make caution / status table:
+Implemented canonical: receptor ports, cond_beta kinetics, positive weights, E_rev sign, dendritic compartment tags for user_m2
+Not promoted canonical: STP from ModelDB fields
+Future implementation choices: custom synapse/event update, built-in plastic synapse if NEST-GPU supports it, or user-model event-state extension
+
+Bottom takeaway:
+"STP would modulate the event amplitude before receptor-port injection; it does not replace receptor ports or cond_beta kinetics."
+
+Accuracy constraints:
+Do not claim STP is currently implemented.
+Do not imply STP can be represented only by adding another receptor port.
+Do not hide current static_exp2syn_no_stp boundary.

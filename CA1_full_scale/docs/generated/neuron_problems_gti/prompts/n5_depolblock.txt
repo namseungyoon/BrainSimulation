@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: Depolarization block -- source CCK stops firing, the point model cannot
+SUBTITLE: The missing mechanism = sodium-channel availability (h-inactivation), added as user_m3.
+Panel A (left): source CCK f-I curve that RISES then FALLS to zero (rise-to-block) vs user_m2 f-I that rises monotonically and saturates. ch_Navcck: g_Na = gbar * m^3 * h, h_inf(-22mV) ~ 0.06 (Na inactivated).
+Panel B (middle): user_m3 fix -- one availability state h. Equations: dh/dt=(h_inf(V)-h)/tau_h ; spike iff V_m>=V_th AND h>h_crit ; on spike h-=delta_h ; suppressed crossing does NOT reset -> depolarized plateau -> h stays low -> silent; recovers on repolarization. Fitted: V_h_half -42 mV, k_h 7, tau_h 67 ms, h_crit 0.35.
+Panel C (right): GPU-validated result -- user_m3 f-I rates rise 10..46.7 Hz then 0,0,0,0 at top currents (block reproduced), +17 recovery spikes. CCK-only opt-in; user_m2 untouched; connect bit-identical.

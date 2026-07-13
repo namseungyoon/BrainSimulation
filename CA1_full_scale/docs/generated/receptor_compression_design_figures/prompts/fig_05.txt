@@ -1,0 +1,28 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Build a design-decision matrix slide for a technical HITL review. Light background, dark readable text, blue/teal/orange accents, green checks and orange cautions. Preserve exact strategy names and decisions.
+
+TITLE TEXT: Design implementation decisions
+SUBTITLE TEXT: What should be deployed now, what remains a diagnostic, and what is intentionally guarded
+
+MAIN MATRIX COLUMNS:
+Decision | Chosen implementation | Rationale | Guardrail
+
+ROWS:
+Runtime compression | utility_weighted_medoids | best hard one-port candidate; utility loss 0.000344 | requires compartment_aware_synapses=True
+Upper-bound diagnostic | utility_sparse2 | best numerical reconstruction; utility loss 0.000261 | not deployed unless event splitting or custom user model is added
+Canonical final path | budget_weighted remains canonical | network-level A/B must pass before promotion | provenance gate rejects silent replacement
+Assignment semantics | exact 39 -> representative table | avoids tau-distance mismatch | assignment_mismatches = 0
+GPU port budget | 20 receptor ports | matches NEST-GPU user model port limit | build rejects too many ports
+Synapse sign | positive weights only | inhibition sign comes from E_rev | GABA ports have E_rev below rest
+
+SIDE PANEL TITLE: Why this is conservative
+SIDE PANEL BULLETS:
+No hidden GPU least-squares reconstruction
+No silent fallback when compartment context is missing
+No promotion to canonical provenance before network A/B
+
+BOTTOM LINE:
+This is a deployment-safe compression strategy, not merely the best-looking waveform fit.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not call utility_weighted_medoids the final canonical safe20 replacement.
+Do not remove the caveat on utility_sparse2.

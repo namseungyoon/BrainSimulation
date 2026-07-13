@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 3.1 -- The firing failure: interneurons are silent
+Band WHY: with an honest gate, the full-scale 3-D free run FAILS: theta prominence 1.33x. Root symptom: the PING interneurons are dead -- PV 0.00, Bistratified 0.02, O_LM 0.00 Hz (targets ~0.9/18/17); SCA over 7x; Pyramidal 7.82 Hz / 100% active.
+Band HOW: is it a weak-cell problem? Single-cell "full converging barrage": drive one interneuron with ALL its afferent rows at real in-degree, no inhibition. 
+Band RESULT: excitation-only, the deployed cells fire PV 64 / Bist 24 / O_LM 20 Hz -- excitability is FINE. Silence appears ONLY with network inhibition. => the wall is NETWORK-level (E/I balance), not single-cell. Reframe complete. Show silent network bars vs firing barrage bars.

@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 1.3 -- Afferent spike-train setup: 11 min -> 13 s
+Band WHY: generating Poisson spike trains for 250k afferent sources took 11 minutes -- a serial, per-source bottleneck exposed by the profiler.
+Band HOW: vectorized the spike-train generation (batched NumPy instead of per-source loops). Considered a per-connection cuRAND poisson_generator on GPU but REJECTED it: ~105 GiB at full scale.
+Band RESULT: 11 min -> 13 s (~50x). No accuracy change; spikes identical. The GPU on-device RNG path was a dead end (memory), so the CPU-vectorized path won. Show before/after bar 11min vs 13s.

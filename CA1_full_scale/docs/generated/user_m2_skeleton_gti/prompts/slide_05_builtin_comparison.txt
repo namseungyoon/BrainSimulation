@@ -1,0 +1,44 @@
+Create one complete 16:9 academic PowerPoint slide image. White background, black text, muted blue/teal/orange/red accents. Use panel labels A-C. No stock art.
+
+TITLE: user_m2 versus built-in cond_beta models
+SUBTITLE: built-in multisynapse 모델은 multi-receptor이지만, user_m2처럼 reduced multicompartment는 아니다
+
+Panel A: Built-in aeif_cond_beta_multisynapse
+Draw one soma voltage node V_m.
+Many receptor ports all feed into one sum:
+I_syn = sum_p g[p] * (E_rev[p] - V_m)
+Then:
+dV_m/dt = leak + AdEx exponential + I_syn - w + I_e
+Labels:
+multi-receptor yes
+single voltage domain
+no compartment[p] routing
+
+Panel B: user_m2
+Draw three voltage nodes:
+V_m soma
+V_d proximal
+V_dist distal
+Ports feed into I_soma / I_prox / I_dist by compartment[p]
+Nodes coupled by g_c and g_c_dist
+Labels:
+multi-receptor yes
+reduced multi-domain yes
+spike threshold evaluated at V_m
+
+Panel C: Practical implication
+Make comparison table:
+Feature | built-in cond_beta multisynapse | user_m2
+multiple receptor kinetics | yes | yes
+0-based receptor ports | yes for NEST-GPU multisynapse | yes
+compartment tag per port | no | yes
+soma/prox/dist states | no | yes
+source-location transfer | external/project layer only | directly consumed as compartment routing
+requires custom kernel changes for new equations | no for built-in use | yes if redefining user_m2
+
+Bottom takeaway:
+"Built-in cond_beta gives many input kinetics into one membrane; user_m2 adds a reduced dendritic receiving geometry."
+
+Accuracy constraints:
+Do not say built-in cond_beta has apical/basal/soma compartment ODEs.
+Do not say user_m2 is a full morphology NEURON replacement.

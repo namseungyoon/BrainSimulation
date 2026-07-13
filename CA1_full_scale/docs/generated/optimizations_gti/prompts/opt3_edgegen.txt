@@ -1,0 +1,29 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable systems-architecture before-after slide. White background, black crisp text, thin grid lines, muted blue and muted red accents, small monospace code labels.
+
+TITLE TEXT: Separating 3-D edge generation from the GPU simulation
+SUBTITLE TEXT: Generate the source-faithful connectivity once, on CPU, then reuse it
+
+Panel A, left, red-tinted (BEFORE):
+Draw one GPU-sim process box that both imports nestgpu AND regenerates 3-D-Gaussian edges inside it, single-threaded.
+Red labels: "edges regenerated every run" and "pool forbidden here (crash) -> serial only".
+Red badge: "~81 minutes of edge generation at full scale, before connect even starts".
+
+Panel B, right, blue-tinted (AFTER):
+Draw TWO boxes connected by an artifact file.
+Box 1 (CPU): "ca1 build-edges - CPU only, never imports nestgpu -> ProcessPool is safe". Arrow down to a file chip labeled "edge artifact .h5 (uint32 sources + offsets, digest + provenance)".
+Box 2 (GPU sim): "loads CA1_EDGE_ARTIFACT, validates digest, Connects" with a fallback note "regenerates only if no artifact".
+Blue label spanning both: "generate ONCE, reuse across seeds / working-point variants".
+
+Panel C, bottom band: Measured (scale 0.125)
+Three badges:
+Badge 1: build-edges 168 s, 906 MB artifact, nestgpu-free (verified: no libinfinipath in process maps)
+Badge 2: pool 2.39x vs serial on the benchmarked projection
+Badge 3: edges bit-identical, digest sha256 4131 4045 ...; sim loads artifact, spikes normal
+
+Panel D, bottom-right: Impact
+Sentence: "Full-scale edge generation moves out of every run and becomes a reusable, pooled, checksummed artifact." Commit eec0d75
+
+IMPORTANT TEXT CONSTRAINTS:
+The CPU build-edges process must NOT import nestgpu; that is why the pool is safe.
+Keep numbers exactly: 81 min in-sim serial; build-edges 168 s at scale 0.125; 906 MB; pool 2.39x.
+Do not claim the GPU connect step was removed; only edge GENERATION was moved out and made reusable.

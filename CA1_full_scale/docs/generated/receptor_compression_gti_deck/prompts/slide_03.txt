@@ -1,0 +1,18 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Use a polished technical deck style, white/light background, dark readable typography, blue/teal/orange accents. The slide must include the exact ranking table below. No fake data.
+
+TITLE TEXT: Ranking result
+SUBTITLE TEXT: Lower objective and utility loss are better
+
+TABLE CONTENT:
+Rank 1 | utility_sparse2 | objective 0.000261 | utility loss 0.000261 | ports 20 | eff ports 1.001
+Rank 2 | utility_weighted_medoids | objective 0.000344 | utility loss 0.000344 | ports 20 | eff ports 1.000
+Rank 3 | conductance_weighted_medoids | objective 0.000422 | utility loss 0.000422 | ports 20 | eff ports 1.000
+Rank 4 | uniform_medoids | objective 0.051551 | utility loss 0.051551 | ports 20 | eff ports 1.000
+Rank 5 | current_safe20 | objective 0.351614 | utility loss 0.351614 | ports 20 | eff ports 1.000
+
+HIGHLIGHT:
+utility_sparse2 is best numerically, but it is a sparse two-port relaxation.
+utility_weighted_medoids is the best hard one-port runtime candidate.
+
+VISUAL:
+Ranked podium or horizontal bars. Emphasize Rank 2 as "selected for runtime".

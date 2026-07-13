@@ -1,0 +1,37 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense but readable second-stage validation slide. White background, black text, muted purple/blue spectral accents, circular phase diagram, panel labels A-D. Preserve exact values.
+
+TITLE TEXT: Gate 2: theta, gamma, and phase validation
+SUBTITLE TEXT: Required only after first-order rates and provenance pass
+
+Panel A, upper left: Oscillation targets
+Table:
+Metric | PASS criterion
+theta peak | 5-10 Hz and |peak - 7.8| <= 1.5 Hz
+theta dominance | theta band power > gamma band power
+gamma peak | 25-80 Hz
+theta-gamma CFC | modulation index > 0
+
+Panel B, upper right: LFP evidence rule
+Show a provenance badge:
+Full-tier spectral evidence requires stored modeldb_n_pole_reduced_domain_lfp.
+Reject hidden pyramidal spike-density fallback.
+Reject implicit default LFP proxy.
+
+Panel C, bottom left: Phase targets
+Small circular phase plot with two groups:
+trough group near 0 / 360 deg:
+Pyramidal 339.7, PV_Basket 356.8, Bistratified 340.0, O_LM 334.7
+rising group away from trough:
+Axo 163.4, CCK_Basket 202.8, Ivy 142.1, Neurogliaform 176.3, SCA 197.9
+
+Panel D, bottom right: Phase hard gate
+Show:
+per-cell-type circular distance <= 45 deg
+Rayleigh p < 0.05
+trough group within 90 deg of trough
+rising group away from trough
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not call theta accepted without LFP provenance.
+Do not invent phase values.
+Do not use a marketing layout; use scientific methods figure style.

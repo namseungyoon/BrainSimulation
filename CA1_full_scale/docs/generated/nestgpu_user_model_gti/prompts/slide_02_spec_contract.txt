@@ -1,0 +1,57 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. White background, black readable typography, subtle grid, muted blue/teal/orange. This is a methods figure, not marketing. Include exact labels. No fake data.
+
+TITLE: Spec contract passed into the user model path
+SUBTITLE: the recommended transport shape is a versioned typed bundle, not ad hoc SetStatus calls
+
+Draw a central container named UserModelBundle v1. It should contain five stacked blocks.
+
+Block 1: model header
+fields:
+model_name = user_m1 or user_m2
+neuron_model = aglif_cond_beta or aglif_dend_cond_beta
+n_cells
+n_ports <= 20
+dt_ms
+seed
+
+Block 2: scalar neuron status, per cell type or per node array
+fields:
+V_th, E_L, C_m, tau_m
+k_adap, k1, k2
+A1, A2
+I_e, V_peak, V_reset, t_ref
+for user_m2 also: dend_C_frac, dend_leak_scale, g_c, dist_C_frac, dist_leak_scale, g_c_dist
+
+Block 3: receptor port table, length n_ports
+columns:
+port_id 0..n_ports-1
+name
+E_rev
+tau_rise
+tau_decay
+compartment for user_m2
+
+Block 4: connection records
+fields:
+pre population
+post population
+conn_spec rule and indegree
+weight_nS positive
+delay_ms
+receptor port_id
+
+Block 5: provenance and gates
+fields:
+receptor_port_strategy
+receptor table sha256
+source_location_transfer provenance
+fit_provenance
+validation status
+
+Right side diagram:
+NetworkSpec -> UserModelBundle -> ngpu.Create/SetStatus/Connect
+
+Bottom rule:
+The bundle should be serializable, hashable, and replayable; it should fail loudly if n_ports > 20 or a receptor name lacks an exact port assignment.
+
+Use panel label B.

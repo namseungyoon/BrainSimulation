@@ -1,0 +1,37 @@
+{
+  "variant": 120,
+  "n_original_items": 39,
+  "n_budget": 20,
+  "scores": [
+    {
+      "strategy": "event_select2_mix",
+      "rank_objective": 0.00026065117514035636,
+      "utility_loss": 0.00026059672089977974,
+      "conductance_loss": 0.003093265440034187,
+      "uniform_loss": 0.14448141965320616,
+      "max_item_loss": 0.9412537862714208,
+      "n_ports": 20,
+      "code_bits": 4,
+      "max_codewords_per_group": 16,
+      "effective_inputs_per_item": 1.0010447990363929,
+      "decoder_parameter_count": 118,
+      "worst_original": "GABA_A_slow:E-60:tr9:td39:dend",
+      "worst_decoded": "GABA_A_slow:E-60:tr0.728:td20.2:dend+GABA_A_slow:E-60:tr2.9:td3.1:dend"
+    },
+    {
+      "strategy": "binary4_cdm",
+      "rank_objective": 0.026562725604947317,
+      "utility_loss": 0.02634643643187103,
+      "conductance_loss": 0.03131313414952489,
+      "uniform_loss": 0.19323434316956384,
+      "max_item_loss": 1.0776602405454698,
+      "n_ports": 18,
+      "code_bits": 4,
+      "max_codewords_per_group": 16,
+      "effective_inputs_per_item": 1.0410471400251011,
+      "decoder_parameter_count": 36,
+      "worst_original": "GABA_A_slow:E-60:tr9:td39:dend",
+      "worst_decoded": "GABA_A_slow:E-60:tr0.728:td20.2:dend"
+    }
+  ]
+}

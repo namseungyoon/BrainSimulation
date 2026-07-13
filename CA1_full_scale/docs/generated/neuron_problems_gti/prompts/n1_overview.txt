@@ -1,0 +1,7 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: CA1 interneuron working-point failure -- a neuron's-eye view (overview)
+SUBTITLE: Goal = intrinsic theta ~7.8 Hz + gamma ~71 Hz emergent from arrhythmic 0.65 Hz Poisson afferents ONLY. Wall = the fast PING interneurons are SILENT.
+Panel A (left): the CA1 recurrent PING loop drawn as neurons -- Pyramidal (excitatory, triangle soma) <-> PV_Basket + Bistratified (fast GABA interneurons), with O_LM providing dendritic inhibition. Arrows: AMPA excitatory (blue), GABA_A inhibitory (red). Label "recurrent Pyr<->PV/Bist PING loop = theta engine".
+Panel B (middle): full-scale free-run RESULT bar chart -- PV_Basket 0.00 Hz, Bistratified 0.02 Hz, O_LM 0.00 Hz (targets ~1/18/17 Hz) all SILENT; Pyramidal 7.82 Hz healthy; CCK_Basket ~45 Hz and SCA ~38 Hz OVER-active. Red X over the silent PING cells.
+Panel C (right): consequence -- with the PING interneurons dead, no theta prominence (1.33x, FAIL). The rest of the deck traces WHY, cell by cell.
+Bottom caption: reduced model = aglif_dend 3-compartment point neuron (soma / prox / dist), NEST-GPU on one A40.

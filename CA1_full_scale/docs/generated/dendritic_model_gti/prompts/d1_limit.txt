@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments with ion channels. Keep all text legible.
+TITLE: The reduction limit -- passive dendrites cannot spike through the shunt
+SUBTITLE: Same recorded CCK=45 Hz inhibition: native multicompartment PING cells FIRE, the reduced point cell stays silent.
+Panel A (left): NATIVE PV cell = soma + branched dendrites studded with active Na/K channels (ch_Navaxonp, ch_Kdrfast). A cluster of distal AMPA EPSPs (blue) triggers a local dendritic Na spike that propagates to soma and fires it, DESPITE a near-soma CCK GABA shunt (red). Somatic spike train.
+Panel B (right): REDUCED user_m2 = soma V_m + prox V_d + dist V_dist, all PASSIVE (leak + axial coupling only). The same distal excitation just decays; soma stuck near -58 mV, subthreshold; no output. Red flat line.
+Bottom: 4-arm result under identical streams -- native PV 15.6 / Bist 8.4 / O_LM 1.17 Hz FIRE; reduced (even exact-contact) 0.3 / 0.15 / 0.02 Hz SILENT. The wall is the reduction, not the data.

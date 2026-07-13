@@ -1,0 +1,7 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: Why CCK over-fires -- reduced-cell model infidelity (D1) + fixed point (D2)
+SUBTITLE: The reduced CCK cell is BOTH intrinsically over-excitable AND over-driven, and loses feedback.
+Panel A (top-left) D1 intrinsic: table reduced-vs-source -- tau_m 8.1 vs 12.9 ms (62%), rheobase 0.041 vs 0.063 nA (66%), f-I gain too high. Draw a fast-spiking CCK soma.
+Panel B (top-right) D1 transfer: CA3 proximal excitation OVER-transferred to CCK -- peak 159%, charge 130% of source (the MIRROR of PV's under-transfer). Blue AMPA arrow oversized.
+Panel C (bottom-left) D1 expressivity: under barrage source CCK enters DEPOLARIZATION BLOCK (0 Hz) but reduced user_m2 keeps firing 55.9 Hz. Draw membrane pinned depolarized.
+Panel D (bottom-right) D2 fixed point: silent PV/Bist/O_LM cannot inhibit CCK -> CCK stays high -> keeps them silent. A self-reinforcing loop diagram.

@@ -1,0 +1,24 @@
+{
+  "title": "NEST-GPU user model setup and spec transport",
+  "generated_for": "CA1 bsb-test project",
+  "date": "2026-07-09",
+  "source_code_paths": [
+    "src/ca1/config.py",
+    "src/ca1/types.py",
+    "src/ca1/sim/gpu_backend.py",
+    "src/ca1/sim/aglif_dend.py",
+    "src/ca1/sim/nestgpu_api.py",
+    ".venv/include/nestgpu/user_m1_kernel.h",
+    ".venv/include/nestgpu/user_m2_kernel.h"
+  ],
+  "canonical_full_scale_model": "aglif_dend_cond_beta",
+  "nestgpu_lowering": {
+    "aglif_cond_beta": "user_m1",
+    "aglif_dend_cond_beta": "user_m2",
+    "aeif_cond_beta_multisynapse": "aeif_cond_beta_multisynapse",
+    "izhikevich_cond_beta": "izhikevich_cond_beta"
+  },
+  "user_model_port_limit": 20,
+  "port_indexing": "NEST-GPU user models use 0-based receptor indices",
+  "spec_transport_recommendation": "versioned typed bundle: model header + scalar params + receptor port table + connection records + provenance hashes"
+}

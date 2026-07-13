@@ -1,0 +1,28 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue, muted red, muted green accents. Include a 3-D spatial neuron layer, Gaussian distance kernel curve, and concentric connection rings.
+
+TITLE TEXT: How the source-faithful connectivity is built
+SUBTITLE TEXT: The neuron-simulation reason behind the build-edges split (commit eec0d75)
+
+Panel A, left: WHY (neuroscience)
+Header: "Anatomy sets who connects to whom"
+Draw the CA1 circuit: 9 cell types (pyramidal + 8 interneuron classes incl. Neurogliaform), recurrent connections plus CA3/ECIII afferents.
+Label: "connectivity from Bezaire/ModelDB fastconn: per-projection in-degree, weights, receptor ports (AMPA, GABA_A, GABA_B)."
+Green note: "distance-dependent wiring sets shared-input correlation -> theta; uniform wiring destroys it."
+
+Panel B, center: HOW (how edges are generated)
+Draw a Gaussian falloff curve over distance with 5 rings out to 4c. For each post cell, sources are sampled by 3-D Euclidean distance with source-specific spread.
+Labels: "3-D Euclidean distance x Gaussian rings", "in-degree K preserved exactly", "~87% of sources in the innermost ring", "billions of explicit edges at full scale".
+
+Panel C, right: GPU technical challenge
+Header: "Edge generation is huge and cannot use the pool inside the GPU process"
+Draw the GPU-sim process regenerating all edges single-threaded (nestgpu already imported -> pool would crash).
+Red chip: "~81 minutes of edge generation per run at full scale, before the simulation even starts."
+
+Panel D, bottom strip: How it was solved
+Sentence: "Generate edges ONCE in a CPU-only, nestgpu-free process (ProcessPool safe), persist a checksummed artifact, and have the GPU sim load + Connect it (bit-identical, digest 41314045). build-edges 168 s at scale 0.125; reusable across seeds." Commit eec0d75.
+
+IMPORTANT TEXT CONSTRAINTS:
+9 CA1 cell types including Neurogliaform; afferents = CA3 Schaffer + ECIII perforant.
+Receptors: AMPA (excitatory), GABA_A and GABA_B (inhibitory); do not invent others.
+Keep "~87% innermost ring", "K preserved", "81 min", "build-edges 168 s", "digest 41314045".
+Distance-dependent wiring changes CORRELATION, not mean firing rate.

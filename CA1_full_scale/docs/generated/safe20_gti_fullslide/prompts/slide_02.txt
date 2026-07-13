@@ -1,0 +1,9 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Why ports exist
+MAIN DIAGRAM: one postsynaptic neuron with receptor ports as fixed input channels.
+LABELS TO SHOW:
+port = receptor_type index
+one port owns one conductance ODE state: E_rev, tau_rise, tau_decay
+connections carry only target port + weight + delay
+PORT LIMIT MEANING: not the number of synapses; it is the number of distinct receptor dynamics a neuron model can expose efficiently.
+BOTTOM CALLOUT: Full network can have millions of connections; many connections reuse the same port.

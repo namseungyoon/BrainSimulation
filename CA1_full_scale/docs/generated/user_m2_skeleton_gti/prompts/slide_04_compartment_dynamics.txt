@@ -1,0 +1,33 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. White background, black crisp text, muted blue/teal/orange/purple accents, large computation diagram. No decorative art.
+
+TITLE: user_m2 reduced multicompartment dynamics
+SUBTITLE: soma / proximal / distal 입력 전류를 coupling ODE로 합쳐 soma spike를 만든다
+
+Draw a central three-domain circuit:
+soma node V_m
+proximal dendrite node V_d
+distal dendrite node V_dist
+Coupling conductance g_c between soma and proximal
+Coupling conductance g_c_dist between proximal and distal
+Leak terms on each node
+Capacitances: C_soma, C_prox, C_dist
+
+Left side: receptor-port current routing
+Show decision:
+compartment[p] < 0.5 -> I_soma += g[p] * (E_rev[p] - V_m)
+0.5 <= compartment[p] < 1.5 -> I_prox += g[p] * (E_rev[p] - V_d)
+compartment[p] >= 1.5 -> I_dist += g[p] * (E_rev[p] - V_dist)
+
+Right side: coupled voltage ODE summary
+Show three equations in compact readable form:
+dV_m/dt uses soma leak + soma-prox coupling + I_soma + intrinsic currents
+dV_d/dt uses prox leak + soma coupling + distal coupling + I_prox
+dV_dist/dt uses distal leak + prox-dist coupling + I_dist
+Spike/reset is evaluated at V_m
+
+Bottom mapping note:
+"apical/basal/full section placement from the source model is compressed into soma/proximal/distal transfer domains; exact section morphology is not retained at runtime."
+
+Accuracy constraints:
+Do not say basal/apical are exact runtime compartments.
+Do not imply distal input spikes independently; it influences V_m through coupling.

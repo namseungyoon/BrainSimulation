@@ -1,0 +1,30 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable engineering before-after slide. White background, black crisp text, thin grid lines, muted blue and muted red accents, small monospace code labels, one small bar chart.
+
+TITLE TEXT: Vectorizing afferent spike-train setup
+SUBTITLE TEXT: 250,000 Poisson source generators were seeded one at a time
+
+Panel A, left, red-tinted (BEFORE):
+Draw a Python for-loop over 250,000 external source nodes.
+Inside the loop body (monospace): rng.choice(np.arange(1, 25000), size=count, replace=False) then ngpu.SetStatus(node[i], "spike_times", ...)
+Red labels: "rebuilds a 25,000-length array PER source" and "O(N_sources x slot_count) numpy work".
+Red total badge: "spike-setup phase ~ 11 minutes at scale 0.125".
+
+Panel B, right, blue-tinted (AFTER):
+Draw a single vectorized block: "batched, memory-bounded Poisson slot draw across all sources; no per-source arange".
+Blue labels: "same stable per-source seeds -> identical statistics" and "no N_sources x slot_count matrix (would be ~6 GB)".
+Blue total badge: "spike-setup phase ~ 13 seconds".
+
+Panel C, bottom-left: small bar chart titled "Slot generation time, 250k sources"
+Two bars: "before 19.1 s" (red), "after 1.5 s" (blue). Annotate "12.9x".
+
+Panel D, bottom-right: Guarantees
+Bullets:
+Determinism preserved (same seed -> same spike trains)
+Poisson counts unchanged at 0.65 Hz afferent rate
+Per-node SetStatus retained (NEST-GPU has no distinct-array-per-node API)
+Commit 999bb1c
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not claim SetStatus itself was batched; only the slot GENERATION was vectorized.
+Keep numbers exactly: 250,000 sources; 19.1 s -> 1.5 s (12.9x); 11 min -> 13 s.
+Do not say this removed the GPU simulation cost.

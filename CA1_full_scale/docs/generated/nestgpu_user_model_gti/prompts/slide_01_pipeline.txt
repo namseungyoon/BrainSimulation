@@ -1,0 +1,52 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a decorative background. White background, black readable typography, muted blue/teal/orange accents, dense methods-figure style. Include all text as part of the slide. No fake screenshots. No stock image. No watermark.
+
+TITLE: NEST-GPU user model setup pipeline
+SUBTITLE: from CA1 model configuration to CUDA user_m1/user_m2 execution
+
+Make a left-to-right pipeline with five numbered stages.
+
+Stage 1: YAML configuration
+Show exact config keys:
+neuron_model: aglif_dend_cond_beta
+backend: gpu
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+Stage 2: NetworkSpec construction
+Show a central typed object:
+NetworkSpec(
+  cell_types,
+  projections,
+  afferents,
+  receptors,
+  neuron_model,
+  provenance
+)
+Add note: one canonical contract, backends do not decide physics.
+
+Stage 3: Model lowering
+Draw a mapping table:
+aglif_cond_beta -> user_m1
+aglif_dend_cond_beta -> user_m2
+aeif_cond_beta_multisynapse -> built-in model
+izhikevich_cond_beta -> built-in model
+
+Stage 4: NEST-GPU population creation
+Show exact call pattern:
+model_name = user_m2
+n_ports = spec.receptors.n_ports()
+nodes = ngpu.Create(model_name, count, n_ports)
+ngpu.SetStatus(nodes, scalar_status)
+ngpu.SetStatus(nodes, receptor_status)
+
+Stage 5: Event routing and simulation
+Show:
+port_idx = receptors.port_index(receptor)
+ngpu.Connect(pre, post, conn_spec, {weight, delay, receptor: port_idx})
+ngpu.Simulate(duration_ms)
+
+Bottom callout:
+NEST-GPU user models use 0-based receptor ports; inhibition is positive weight routed to negative E_rev ports.
+
+Visual style: compact flowchart with code chips and arrows. Use panel label A.

@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: The PING cells are NOT weak -- they fire under excitation alone
+SUBTITLE: Single-cell "full converging barrage": drive one interneuron with ALL its afferent rows at real in-degree, spike mechanism ON.
+Panel A (left): a PV_Basket neuron receiving CA3 (K=6047) + Pyramidal AMPA barrage onto its dendrites, no inhibition. Show it firing a train.
+Panel B (middle): 3-arm firing-rate table (excitation-only): source NEURON vs deployed reduced vs in-network. PV 102.7 / 64.1 / 0.0 Hz; Bistratified 55.6 / 23.5 / 0.0; O_LM 24.9 / 19.9 / 0.0. Highlight: deployed reduced cells fire 20-64 Hz under excitation alone.
+Panel C (right): the reframe. Excitability is FINE. The silence appears ONLY when network inhibition is added. => the wall is NETWORK-level (E/I balance), not single-cell charge/excitability. Arrow to next slide: "who is the inhibitor?".

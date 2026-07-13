@@ -1,0 +1,31 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Make it a QA and failure-mode slide. White/light background, dark text, orange warning color for the bug, green for the fix. Use an explicit before/after diagram.
+
+TITLE TEXT: Assignment semantics are part of the compression
+SUBTITLE TEXT: The port codebook alone is not enough; routing must match the scorer
+
+LEFT PANEL TITLE: Failure mode
+Show 39 source kernels -> 20 port codebook -> tau-distance nearest at runtime
+Warning labels:
+analysis scorer used response-loss medoid assignment
+runtime used tau-distance nearest assignment
+8 / 39 kernels routed differently
+meaning: same 20 ports, different approximation
+
+RIGHT PANEL TITLE: Fix
+Show 39 source kernels -> exact assignment table -> 20 runtime ports
+Green labels:
+assignment_mismatches = 0
+runtime_utility_loss = 0.0003440384033712691
+ranked_utility_loss = 0.0003440384033712691
+ports = 20
+
+BOTTOM RULE:
+Compression artifact = selected ports + exact assignment table + provenance hash.
+
+BOTTOM NOTE:
+This is why fallback-by-nearest must be a loud error, not an invisible recovery path.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not invent extra mismatch counts.
+Do not imply fallback is acceptable.
+Do not change the exact loss values.

@@ -1,0 +1,50 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense but readable. White background, black text, muted colors, panel labels A-C. The figure should summarize how hypotheses are tested and when model expressivity escalates.
+
+TITLE: Hypothesis testing and expressivity escalation ladder
+SUBTITLE: avoid overfitting a module; promote only when network-level evidence requires it
+
+Panel A, left, hypothesis lanes:
+Draw parallel lanes:
+H1 single-cell excitability mismatch
+Evidence: f-I, passive features, adaptation, sag
+Intervention: A-GLIF / Izhikevich / AdEx parameter fit
+
+H2 synaptic kinetics compression mismatch
+Evidence: response_loss, utility_loss, effective_ports, max_item_loss
+Intervention: receptor codebook strategy A/B
+
+H3 source-location / dendritic response mismatch
+Evidence: row-level EPSP fidelity, M2 validation, dendritic transfer provenance
+Intervention: user_m2 transfer parameters and source-location table validation
+
+H4 network topology / drive mismatch
+Evidence: no-recurrent vs recurrent split, external CA3/EC Poisson drive, rates, theta, LFP
+Intervention: topology/drive calibration, not single-cell overfitting
+
+Panel B, center, escalation ladder:
+Draw a vertical ladder:
+1. canonical budget_weighted + validated A-GLIF
+2. utility_weighted_medoids A/B as hard codebook candidate
+3. Izhikevich_cond_beta diagnostic/fallback if point-neuron pattern class matters
+4. custom user_m1 E-GLIF only if GPU implementation is justified
+5. two-compartment fallback only for irreducible compartment effects
+Add side note:
+Every rung must preserve NEST-GPU feasibility and validation provenance.
+
+Panel C, right, decision rule:
+Show a small logic diagram:
+module score improves?
+-> yes: run network A/B
+network theta/rates/LFP improve without provenance blockers?
+-> yes: promote
+-> no: keep as diagnostic
+If failure is only high-current depolarization block:
+mask or document; do not overfit point model
+
+Bottom statement:
+The goal is not the most flexible fit; the goal is the simplest GPU-feasible reduction that survives network-level validation.
+
+IMPORTANT CONSTRAINTS:
+Do not claim E-GLIF is already built into NEST-GPU.
+Do not claim two-compartment is the current plan.
+Do not imply module-level scores alone are sufficient.

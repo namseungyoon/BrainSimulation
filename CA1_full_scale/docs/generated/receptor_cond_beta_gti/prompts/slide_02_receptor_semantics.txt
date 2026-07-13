@@ -1,0 +1,45 @@
+Create one complete 16:9 academic PowerPoint slide image. Dense but readable. White background, black text, muted blue/green/orange. Use panel labels A-D. No decorative art.
+
+TITLE: What "receptor" means in NEST-GPU
+SUBTITLE: connection 필드이지만 의미론적으로는 postsynaptic receptor/channel index
+
+Panel A: Event packet
+Draw a packet labeled "spike event after delay" with fields:
+source id
+target id
+weight_nS
+delay_ms
+receptor = port_idx
+Caption: "The event carries routing and magnitude, not its own ODE."
+
+Panel B: Target-side receptor table
+Draw a postsynaptic neuron with a receptor table attached:
+port 0 | E_rev[0] | tau_rise[0] | tau_decay[0]
+port 1 | E_rev[1] | tau_rise[1] | tau_decay[1]
+...
+port 19 | E_rev[19] | tau_rise[19] | tau_decay[19]
+Label: "NEST-GPU user / multisynapse models use 0-based receptor ports."
+
+Panel C: How project code lowers it
+Show compact pseudocode boxes:
+n_ports = receptors.n_ports()
+nodes = ngpu.Create(model_name, count, n_ports)
+ngpu.SetStatus(nodes, {E_rev, tau_rise, tau_decay})
+port_idx = receptors.port_index(proj.receptor)
+ngpu.Connect(pre, post, conn_spec, {weight, delay, receptor: port_idx})
+
+Panel D: Why pre and post both matter
+Draw mapping key:
+(pre cell type, post cell type, mechanism, target location) -> receptor port
+Add explanation chips:
+pre defines source pathway
+post defines target channel context
+mechanism defines AMPA/NMDA/GABA-like kinetics
+location defines soma/proximal/distal domain when user_m2 is used
+
+Bottom statement:
+"A receptor id is stored on the connection, but interpreted by the target neuron."
+
+Accuracy constraints:
+Do not call receptor a presynaptic output port.
+Do not omit 0-based NEST-GPU indexing.

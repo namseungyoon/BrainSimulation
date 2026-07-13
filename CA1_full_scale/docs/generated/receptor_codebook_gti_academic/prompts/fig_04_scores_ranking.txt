@@ -1,0 +1,45 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense but readable, white background, black text, thin gridlines, muted colored bars. Use panel labels A-C. This is a quantitative methods comparison figure.
+
+TITLE: Codebook compression methods: quantitative scores
+SUBTITLE: All strategies use a 20-port budget; lower score is better
+
+Panel A, upper left, log-scale bar chart:
+Title: Rank objective J
+Y-axis rows, in this exact order:
+utility_sparse2
+utility_weighted_medoids
+conductance_weighted_medoids
+uniform_medoids
+current_safe20
+X-axis: rank objective J, log scale
+Exact bar labels:
+utility_sparse2 = 0.000261
+utility_weighted_medoids = 0.000344
+conductance_weighted_medoids = 0.000422
+uniform_medoids = 0.051551
+current_safe20 = 0.351614
+
+Panel B, upper right, interpretation:
+Three boxed callouts:
+utility_sparse2: best numerical reconstruction; upper-bound diagnostic
+utility_weighted_medoids: best hard one-port runtime candidate
+current_safe20: baseline; much larger utility-weighted loss
+
+Panel C, bottom, exact score table:
+Columns:
+Rank | Strategy | Method class | J objective | Utility loss | Conductance loss | Uniform loss | Max item | Effective ports
+Rows exactly:
+1 | utility_sparse2 | sparse diagnostic | 0.000261 | 0.000261 | 0.003093 | 0.144481 | 0.941 | 1.001
+2 | utility_weighted_medoids | hard codebook | 0.000344 | 0.000344 | 0.003905 | 0.181636 | 1.078 | 1.000
+3 | conductance_weighted_medoids | hard codebook | 0.000422 | 0.000422 | 0.003692 | 0.196996 | 0.762 | 1.000
+4 | uniform_medoids | hard codebook | 0.051551 | 0.051551 | 0.086297 | 0.112729 | 0.423 | 1.000
+5 | current_safe20 | baseline hard codebook | 0.351614 | 0.351614 | 0.245320 | 0.243172 | 1.701 | 1.000
+
+Bottom decision sentence:
+Decision: utility_weighted_medoids is the best deployable hard codebook; utility_sparse2 remains an upper-bound diagnostic.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not change strategy names.
+Do not reorder rows.
+Do not invent more strategies.
+Do not call utility_sparse2 deployed runtime.

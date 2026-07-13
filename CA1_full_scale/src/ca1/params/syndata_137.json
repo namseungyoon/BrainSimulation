@@ -1,0 +1,1485 @@
+{
+  "syn_data_id": "137",
+  "source_file": "bezaire_modeldb/datasets/syndata_137.dat",
+  "entries": [
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.6,
+        "tau_decay": 15.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.11,
+        "tau_decay": 0.25,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.18,
+        "tau_decay": 0.45,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "bistratifiedcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.728,
+        "tau_decay": 20.2,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 0.6,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "cckcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.25,
+        "tau_decay": 7.5,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 0.6,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ivycell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "y3d(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 3.1,
+        "tau_decay_A": 42.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 1.3,
+        "tau_decay": 10.2,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "ngfcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>10",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 8.0,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 1.0,
+        "tau_decay": 8.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 1.0,
+        "tau_decay": 8.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 1.0,
+        "tau_decay": 8.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "basal_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.25,
+        "tau_decay": 7.5,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "basal_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 0.6,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 1.0,
+        "tau_decay": 8.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "olmcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 1.0,
+        "tau_decay": 8.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.5,
+        "tau_decay": 3.0,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.5,
+        "tau_decay": 3.0,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "axoaxoniccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "axon_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.28,
+        "tau_decay": 8.4,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.11,
+        "tau_decay": 9.7,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.2,
+        "tau_decay": 4.2,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.2,
+        "tau_decay": 4.2,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 1.1,
+        "tau_decay": 11.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 9.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -75.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.13,
+        "tau_decay": 11.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.1,
+        "tau_decay": 1.5,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 6.2,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pyramidalcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.15,
+        "tau_decay": 3.9,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.25,
+        "tau_decay": 7.5,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.07,
+        "tau_decay": 0.2,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.08,
+        "tau_decay": 4.8,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "pvbasketcell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.07,
+        "tau_decay": 29.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 0.6,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "scacell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.2,
+        "tau_decay": 2.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "ca3cell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "eccell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 2.0,
+        "tau_decay": 6.3,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "bistratifiedcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<50"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "cckcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.432,
+        "tau_decay": 4.49,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "ivycell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 2.9,
+        "tau_decay": 3.1,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "ngfcell",
+      "mechanism": "ExpGABAab",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise_A": 8.0,
+        "tau_decay_A": 39.0,
+        "e_rev_A": -60.0,
+        "tau_rise_B": 180.0,
+        "tau_decay_B": 200.0,
+        "e_rev_B": -90.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "olmcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>200",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.728,
+        "tau_decay": 10.0,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "pyramidalcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "apical_list",
+      "distance_conditions": [
+        "distance(x)>100",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.3,
+        "tau_decay": 0.6,
+        "e_rev": 0.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "pvbasketcell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "soma_list",
+      "distance_conditions": [
+        "distance(x)>-1",
+        "distance(x)<1000"
+      ],
+      "parameters": {
+        "tau_rise": 0.287,
+        "tau_decay": 2.67,
+        "e_rev": -60.0
+      }
+    },
+    {
+      "postsynaptic": "axoaxoniccell",
+      "presynaptic": "scacell",
+      "mechanism": "MyExp2Sid",
+      "section_list": "dendrite_list",
+      "distance_conditions": [
+        "distance(x)>50",
+        "distance(x)<200"
+      ],
+      "parameters": {
+        "tau_rise": 0.419,
+        "tau_decay": 4.99,
+        "e_rev": -60.0
+      }
+    }
+  ]
+}

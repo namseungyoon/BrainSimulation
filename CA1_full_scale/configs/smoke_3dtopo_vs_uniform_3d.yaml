@@ -1,0 +1,30 @@
+name: ca1_smoke_3dtopo_ab_3d
+# Smallest ~0.1 scale whose regular ModelDB grid has >=K distinct candidates
+# inside 4c for every recurrent pair (0.1 exactly fails two O_LM edge cases).
+scale: 0.125
+seed: 12345
+
+duration_s: 2.5
+dt_s: 0.0001
+
+afferent_rate_hz: 0.65
+afferent_topology: literal_source_graph
+afferent_source_pool_size: 250000
+afferent_source_pool_indegree: 64
+recurrent_topology: modeldb_fastconn_3d_gaussian
+
+downscale_mode: preserve-indegree
+backend: gpu
+neuron_model: aglif_dend_cond_beta
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_mode: all_dend
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+tier: scaled
+crop_first_ms: 50.0
+syndata_variant: 120
+
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Reproducing CA1 intrinsic theta on ONE GPU -- a technical journey
+SUBTITLE: from "make it run" to "make it right" to "fix the firing"
+Band WHY: goal = intrinsic theta ~7.8 Hz + gamma ~71 Hz emergent from arrhythmic 0.65 Hz Poisson only, full-scale (338,740 cells, ~5.6B synapses) on a single A40. Naive attempt: crashes, minutes-per-step, and interneurons silent.
+Band HOW: three acts -- (1) GPU engineering to make full-scale runnable; (2) source-faithful topology/afferent/measurement to make it scientifically correct; (3) firing-pattern error analysis to find why interneurons are silent and fix the reduced model.
+Band RESULT: full-scale runs on one GPU; measurement is honest; the silence is root-caused to the point-model reduction and a source-grounded model stack (user_m3..m7) recruits the interneurons. Draw a 3-act roadmap arrow left-to-right.

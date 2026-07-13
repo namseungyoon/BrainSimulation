@@ -1,0 +1,66 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense, journal-style, white background, black text, thin vector arrows, muted colors. The purpose is to compare all receptor-port codebook compression algorithms and their scores on one page. Use panel labels A-C. Do not add decorative icons, photos, or stock art.
+
+TITLE: Receptor-port codebook compression algorithms compared
+SUBTITLE: 39 original synaptic kernels -> 20 receptor-port codebook; lower score is better
+
+Context banner at top-right:
+Current full-scale canonical config: budget_weighted
+Best hard experimental candidate: utility_weighted_medoids
+Numerical upper bound diagnostic: utility_sparse2
+
+Panel A, left 60%, algorithm cards in one row or two rows. Show five compact algorithm cards with arrows and tiny diagrams:
+
+1. current_safe20 / budget_weighted baseline
+Logic: pre-existing 20-port codebook and hand/budget-driven replacements
+Runtime: hard one-port mapping
+J = 0.351614
+
+2. uniform_medoids
+Logic: choose medoid representatives minimizing response loss with uniform item weights
+Runtime: hard one-port mapping
+J = 0.051551
+
+3. conductance_weighted_medoids
+Logic: choose medoids weighted by conductance budget
+Runtime: hard one-port mapping
+J = 0.000422
+
+4. utility_weighted_medoids
+Logic: choose medoids weighted by conductance * driving force * target priority
+Runtime: hard one-port mapping
+J = 0.000344
+Label this card: best deployable hard experimental candidate
+
+5. utility_sparse2
+Logic: use the same selected 20 ports, then decode each kernel as a nonnegative mixture of up to two ports
+Runtime: diagnostic only unless event splitting or custom user model is added
+J = 0.000261
+Label this card: best numerical upper bound
+
+Panel B, right upper, exact score ranking bar chart:
+Horizontal log-scale bars in this exact order:
+utility_sparse2 0.000261
+utility_weighted_medoids 0.000344
+conductance_weighted_medoids 0.000422
+uniform_medoids 0.051551
+current_safe20 0.351614
+Show x-axis label: rank objective J, log scale.
+
+Panel C, right lower or bottom, compact metrics table:
+Columns:
+Strategy | Class | J | Utility loss | Effective ports
+Rows:
+utility_sparse2 | sparse diagnostic | 0.000261 | 0.000261 | 1.001
+utility_weighted_medoids | hard codebook | 0.000344 | 0.000344 | 1.000
+conductance_weighted_medoids | hard codebook | 0.000422 | 0.000422 | 1.000
+uniform_medoids | hard codebook | 0.051551 | 0.051551 | 1.000
+current_safe20 | baseline hard codebook | 0.351614 | 0.351614 | 1.000
+
+Bottom decision statement:
+Deployment-safe winner among hard one-port mappings is utility_weighted_medoids, but canonical full-scale remains budget_weighted until network A/B validation promotes it.
+
+IMPORTANT CONSTRAINTS:
+Do not say utility_sparse2 is deployed runtime.
+Do not say utility_weighted_medoids is current canonical full-scale.
+Preserve exact strategy names, scores, and order.
+Use the phrase "codebook compression".

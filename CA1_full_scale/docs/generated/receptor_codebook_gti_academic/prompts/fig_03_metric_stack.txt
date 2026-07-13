@@ -1,0 +1,46 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense but readable. White paper background, small but legible formulas, panel labels A-D, restrained colors. The figure explains the metric stack for receptor codebook compression.
+
+TITLE: Evaluation metric stack
+SUBTITLE: waveform fidelity is weighted by network utility and runtime efficiency
+
+Panel A, left upper, response kernel:
+Draw three normalized conductance curves on the same axes:
+black: original target
+blue: hard codebook estimate
+teal dashed: sparse2 estimate
+x-axis: time (ms)
+y-axis: normalized conductance
+Caption: response kernels are peak-normalized over 0-500 ms.
+
+Panel B, right upper, response_loss definition:
+Show formula:
+L(g, g_hat) = D_shape + 0.35 D_area + 0.2 D_peak + 0.2 D_tpeak
+Define:
+D_shape = L1 distance between normalized |g(t)| distributions
+D_area = |log area_target - log area_estimate|
+D_peak = |log peak_target - log peak_estimate|
+D_tpeak = |argmax_target - argmax_estimate| / N
+
+Panel C, left lower, utility weighting:
+Show formula:
+w_k = conductance_budget_k * |E_rev,k - (-55 mV)| * target_multiplier
+Show target multipliers:
+Pyramidal 4.0
+PV_Basket 2.5
+O_LM 2.5
+CCK_Basket 2.0
+SCA 2.0
+Include a small bar chart comparing "conductance only" vs "utility weight".
+
+Panel D, right lower, ranking objective:
+Show formula:
+utility_loss = sum_k w_k L_k / sum_k w_k
+effective_ports = sum_k w_k n_k / sum_k w_k
+J = utility_loss * [1 + 0.2 * max(0, effective_ports - 1)]
+Bottom boxed statement:
+Reconstruction ability and deployment fitness are different criteria.
+
+IMPORTANT TEXT CONSTRAINTS:
+Preserve coefficients 0.35, 0.2, 0.2.
+Preserve V_operating = -55 mV.
+Do not invent statistical tests, p-values, or biological claims.

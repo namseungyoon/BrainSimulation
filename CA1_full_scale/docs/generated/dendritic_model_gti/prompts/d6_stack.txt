@@ -1,0 +1,7 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments with ion channels. Keep all text legible.
+TITLE: The full source-grounded model stack toward theta
+SUBTITLE: Each reduced-model fidelity gap gets a minimal, source-fitted, opt-in mechanism -- no Table-5 tuning anywhere.
+Panel A (left): a stacked roadmap of neuron models on the aglif_dend base --
+ user_m2 (base 3-compartment) ; user_m3 = +Na availability h -> CCK depolarization block (DONE, GPU-validated) ; user_m4 = +dendritic regen on domain mean -> Bistratified recruited (DONE) ; user_m5 = +branch-local voltage -> PV/O_LM recruited (IN PROGRESS).
+Panel B (middle): plus the transfer/config corrections -- CCK dis-inhibition (GABA-into-CCK) restored (CCK 45->24 Hz), contact-allocation faithful. All source-grounded.
+Panel C (right): the target -- combine in the immutable-row closed loop: PV/Bist/O_LM recruited -> feed back to lower CCK/SCA -> break the pathological inhibitory fixed point -> recurrent PING loop produces intrinsic theta ~7.8 Hz + gamma. O_LM Ih added last for theta phase. Draw the recurrent Pyr<->PV/Bist loop oscillating.

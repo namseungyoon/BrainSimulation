@@ -1,0 +1,50 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense engineering methods slide, white background, crisp black text, muted blue/teal/orange accents, panel labels A-D. No photos, no fake dashboard screenshots.
+
+TITLE: Strategy 5 — GPU execution policy and sharding discipline
+SUBTITLE: full-scale 가능성을 유지하되, 병렬화가 생물학적 등가성을 깨뜨리지 않는지 분리 검증
+
+Panel A: NEST-GPU runtime lowering
+Draw call stack:
+YAML config -> NetworkSpec -> gpu_backend.py -> nestgpu_api.py -> NEST-GPU
+Show exact mapping:
+aglif_dend_cond_beta -> user_m2
+aglif_cond_beta -> user_m1
+aeif_cond_beta_multisynapse -> built-in
+izhikevich_cond_beta -> built-in
+user_m1/user_m2 max receptor ports = 20
+
+Panel B: Single-GPU canonical path
+Draw one A40 GPU box:
+full scale 338,740 CA1 cells
+literal_source_graph afferents
+modeldb_fastconn_binned recurrent connections
+20 receptor ports
+validation artifacts
+Caption:
+"Conservative final-equivalence path: one-GPU full-scale run when memory permits."
+
+Panel C: Multi-GPU usage policy
+Draw three A40 boxes.
+Left arrows:
+parallel hypothesis sweeps
+single-cell fitting workers
+independent no-recurrent/recurrent experiments
+Right caution:
+MPI recurrent sharding is benchmark/diagnostic until final-equivalence is proven
+do not infer correctness from speedup alone
+no-recurrent 1GPU vs 3GPU agreement isolates afferent drive, not recurrent equivalence
+
+Panel D: Performance vs correctness decision rule
+Draw a flowchart:
+Can one GPU run full-scale? -> yes -> use 1GPU for canonical conclusion
+Need throughput for hypotheses? -> run independent settings across 3 GPUs
+Need sharded recurrent network? -> require 1GPU-vs-3GPU equivalence test
+If divergence appears -> debug recurrent connection semantics before biological interpretation
+
+Bottom line:
+"Because memory appears sufficient, 3 GPUs are more valuable as parallel hypothesis lanes than as mandatory sharding for the canonical answer."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not claim 3GPU sharded recurrent simulation is final-equivalent.
+Do not imply GPU memory alone validates the model.
+Do not omit that 3 GPUs can be used for independent hypothesis sweeps.

@@ -1,0 +1,43 @@
+# Phase-1 causal control: NGF-boosted (as phase1_ngf5x) but with GABA_B ablated.
+# If theta emerges under phase1_ngf5x and DISAPPEARS here, theta depends on NGF's
+# slow GABA_B charge (the paper's mechanism). GABA_B weight -> 0; nothing else
+# changed (no compensatory weight increase), so this is the signed causal test.
+name: ca1_phase1_ngf5x_gababoff
+
+scale: 1.0
+seed: 12345
+duration_s: 10.0
+dt_s: 0.0001
+
+afferent_rate_hz: 0.65
+afferent_topology: literal_source_graph
+afferent_source_pool_size: 250000
+afferent_source_pool_indegree: 64
+recurrent_topology: modeldb_fastconn_binned
+downscale_mode: preserve-indegree
+
+backend: gpu
+neuron_model: aglif_dend_cond_beta
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_mode: all_dend
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+aglif_receive_domain_overrides:
+  PV_Basket: soma_excitatory
+  Bistratified: soma_excitatory
+  O_LM: soma_excitatory
+
+calibration:
+  mode: diagnostic
+  afferent_weight_scales:
+    ECIII_to_Neurogliaform: 5.0
+  recurrent_receptor_weight_scales:
+    GABA_B: 0.0
+
+tier: scaled
+crop_first_ms: 50.0
+syndata_variant: 120
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

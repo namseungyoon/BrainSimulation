@@ -1,0 +1,42 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense final-preflight checklist. White background, black text, thin grid lines, muted blue for pass gates, orange for cautions, panel labels A-C. Preserve all exact numbers and code labels.
+
+TITLE TEXT: Gate 1A: full-scale structural eligibility
+SUBTITLE TEXT: Binary provenance gate before any biological interpretation
+
+Panel A, left: Required network size table
+Columns: Quantity | Required value | Meaning
+Rows exactly:
+total cells | 338,740 | Bezaire full-scale count
+cell types | 9 | CA1 population classes
+recurrent projections | 68 | Table 1 recurrent graph
+afferents | 13 | CA3 / ECIII paths
+recurrent synapses | 441,375,540 | recurrent edge budget
+afferent synapses | 4,704,026,540 | external source edge budget
+total synapses | 5,145,402,080 | full network load
+
+Panel B, right: Required source and topology records
+Show a checklist:
+afferent sources include CA3 and ECIII
+afferent rate = 0.65 Hz
+afferent_source_rate_rule = homogeneous
+recurrent_topology = modeldb_fastconn_binned
+afferent_topology = literal_source_graph
+conndata_index = 430
+cellnumbers_index = 101
+conndata_count_mode = per_cell
+
+Panel C, bottom: Receptor and synapse implementation records
+Draw a compact artifact strip:
+synapse.receptor_ports = syndata120-compartment-aware-39port-exact
+global receptor ports = 39
+max target-local ports = 13 <= 20
+NEST-GPU receptor readback = PASS
+synapse.short_term_plasticity = static_exp2syn_no_stp
+
+Bottom warning:
+Any fallback, default, prototype, missing, diagnostic, or unvalidated provenance token blocks full-tier interpretation.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not change any numbers.
+Do not imply source_pool or compound topology is final eligible.
+Do not claim STP is implemented; show static_exp2syn_no_stp as current gate value.

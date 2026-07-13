@@ -1,0 +1,56 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense scientific diagram, white background, crisp text, muted green/blue/orange accents, panel labels A-D. No stock imagery.
+
+TITLE: Strategy 3 — Source-location and dendritic transfer
+SUBTITLE: full morphology placement을 매 synapse마다 풀지 않고 somatic/proximal/distal 효과를 보존
+
+Panel A: Original ModelDB spatial synapse logic
+Draw dendritic morphology with section masks:
+soma, basal, apical, O-LM distal inhibition, Schaffer/EC inputs
+Labels:
+target_section
+distance filters
+pathway-specific row in syndata_120
+local dendritic filtering before somatic readout
+
+Panel B: Reduced transfer representation
+Draw mapping:
+(post cell, pre cell, mechanism, source location, port) -> transfer domain + scale
+Use exact table name:
+source_location_transfer_syndata120_budget_weighted.json
+mode: all_dend
+implementation: aglif_dend_cond_beta -> user_m2
+Domains:
+soma channel
+proximal dendritic channel
+distal dendritic channel
+
+Panel C: User_m2 computation graph
+Draw compact equations as boxes:
+spike event -> receptor port conductance g_p(t)
+port has E_rev, tau_rise, tau_decay, compartment tag
+compartment current -> soma/prox/dist state
+coupling parameters: g_c, dend_C_frac, dend_leak_scale, dist_C_frac, g_c_dist
+readout -> V_soma spikes
+
+Panel D: Validation and failure behavior
+Draw gate pipeline:
+row-level EPSP response fidelity
+mixed-domain port check
+shared-port resolution check
+provenance hash
+network acceptance harness
+Fail-loud note:
+"No silent fallback when a required dendritic mapping or receptor assignment is missing."
+
+Right margin: what this buys
+Keep source-location effects relevant for theta
+Avoid full morphology simulation at 338,740 cells
+Allow paper-scale recurrent + afferent budget on GPU
+
+Bottom caution:
+"Dendritic transfer is a response approximation layer, not a replacement for all active dendritic biophysics."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not imply exact section-by-section morphology remains in runtime.
+Do not omit the fail-loud/no-silent-fallback guard.
+Do not claim dendritic transfer alone validates the whole network.

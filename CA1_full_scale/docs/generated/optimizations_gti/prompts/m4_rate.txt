@@ -1,0 +1,29 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable statistics-methods slide with equations and a small per-cell-type rate bar chart. White background, black crisp text, thin grid lines, muted blue/red accents.
+
+TITLE TEXT: Mean firing rates and population statistics
+SUBTITLE TEXT: How each per-cell-type number is computed, and the measured working point
+
+Panel A, top-left: Mean firing rate
+Equation: r_type = (1 / N_cells) * sum over cells of ( n_spikes_cell / T )
+CRITICAL: T is the ACTUAL cropped analysis window (post-transient elapsed time), NOT the nominal simulation duration -- dividing by nominal duration inflated rates ~5x (a fixed bug).
+active_only variant averages over spiking cells only.
+
+Panel B, top-right: Irregularity and variability
+- CV_ISI = std(ISI) / mean(ISI), per cell then averaged; asynchronous-irregular regime CV ~ 1, regular oscillator < 1, burster > 1.
+- Fano factor = var(counts) / mean(counts) over bins (bin 10 ms).
+
+Panel C, bottom-left: Synchrony and phase
+- Golomb-Rinzel chi^2 = Var(population_mean_activity) / mean(per_cell_variance); chi^2 > 1 = synchrony.
+- Phase preference: spike phases relative to LFP theta (trough = 0 deg); Rayleigh test p < 0.05.
+- Modulation: theta vector strength (mean resultant length) vs Table 5 target.
+
+Panel D, bottom-right: Measured full-scale 3-D working point (per-cell-type rate bars)
+Bars vs Table 5 target (Hz), highlight the silent interneurons in red:
+Pyramidal 7.82 (target 6); PV_Basket 0.00 (0.9); Bistratified 0.02 (18); O_LM 0.00 (17.4); Axo 18.9 (8.9); CCK 45.3 (54.4); Ivy 9.1 (43.3); NGF 13.9 (55.1); SCA 38.5 (5.2).
+Caption: "PV/Bistratified/O-LM silent -> the primary theta loop cannot run."
+
+IMPORTANT TEXT CONSTRAINTS:
+The rate denominator MUST be the actual cropped duration, not nominal (the ~5x inflation bug).
+CV_ISI ~1 is asynchronous-irregular; chi^2 > 1 is synchrony.
+Keep the measured rates exact as listed; mark PV 0.00 / Bistratified 0.02 / O_LM 0.00 as the silent group.
+Phase uses LFP trough = 0 deg convention.

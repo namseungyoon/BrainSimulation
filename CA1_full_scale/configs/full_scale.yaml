@@ -1,0 +1,47 @@
+# Full-scale CA1 network configuration
+# Bezaire et al. (2016) reference: 311 500 pyramidal + 8 interneuron types
+# Backend: NEST GPU. Full-scale afferents use a literal shared CA3/ECIII source
+# graph with precomputed Poisson spike_generator source trains. Diagnostic
+# compound/source_pool fallbacks must fail full-tier provenance checks.
+# Goal: intrinsic theta (~7.8 Hz) + gamma (~71 Hz) from ~0.65 Hz Poisson afferents
+
+name: ca1_full_scale
+
+# Scale 1.0 = 338 740 cells total (Bezaire counts)
+scale: 1.0
+seed: 12345
+
+# Simulation timing
+duration_s: 10.0
+dt_s: 0.0001
+
+# Afferent drive (Bezaire 2016 Fig 6 -- arrhythmic Poisson, no rhythmic input)
+afferent_rate_hz: 0.65
+afferent_topology: literal_source_graph
+afferent_source_pool_size: 250000
+afferent_source_pool_indegree: 64
+recurrent_topology: modeldb_fastconn_binned
+
+# Downscaling mode (irrelevant at scale=1.0 but must be set)
+downscale_mode: preserve-indegree
+
+# Simulator backend
+backend: gpu
+neuron_model: aglif_dend_cond_beta
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_mode: all_dend
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+# Validation tier: full-scale results gate oscillation claims
+tier: full
+
+# Transient to discard before analysis (ms; Bezaire methods crop first 50 ms)
+crop_first_ms: 50.0
+
+# Receptor kinetic variant (120 = GABA_A E_rev -60 mV, 137 = -75 mV)
+syndata_variant: 120
+
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

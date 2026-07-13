@@ -1,0 +1,21 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Use a polished validation dashboard layout, readable labels, green checks, restrained colors. No fake test names beyond the ones listed.
+
+TITLE TEXT: Verification status
+SUBTITLE TEXT: CPU-only gates passed; GPU jobs were not touched
+
+VALIDATION CARDS:
+pytest receptor compression + mapping + provenance: 31 passed
+basedpyright: 0 errors, 0 warnings
+ruff: passed
+no-excuse rules: passed
+CLI help / bad input / happy path: passed
+runtime build_network_spec probe: passed
+review-work lanes: goal, code, QA, security, context all PASS
+
+RUNTIME PROBE FACTS:
+ports = 20
+provenance contains 20port-utility_weighted_medoids
+no-compartment config rejects loudly
+
+BOTTOM CALLOUT:
+This validates implementation readiness, not final biological acceptance.

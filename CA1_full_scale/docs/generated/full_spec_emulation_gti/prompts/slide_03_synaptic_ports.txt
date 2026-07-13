@@ -1,0 +1,51 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Academic, detailed, readable. White background, black typography, muted colors, panel labels A-E. Focus on receptor-port compression and event semantics. No decorative art.
+
+TITLE: Strategy 2 — Synaptic kinetics as a 20-port receptor codebook
+SUBTITLE: 원본 pathway-specific kinetics를 NEST-GPU user-model port budget 안에서 보존
+
+Panel A: Original synaptic information
+Draw a table-like source:
+syndata_120 entries: pathway, pre cell, post cell, target section, distance filter, mechanism, E_rev, tau_rise, tau_decay
+Label: "97 pathway rows; 39 compartment-aware original kernels after grouping."
+
+Panel B: Compression into GPU ports
+Draw funnel:
+39 compartment-aware kernels -> codebook assignment -> 20 receptor ports
+Label current canonical:
+strategy = budget_weighted
+port table provenance = syndata120-compartment-aware-20port-budget_weighted
+candidate not yet canonical:
+utility_weighted_medoids = experimental hard codebook candidate
+
+Panel C: Runtime event semantics
+Draw one spike event:
+pre spike + weight_nS + delay + receptor id
+-> postsynaptic user_m2 receptor port
+-> conductance ODE: dg/dt with tau_rise/tau_decay
+-> current term: g(t) * (V - E_rev)
+Show exact rule:
+weights are positive
+inhibition sign comes from negative E_rev
+NEST-GPU user ports are 0-based
+max ports = 20 for user_m1/user_m2
+
+Panel D: Why this differs from per-synapse mechanism objects
+Draw contrast:
+Original-style conceptual view: each pathway has its own kinetics and spatial filters
+NEST-GPU efficient view: each postsynaptic neuron owns up to 20 channel states; events only inject weight into a selected channel
+Memory note: "avoid per-synapse ODE state for ~5B+ contacts."
+
+Panel E: Boundaries and caveats
+Make caution boxes:
+Static synapse rule: static_exp2syn_no_stp
+STP is not currently promoted from ModelDB fields
+20 ports are receptor-channel definitions, not a claim that biology has only 20 synapse types
+hard one-port mapping is deployment-safe; sparse two-port decoding is diagnostic unless event splitting/custom model is added
+
+Bottom line:
+"The port ID is a compact information channel: it selects the channel ODE and reversal potential; weight carries magnitude, delay carries timing, source graph carries topology."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not claim STP is implemented.
+Do not say utility_weighted_medoids is current canonical.
+Do not invent more than 20 NEST-GPU user-model receptor ports.

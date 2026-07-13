@@ -1,0 +1,37 @@
+# Scaled CA1 network configuration: 1/50 scale (scale = 0.02)
+# Use for rapid development iteration and first-order rate checks.
+# Oscillation / LFP targets NOT gated at this scale (tier: scaled).
+# Backend: CPU NEST (correctness oracle)
+
+name: ca1_scaled_1_50
+
+# 1/50 scale: ~6 769 cells total
+scale: 0.02
+seed: 12345
+
+# Simulation timing
+duration_s: 10.0
+dt_s: 0.0001
+
+# Afferent drive — same rate as full scale
+afferent_rate_hz: 0.65
+
+# Downscale mode: preserve-indegree keeps K invariant with weight compensation
+# (mean-field: J -> J/k + DC compensation; p-preserve: DEBUG ONLY)
+downscale_mode: preserve-indegree
+
+# Simulator backend
+backend: nest
+
+# Validation tier: scaled = first_order + phase checks REQUIRED, oscillation WARN
+tier: scaled
+
+# Transient to discard before analysis (ms)
+crop_first_ms: 500.0
+
+# Receptor kinetic variant
+syndata_variant: 120
+
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

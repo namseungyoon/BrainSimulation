@@ -1,0 +1,53 @@
+# Full-scale 3-D Gaussian ultimate test for the assembled source-grounded stack.
+# This is an opt-in deployment deck; canonical configs and parameter files stay unchanged.
+name: ca1_full_scale_theta_stack
+scale: 1.0
+seed: 12345
+
+duration_s: 10.0
+dt_s: 0.0001
+
+afferent_rate_hz: 0.65
+afferent_topology: literal_source_graph
+afferent_source_pool_size: 250000
+afferent_source_pool_indegree: 64
+recurrent_topology: modeldb_fastconn_3d_gaussian
+
+downscale_mode: preserve-indegree
+
+backend: gpu
+neuron_model: aglif_dend_cond_beta
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_mode: all_dend
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+tier: full
+crop_first_ms: 50.0
+syndata_variant: 120
+
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell
+
+# Per-cell model choices are explicit. PV remains the deployed user_m2 model.
+aglif_dend_overrides:
+  CCK_Basket:
+    model: user_m3
+  Bistratified:
+    model: user_m4
+  O_LM:
+    model: user_m5
+  PV_Basket:
+    model: user_m2
+
+# Apply only the source-grounded SCA refit from the CCK/SCA artifact, followed
+# by all five source-gated GABA-into-CCK rows (including Ivy->CCK).
+source_grounded_stack:
+  refit_candidate: ../results/cck_sca_refit_candidate.json
+  refit_cells:
+    - SCA
+  gaba_into_cck_candidate: ../results/gaba_into_cck_candidate.json
+
+# Contact-allocation correction is intentionally omitted: no production config
+# option can express per-contact mixed-domain draws without changing graph semantics.

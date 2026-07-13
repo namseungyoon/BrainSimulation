@@ -1,0 +1,23 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Make it a decision / next-step slide for a technical research meeting. Light background, dark text, blue/teal accents, clear decision boxes.
+
+TITLE TEXT: Decision and next experiment
+SUBTITLE TEXT: Ready for network-level A/B, not final adoption yet
+
+LEFT DECISION BOX:
+Implementation decision
+Use utility_weighted_medoids as the first experimental runtime strategy.
+Keep budget_weighted as the canonical final safe20 path.
+
+RIGHT NEXT TEST BOX:
+Network A/B required
+Compare budget_weighted vs utility_weighted_medoids under identical settings:
+no-recurrent rates
+recurrent rates
+theta / LFP metrics
+1GPU vs 3GPU consistency
+
+BOTTOM RISK NOTE:
+Do not promote to canonical final provenance until network-level validation passes.
+
+FINAL LINE:
+Current status: implemented, verified, ready for controlled A/B.

@@ -1,0 +1,11 @@
+{
+  "title": "Full-scale sweep first validation gate",
+  "slides": [
+    {"slide": "01", "prompt": "prompts/slide_01_overview.txt", "image": "images/slide_01_overview.png"},
+    {"slide": "02", "prompt": "prompts/slide_02_structure_provenance.txt", "image": "images/slide_02_structure_provenance.png"},
+    {"slide": "03", "prompt": "prompts/slide_03_rate_gate_table.txt", "image": "images/slide_03_rate_gate_table.png"},
+    {"slide": "04", "prompt": "prompts/slide_04_triage_matrix.txt", "image": "images/slide_04_triage_matrix.png"},
+    {"slide": "05", "prompt": "prompts/slide_05_theta_phase_gate.txt", "image": "images/slide_05_theta_phase_gate.png"},
+    {"slide": "06", "prompt": "prompts/slide_06_runbook_outputs.txt", "image": "images/slide_06_runbook_outputs.png"}
+  ]
+}

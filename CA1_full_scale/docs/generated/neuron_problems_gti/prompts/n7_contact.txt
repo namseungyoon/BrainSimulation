@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: Contact allocation -- a real bug, but NOT the wall
+SUBTITLE: How the 8 synaptic contacts of a CCK->PING connection land on the target's compartments.
+Panel A (left): SOURCE ModelDB rule -- draw each of 8 contacts independently/uniformly from the eligible segments (2 dendritic + 1 somatic) => 2/3 dendrite, 1/3 soma, MIXED per event (~5.3 dend + 2.7 soma). Draw a PV cell with contacts scattered mostly on dendrites.
+Panel B (middle): DEPLOYED reduction -- split in-degree equally across receptor/domain ports (1/2 soma) with all 8 contacts on ONE domain per source. CCK->PV: 48 soma vs source-expected 32 (over-somatic by 50%). Draw all-8-on-soma clusters. Soma-directed GABA is the most potent clamp.
+Panel C (right): 4-arm test verdict -- correcting contact allocation (arm B) did NOT release PING (PV 0.30 -> 0.30). Real correctness issue, causally aligned, but not the decisive wall. Arrow to the final slide.

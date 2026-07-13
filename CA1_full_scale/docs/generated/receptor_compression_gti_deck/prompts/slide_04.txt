@@ -1,0 +1,21 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Clean research presentation style. Use a technical diagram, not decorative art. Preserve exact labels and values.
+
+TITLE TEXT: Why utility_weighted_medoids won for runtime
+SUBTITLE TEXT: Best hard 20-port mapping, no multi-port mixture required
+
+LEFT PANEL: Decision matrix
+Rows:
+utility_sparse2: best loss, but uses sparse two-port decoding
+utility_weighted_medoids: best hard one-port mapping, runtime-ready
+conductance_weighted_medoids: close, but less utility-aligned
+uniform_medoids: ignores pathway importance
+current_safe20: baseline, high response-space loss
+
+RIGHT PANEL: Selection logic
+1. Preserve 20-port GPU budget
+2. Keep one receptor port per synapse route
+3. Weight error by conductance, driving force, and target-cell importance
+4. Avoid replacing canonical final safe20 silently
+
+BOTTOM CALLOUT:
+Selected candidate: utility_weighted_medoids

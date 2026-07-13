@@ -1,0 +1,45 @@
+Create one complete 16:9 academic technical PowerPoint slide image. White background, black text, muted blue/orange/green accents, panel labels A-D. No stock art.
+
+TITLE: Why the 20-port limit appears
+SUBTITLE: user model만의 임의 제한이 아니라, NEST-GPU multi-port CUDA 모델군의 compile-time specialization
+
+Panel A: Evidence table
+Draw a table titled "NEST-GPU headers with MAX_PORT_NUM 20"
+Rows:
+user_m1.h | user model | MAX_PORT_NUM 20
+user_m2.h | user model + dendritic extension | MAX_PORT_NUM 20
+aeif_cond_beta_multisynapse.h | built-in multisynapse conductance | MAX_PORT_NUM 20
+izhikevich_cond_beta.h | built-in multisynapse conductance | MAX_PORT_NUM 20
+aeif_cond_alpha_multisynapse.h | built-in multisynapse conductance | MAX_PORT_NUM 20
+
+Panel B: Why CUDA wants a finite port count
+Draw template specialization:
+UpdateNR<N_PORT>()
+NVAR = scalar variables + port variables * N_PORT
+NPARAM = scalar params + port params * N_PORT
+RK5 kernel compiled for finite N_PORT
+Caption: "Port count shapes per-neuron state arrays and kernel code."
+
+Panel C: Not every model is arbitrary multi-port
+Draw two branches:
+single/specialized built-in models -> fixed or limited receptor semantics
+multi-port cond_beta/user models -> Create(model, n_ports), arrays E_rev/tau_rise/tau_decay
+Caption:
+"The limit applies to models that expose receptor-port arrays; it does not mean every NEST-GPU model accepts arbitrary ports."
+
+Panel D: Consequence for the CA1 reduction
+Draw:
+syndata_120 pathway kernels -> 39 compartment-aware kernels -> 20 receptor ports
+Need compression/codebook because original distinct kernels exceed port budget
+Canonical current project strategy:
+budget_weighted
+Experimental candidate:
+utility_weighted_medoids
+
+Bottom takeaway:
+"20 ports are a GPU execution budget, not a biological statement that CA1 has only 20 synapse types."
+
+Accuracy constraints:
+Do not claim this is only user_m1/user_m2.
+Do not claim more than 20 ports are available without changing/rebuilding model code.
+Do not call utility_weighted_medoids canonical.

@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 1.4 -- Stop rebuilding the wiring every run
+Band WHY: the 3-D distance-dependent edges were regenerated single-threaded inside the GPU sim every run -- ~81 min at full scale -- and the multiprocessing speedup triggered the libinfinipath crash (Act 1.1).
+Band HOW: split edge generation from simulation. New CPU-only "ca1 build-edges" command generates edges nestgpu-free (ProcessPool safe, no crash) and persists them to an HDF5 artifact with a digest + provenance; the sim loads via CA1_EDGE_ARTIFACT instead of regenerating.
+Band RESULT: bit-identical (digest 41314045), reusable across seeds/conditions, GPU-verified (build-edges 168 s @0.125, 906 MB; sim loads + spikes normal). Wiring is now built once, not every run. Draw build-edges -> HDF5 artifact -> sim reuse.

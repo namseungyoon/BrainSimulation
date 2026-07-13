@@ -1,0 +1,15 @@
+{
+  "title": "Receptor Compression Strategy Runtime Decision",
+  "slides": [
+    {"slide": "01", "prompt": "prompts/slide_01.txt", "image": "images/slide_01.png"},
+    {"slide": "02", "prompt": "prompts/slide_02.txt", "image": "images/slide_02.png"},
+    {"slide": "03", "prompt": "prompts/slide_03.txt", "image": "images/slide_03.png"},
+    {"slide": "04", "prompt": "prompts/slide_04.txt", "image": "images/slide_04.png"},
+    {"slide": "05", "prompt": "prompts/slide_05.txt", "image": "images/slide_05.png"},
+    {"slide": "06", "prompt": "prompts/slide_06.txt", "image": "images/slide_06.png"},
+    {"slide": "07", "prompt": "prompts/slide_07.txt", "image": "images/slide_07.png"},
+    {"slide": "08", "prompt": "prompts/slide_08.txt", "image": "images/slide_08.png"}
+  ],
+  "source_ranking": "../receptor_compression_ranking.json",
+  "runtime_strategy": "utility_weighted_medoids"
+}

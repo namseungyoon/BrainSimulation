@@ -1,0 +1,41 @@
+Create one complete 16:9 academic PowerPoint slide image. Clean scientific explanatory figure. White background, black text, muted red/blue/green/orange. Use panel labels A-C. No decorative images.
+
+TITLE: Excitation and inhibition come from E_rev, not negative weights
+SUBTITLE: 현재 CA1 GPU path는 positive weight를 쓰고, receptor port의 reversal potential이 전류 방향을 정함
+
+Panel A: Excitatory example
+Draw a voltage axis with V_m around -65 mV and E_rev around 0 mV.
+Equation:
+I_syn = g(t) * (0 - (-65)) > 0
+Label:
+AMPA-like / excitatory port
+depolarizing drive
+positive conductance weight
+
+Panel B: Inhibitory example
+Draw a voltage axis with V_m around -55 mV and E_rev around -70 mV.
+Equation:
+I_syn = g(t) * (-70 - (-55)) < 0
+Label:
+GABA_A-like / inhibitory port
+hyperpolarizing or shunting effect
+positive conductance weight
+
+Panel C: Why this matters for port compression
+Draw receptor table rows:
+port id -> E_rev, tau_rise, tau_decay, optional compartment
+Explain:
+port identity carries sign logic through E_rev
+weight carries magnitude
+delay carries timing
+source/target graph carries topology
+
+Add a small project-code note:
+"gpu_backend.py: Always positive; inhibition sign encoded by E_rev on port."
+
+Bottom takeaway:
+"A GABA event is not a negative spike; it is a positive conductance update routed to a low-E_rev receptor channel."
+
+Accuracy constraints:
+Do not draw negative synaptic weights as the canonical inhibition mechanism.
+Do not imply E_rev is optional for conductance models.

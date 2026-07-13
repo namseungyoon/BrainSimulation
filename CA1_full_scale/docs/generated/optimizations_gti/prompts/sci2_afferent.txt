@@ -1,0 +1,29 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue and muted red accents. Include small neuron drawings, Poisson spike-train raster ticks, and arrows from external sources to CA1 cells.
+
+TITLE TEXT: Why 250,000 afferent Poisson sources: the only drive
+SUBTITLE TEXT: The neuron-simulation reason behind the spike-train vectorization (commit 999bb1c)
+
+Panel A, left: WHY (neuroscience)
+Header: "The network's ONLY input is arrhythmic Poisson"
+Draw external source populations "CA3 (Schaffer collaterals)" and "ECIII (perforant path)" projecting onto CA1 cells.
+Show a sparse Poisson spike raster at 0.65 Hz.
+Label: "no rhythmic / oscillatory input is injected; any theta must be INTRINSIC to the CA1 circuit."
+Note: "each CA1 cell gets a specific afferent in-degree; nearby cells partly share the SAME sources (shared input)."
+
+Panel B, center: HOW (how inputs are simulated)
+Draw a pool of ~250,000 spike_generator nodes, each emitting its own independent Poisson spike train, wired to CA1 targets.
+Labels: "one spike_generator per external source", "per-source Poisson spike_times drawn at 0.65 Hz", "deterministic per-source seeds -> reproducible".
+
+Panel C, right: GPU technical challenge
+Header: "Loading 250,000 independent spike trains onto the GPU"
+Draw a Python loop calling ngpu.SetStatus once per source node (250,000 Python-to-C++ crossings), each rebuilding a long time-slot array.
+Red chip: "the naive per-source setup dominated startup: ~11 minutes at scale 0.125."
+
+Panel D, bottom strip: How it was solved
+Sentence: "Vectorize the Poisson slot draw across all sources (bounded memory, identical statistics and seeds): generation 19.1 s -> 1.5 s, spike-setup 11 min -> 13 s. Per-node SetStatus retained (no distinct-array-per-node API)." Commit 999bb1c.
+
+IMPORTANT TEXT CONSTRAINTS:
+Drive is arrhythmic 0.65 Hz Poisson; CA3 = Schaffer collaterals, ECIII = perforant path.
+Keep numbers exact: 250,000 sources; 11 min -> 13 s; 19.1 s -> 1.5 s.
+Do not claim SetStatus itself was batched; only the slot GENERATION was vectorized.
+Emphasize theta must be INTRINSIC (no rhythmic input).

@@ -1,0 +1,14 @@
+{
+  "title": "Receptor Compression Design Figures",
+  "slides": [
+    {"slide": "01", "prompt": "prompts/fig_01.txt", "image": "images/fig_01.png"},
+    {"slide": "02", "prompt": "prompts/fig_02.txt", "image": "images/fig_02.png"},
+    {"slide": "03", "prompt": "prompts/fig_03.txt", "image": "images/fig_03.png"},
+    {"slide": "04", "prompt": "prompts/fig_04.txt", "image": "images/fig_04.png"},
+    {"slide": "05", "prompt": "prompts/fig_05.txt", "image": "images/fig_05.png"},
+    {"slide": "06", "prompt": "prompts/fig_06.txt", "image": "images/fig_06.png"}
+  ],
+  "source_ranking": "../receptor_compression_ranking.json",
+  "runtime_strategy": "utility_weighted_medoids",
+  "diagnostic_strategy": "utility_sparse2"
+}

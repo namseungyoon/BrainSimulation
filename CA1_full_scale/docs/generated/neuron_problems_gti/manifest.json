@@ -1,0 +1,16 @@
+{
+  "deck": "neuron_problems_gti",
+  "title": "CA1 interneuron working-point failure -- a neuron's-eye view",
+  "date": "2026-07-13",
+  "slides": [
+    {"n": 1, "file": "n1_overview.png", "topic": "Overview: goal + the silent-PING wall"},
+    {"n": 2, "file": "n2_barrage.png", "topic": "PING fire under excitation-only; silence is network-level"},
+    {"n": 3, "file": "n3_cck_clamp.png", "topic": "CCK Basket is the dominant GABA clamp"},
+    {"n": 4, "file": "n4_cck_overfire.png", "topic": "Why CCK over-fires: D1 model infidelity + D2 fixed point"},
+    {"n": 5, "file": "n5_depolblock.png", "topic": "Depolarization block: source blocks, point model can't -> user_m3"},
+    {"n": 6, "file": "n6_disinhibition.png", "topic": "CCK dis-inhibited: GABA into CCK under-transferred"},
+    {"n": 7, "file": "n7_contact.png", "topic": "Contact allocation: real bug but not the wall"},
+    {"n": 8, "file": "n8_resolution.png", "topic": "RESOLVED: fundamental point-reduction limit (native fires, reduced doesn't)"},
+    {"n": 9, "file": "n9_fix.png", "topic": "The fix: user_m4 dendritic Na regeneration"}
+  ]
+}

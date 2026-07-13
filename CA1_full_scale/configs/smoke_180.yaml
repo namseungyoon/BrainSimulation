@@ -1,0 +1,35 @@
+# Smoke-test CA1 network configuration: ~180 cells
+# Intended for CI / import checks -- NOT for science.
+# Scale chosen so total_cells ~ 180 (scale ~ 0.000531).
+
+name: ca1_smoke_180
+
+# scale = 180 / 338440 ~ 0.000532 -> total ~180 cells
+scale: 0.000532
+seed: 42
+
+# Short run for fast smoke testing
+duration_s: 1.0
+dt_s: 0.0001
+
+# Afferent drive
+afferent_rate_hz: 0.65
+
+# Downscale mode: preserve-indegree
+downscale_mode: preserve-indegree
+
+# Backend: CPU NEST (no GPU required for smoke)
+backend: nest
+
+# Validation tier: scaled (first-order only; oscillation warns)
+tier: scaled
+
+# Minimal transient crop
+crop_first_ms: 50.0
+
+# Receptor kinetic variant
+syndata_variant: 120
+
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

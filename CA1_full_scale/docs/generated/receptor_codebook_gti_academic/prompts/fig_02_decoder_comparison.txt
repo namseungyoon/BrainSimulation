@@ -1,0 +1,45 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense but readable. White background, black text, thin vector lines, muted blue for deployable hard decoder, muted teal for sparse diagnostic, orange caution labels. Use panel labels A-C. Use mathematical notation clearly.
+
+TITLE: Two decoders on the same 20-port codebook
+SUBTITLE: hard medoids are deployable; sparse2 is a reconstruction upper bound
+
+Panel A, left column, Hard codebook decoder:
+Formula 1:
+q(k) = arg min over c in C_{receptor,E_rev,compartment} of L(g_k, g_c)
+Formula 2:
+g_hat_k(t) = g_{q(k)}(t)
+Runtime implications as bullet list:
+one synaptic event
+one receptor id
+one port ODE channel
+Score badge:
+rank objective J = 0.000344
+utility loss = 0.000344
+effective ports = 1.000
+Label: best deployable hard runtime candidate = utility_weighted_medoids
+
+Panel B, right column, Sparse2 diagnostic decoder:
+Formula 1:
+(i,j,alpha,beta) = arg min L(g_k, alpha g_i + beta g_j), alpha,beta >= 0
+Formula 2:
+g_hat_k(t) = alpha g_i(t) + beta g_j(t)
+Runtime implications if deployed:
+two events per original synapse, OR custom user model with split weights
+no current GPU least-squares solve
+Score badge:
+rank objective J = 0.000261
+utility loss = 0.000261
+effective ports = 1.001
+Label: best numerical reconstruction upper bound = utility_sparse2
+
+Panel C, bottom, decision boundary:
+Draw a horizontal axis from "reconstruction upper bound" to "deployment-safe hard runtime".
+Place utility_sparse2 near reconstruction upper bound.
+Place utility_weighted_medoids near deployment-safe hard runtime.
+Bottom statement:
+Sparse2 is useful evidence, but the hard codebook is the deployable GPU path.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not say sparse2 is currently deployed.
+Do not say hard medoids are numerically best; say deployable best hard runtime candidate.
+Preserve the exact scores 0.000261, 0.000344, 1.001, 1.000.

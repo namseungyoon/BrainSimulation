@@ -1,0 +1,357 @@
+{
+  "syndata_variant": 120,
+  "strategy": "budget_weighted",
+  "compartment_aware": true,
+  "entries": 97,
+  "component_rows": 105,
+  "raw_kinetics_unique": 32,
+  "raw_kinetics_plus_compartment_unique": 36,
+  "typed_unique": 36,
+  "typed_plus_compartment_unique": 39,
+  "compressed_ports": 20,
+  "ports": [
+    {
+      "port": "AMPA_fast__e0__tr0p07__td0p2__dend",
+      "component_rows": 2,
+      "original_unique": 2,
+      "examples": [
+        "Pyramidal->Bistratified:A",
+        "Pyramidal->PV_Basket:A"
+      ]
+    },
+    {
+      "port": "AMPA_fast__e0__tr0p3__td0p6__dend",
+      "component_rows": 6,
+      "original_unique": 2,
+      "examples": [
+        "Pyramidal->CCK_Basket:A",
+        "Pyramidal->Ivy:A",
+        "Pyramidal->O_LM:A",
+        "Pyramidal->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "AMPA_fast__e0__tr0p5__td3__dend",
+      "component_rows": 1,
+      "original_unique": 1,
+      "examples": [
+        "CA3->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "AMPA_fast__e0__tr2__td6p3__dend",
+      "component_rows": 8,
+      "original_unique": 2,
+      "examples": [
+        "CA3->Bistratified:A",
+        "CA3->CCK_Basket:A",
+        "CA3->Ivy:A",
+        "CA3->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "AMPA_slow__e0__tr0p5__td3__dend",
+      "component_rows": 1,
+      "original_unique": 1,
+      "examples": [
+        "ECIII->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "AMPA_slow__e0__tr2__td6p3__dend",
+      "component_rows": 7,
+      "original_unique": 1,
+      "examples": [
+        "ECIII->Bistratified:A",
+        "ECIII->CCK_Basket:A",
+        "ECIII->Ivy:A",
+        "ECIII->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_A_fast__em60__tr0p287__td2p67__soma",
+      "component_rows": 7,
+      "original_unique": 3,
+      "examples": [
+        "PV_Basket->Bistratified:A",
+        "PV_Basket->CCK_Basket:A",
+        "PV_Basket->Ivy:A",
+        "PV_Basket->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_A_fast__em60__tr0p28__td8p4__soma",
+      "component_rows": 2,
+      "original_unique": 2,
+      "examples": [
+        "PV_Basket->O_LM:A",
+        "Axo->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "GABA_A_fast__em60__tr0p3__td6p2__soma",
+      "component_rows": 1,
+      "original_unique": 1,
+      "examples": [
+        "PV_Basket->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p11__td9p7__dend",
+      "component_rows": 3,
+      "original_unique": 3,
+      "examples": [
+        "Bistratified->Pyramidal:A",
+        "O_LM->Pyramidal:A",
+        "O_LM->SCA:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p25__td7p5__dend",
+      "component_rows": 4,
+      "original_unique": 2,
+      "examples": [
+        "O_LM->Ivy:A",
+        "O_LM->O_LM:A",
+        "CCK_Basket->Pyramidal:A",
+        "O_LM->PV_Basket:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p25__td7p5__soma",
+      "component_rows": 1,
+      "original_unique": 1,
+      "examples": [
+        "CCK_Basket->Pyramidal:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p287__td2p67__dend",
+      "component_rows": 9,
+      "original_unique": 3,
+      "examples": [
+        "Bistratified->Bistratified:A",
+        "Bistratified->CCK_Basket:A",
+        "Bistratified->Ivy:A",
+        "Bistratified->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p432__td4p49__dend",
+      "component_rows": 13,
+      "original_unique": 2,
+      "examples": [
+        "CCK_Basket->Bistratified:A",
+        "SCA->Bistratified:A",
+        "CCK_Basket->CCK_Basket:A",
+        "SCA->CCK_Basket:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr0p432__td4p49__soma",
+      "component_rows": 7,
+      "original_unique": 1,
+      "examples": [
+        "CCK_Basket->Bistratified:A",
+        "CCK_Basket->CCK_Basket:A",
+        "CCK_Basket->Ivy:A",
+        "CCK_Basket->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr1__td8__dend",
+      "component_rows": 8,
+      "original_unique": 6,
+      "examples": [
+        "O_LM->Bistratified:A",
+        "O_LM->CCK_Basket:A",
+        "O_LM->Neurogliaform:A",
+        "Bistratified->O_LM:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr1__td8__soma",
+      "component_rows": 1,
+      "original_unique": 1,
+      "examples": [
+        "CCK_Basket->O_LM:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr2p9__td3p1__dend",
+      "component_rows": 8,
+      "original_unique": 1,
+      "examples": [
+        "Ivy->Bistratified:A",
+        "Ivy->CCK_Basket:A",
+        "Ivy->Ivy:A",
+        "Ivy->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_A_slow__em60__tr8__td39__dend",
+      "component_rows": 8,
+      "original_unique": 3,
+      "examples": [
+        "Neurogliaform->Bistratified:A",
+        "Neurogliaform->CCK_Basket:A",
+        "Neurogliaform->Ivy:A",
+        "Neurogliaform->Neurogliaform:A"
+      ]
+    },
+    {
+      "port": "GABA_B__em90__tr180__td200__dend",
+      "component_rows": 8,
+      "original_unique": 1,
+      "examples": [
+        "Neurogliaform->Bistratified:B",
+        "Neurogliaform->CCK_Basket:B",
+        "Neurogliaform->Ivy:B",
+        "Neurogliaform->Neurogliaform:B"
+      ]
+    }
+  ],
+  "canonical_receptor_provenance": "syndata120-compartment-aware-20port-budget_weighted;sha256=26774704b306d1bd0461fd7df69491cfacd0e1a2e6385877ece2150c9e05e46c",
+  "canonical_ports": [
+    {
+      "index": 0,
+      "name": "AMPA_fast__e0__tr0p07__td0p2__dend",
+      "e_rev": 0.0,
+      "tau_rise": 0.07,
+      "tau_decay": 0.2
+    },
+    {
+      "index": 1,
+      "name": "AMPA_fast__e0__tr0p3__td0p6__dend",
+      "e_rev": 0.0,
+      "tau_rise": 0.3,
+      "tau_decay": 0.6
+    },
+    {
+      "index": 2,
+      "name": "AMPA_fast__e0__tr0p5__td3__dend",
+      "e_rev": 0.0,
+      "tau_rise": 0.5,
+      "tau_decay": 3.0
+    },
+    {
+      "index": 3,
+      "name": "AMPA_fast__e0__tr2__td6p3__dend",
+      "e_rev": 0.0,
+      "tau_rise": 2.0,
+      "tau_decay": 6.3
+    },
+    {
+      "index": 4,
+      "name": "AMPA_slow__e0__tr0p5__td3__dend",
+      "e_rev": 0.0,
+      "tau_rise": 0.5,
+      "tau_decay": 3.0
+    },
+    {
+      "index": 5,
+      "name": "AMPA_slow__e0__tr2__td6p3__dend",
+      "e_rev": 0.0,
+      "tau_rise": 2.0,
+      "tau_decay": 6.3
+    },
+    {
+      "index": 6,
+      "name": "GABA_A_fast__em60__tr0p287__td2p67__soma",
+      "e_rev": -60.0,
+      "tau_rise": 0.287,
+      "tau_decay": 2.67
+    },
+    {
+      "index": 7,
+      "name": "GABA_A_fast__em60__tr0p28__td8p4__soma",
+      "e_rev": -60.0,
+      "tau_rise": 0.28,
+      "tau_decay": 8.4
+    },
+    {
+      "index": 8,
+      "name": "GABA_A_fast__em60__tr0p3__td6p2__soma",
+      "e_rev": -60.0,
+      "tau_rise": 0.3,
+      "tau_decay": 6.2
+    },
+    {
+      "index": 9,
+      "name": "GABA_A_slow__em60__tr0p11__td9p7__dend",
+      "e_rev": -60.0,
+      "tau_rise": 0.11,
+      "tau_decay": 9.7
+    },
+    {
+      "index": 10,
+      "name": "GABA_A_slow__em60__tr0p25__td7p5__dend",
+      "e_rev": -60.0,
+      "tau_rise": 0.25,
+      "tau_decay": 7.5
+    },
+    {
+      "index": 11,
+      "name": "GABA_A_slow__em60__tr0p25__td7p5__soma",
+      "e_rev": -60.0,
+      "tau_rise": 0.25,
+      "tau_decay": 7.5
+    },
+    {
+      "index": 12,
+      "name": "GABA_A_slow__em60__tr0p287__td2p67__dend",
+      "e_rev": -60.0,
+      "tau_rise": 0.287,
+      "tau_decay": 2.67
+    },
+    {
+      "index": 13,
+      "name": "GABA_A_slow__em60__tr0p432__td4p49__dend",
+      "e_rev": -60.0,
+      "tau_rise": 0.432,
+      "tau_decay": 4.49
+    },
+    {
+      "index": 14,
+      "name": "GABA_A_slow__em60__tr0p432__td4p49__soma",
+      "e_rev": -60.0,
+      "tau_rise": 0.432,
+      "tau_decay": 4.49
+    },
+    {
+      "index": 15,
+      "name": "GABA_A_slow__em60__tr1__td8__dend",
+      "e_rev": -60.0,
+      "tau_rise": 1.0,
+      "tau_decay": 8.0
+    },
+    {
+      "index": 16,
+      "name": "GABA_A_slow__em60__tr1__td8__soma",
+      "e_rev": -60.0,
+      "tau_rise": 1.0,
+      "tau_decay": 8.0
+    },
+    {
+      "index": 17,
+      "name": "GABA_A_slow__em60__tr2p9__td3p1__dend",
+      "e_rev": -60.0,
+      "tau_rise": 2.9,
+      "tau_decay": 3.1
+    },
+    {
+      "index": 18,
+      "name": "GABA_A_slow__em60__tr8__td39__dend",
+      "e_rev": -60.0,
+      "tau_rise": 8.0,
+      "tau_decay": 39.0
+    },
+    {
+      "index": 19,
+      "name": "GABA_B__em90__tr180__td200__dend",
+      "e_rev": -90.0,
+      "tau_rise": 180.0,
+      "tau_decay": 200.0
+    }
+  ]
+}

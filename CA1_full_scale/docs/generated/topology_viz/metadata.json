@@ -1,0 +1,155 @@
+{
+  "generated_utc": "2026-07-10T08:39:31.428374+00:00",
+  "config": "configs/full_scale.yaml",
+  "scale": 1.0,
+  "seed": 12345,
+  "geometry_um": {
+    "longitudinal_um": 4000.0,
+    "transverse_um": 1000.0,
+    "layer_heights_um": [
+      4.0,
+      100.0,
+      50.0,
+      200.0,
+      100.0
+    ]
+  },
+  "full_counts": {
+    "Pyramidal": 311500,
+    "PV_Basket": 5530,
+    "CCK_Basket": 3600,
+    "Axo": 1470,
+    "Bistratified": 2210,
+    "Ivy": 8810,
+    "O_LM": 1640,
+    "SCA": 400,
+    "Neurogliaform": 3580,
+    "CA3": 204700,
+    "ECIII": 250000
+  },
+  "generated_counts": {
+    "Pyramidal": 311500,
+    "PV_Basket": 5530,
+    "CCK_Basket": 3600,
+    "Axo": 1470,
+    "Bistratified": 2210,
+    "Ivy": 8810,
+    "O_LM": 1640,
+    "SCA": 400,
+    "Neurogliaform": 3580,
+    "CA3": 204700,
+    "ECIII": 250000
+  },
+  "context_displayed_counts": {
+    "Pyramidal": 800,
+    "PV_Basket": 800,
+    "Bistratified": 800,
+    "O_LM": 800,
+    "Axo": 800,
+    "CCK_Basket": 800,
+    "Ivy": 800,
+    "Neurogliaform": 800,
+    "SCA": 400,
+    "CA3": 800,
+    "ECIII": 800
+  },
+  "palette": {
+    "Pyramidal": "#4E79A7",
+    "PV_Basket": "#E15759",
+    "Bistratified": "#EDC948",
+    "O_LM": "#59A14F",
+    "Axo": "#B07AA1",
+    "CCK_Basket": "#FF9DA7",
+    "Ivy": "#9C755F",
+    "Neurogliaform": "#76B7B2",
+    "SCA": "#79706E",
+    "CA3": "#F28E2B",
+    "ECIII": "#2F9ED1"
+  },
+  "marker_sizes": {
+    "Pyramidal": 6.0,
+    "PV_Basket": 9.0,
+    "Bistratified": 8.0,
+    "O_LM": 8.0,
+    "Axo": 8.5,
+    "CCK_Basket": 8.5,
+    "Ivy": 7.5,
+    "Neurogliaform": 8.0,
+    "SCA": 7.5,
+    "CA3": 5.0,
+    "ECIII": 5.0
+  },
+  "comparisons": [
+    {
+      "post_type": "Pyramidal",
+      "post_index": 165217,
+      "post_position_um": [
+        1995.0,
+        495.0,
+        53.5
+      ],
+      "incoming_edges_per_topology": 309,
+      "uniform_inner_fraction": 0.05501618122977346,
+      "gaussian_3d_inner_fraction": 0.8705501618122977
+    },
+    {
+      "post_type": "Neurogliaform",
+      "post_index": 1800,
+      "post_position_um": [
+        1987.5,
+        527.0,
+        187.0
+      ],
+      "incoming_edges_per_topology": 58,
+      "uniform_inner_fraction": 0.05172413793103448,
+      "gaussian_3d_inner_fraction": 0.8448275862068966
+    },
+    {
+      "post_type": "PV_Basket",
+      "post_index": 2808,
+      "post_position_um": [
+        1989.0,
+        512.5,
+        29.0
+      ],
+      "incoming_edges_per_topology": 524,
+      "uniform_inner_fraction": 0.04770992366412214,
+      "gaussian_3d_inner_fraction": 0.8683206106870229
+    },
+    {
+      "post_type": "Bistratified",
+      "post_index": 1130,
+      "post_position_um": [
+        1995.0,
+        493.0,
+        54.0
+      ],
+      "incoming_edges_per_topology": 466,
+      "uniform_inner_fraction": 0.08798283261802575,
+      "gaussian_3d_inner_fraction": 0.8669527896995708
+    }
+  ],
+  "html": [
+    "docs/generated/topology_viz/pyramidal_comparison.html",
+    "docs/generated/topology_viz/neurogliaform_comparison.html",
+    "docs/generated/topology_viz/pv_basket_comparison.html",
+    "docs/generated/topology_viz/bistratified_comparison.html",
+    "docs/generated/topology_viz/population_context.html"
+  ],
+  "png": [
+    "docs/generated/topology_viz/pyramidal_oblique.png",
+    "docs/generated/topology_viz/pyramidal_longitudinal.png",
+    "docs/generated/topology_viz/pyramidal_top.png",
+    "docs/generated/topology_viz/neurogliaform_oblique.png",
+    "docs/generated/topology_viz/neurogliaform_longitudinal.png",
+    "docs/generated/topology_viz/neurogliaform_top.png",
+    "docs/generated/topology_viz/pv_basket_oblique.png",
+    "docs/generated/topology_viz/pv_basket_longitudinal.png",
+    "docs/generated/topology_viz/pv_basket_top.png",
+    "docs/generated/topology_viz/bistratified_oblique.png",
+    "docs/generated/topology_viz/bistratified_longitudinal.png",
+    "docs/generated/topology_viz/bistratified_top.png",
+    "docs/generated/topology_viz/population_context_oblique.png",
+    "docs/generated/topology_viz/population_context_top.png"
+  ]
+}

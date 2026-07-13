@@ -1,0 +1,30 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable performance-profiling before-after slide. White background, black crisp text, thin grid lines, muted blue and muted red accents, small monospace labels, one small stacked bar.
+
+TITLE TEXT: Removing the LFP-recording bottleneck in Simulate()
+SUBTITLE TEXT: Analog recording, not neuron dynamics, dominated the GPU run
+
+Panel A, top-left: Profiling result (the surprise)
+Small stacked bar titled "run() at scale 0.125, 0.2 s model":
+Segment "pure Simulate 35.1 s" (blue) + segment "LFP recording 73.7 s" (red) = "108.8 s total".
+Big red callout: "LFP recording = 68% of run()".
+Caption: measured by turning LFP sampling off (128 cells -> 0 cells).
+
+Panel B, right, red-tinted (BEFORE - root cause):
+Draw the NEST-GPU multimeter copying 128 sampled pyramidal cells x (V_m, V_d, V_dist + per-port g) to host EVERY time step via blocking cudaMemcpy.
+Red label: "hundreds of synchronous Device->Host copies per step x 100,000 steps".
+Small note: "a rejected chunked-Simulate fix set spikes to 0 (chunk-local update index at nestgpu.cu:788)".
+
+Panel C, bottom, blue-tinted (AFTER - fix):
+Draw a single Simulate(total) call plus a native multimeter SAMPLING STRIDE.
+Blue chip: "record every N steps (CA1_LFP_RECORD_EVERY = 10 -> 1 ms)".
+Blue chip: "single Simulate -> spikes exactly unchanged (308,826)".
+Blue chip: "LFP dt = stride x dt; theta/gamma bands intact (~14 gamma samples/cycle at 1 ms)".
+Arrow to target badge: "run() approaches the 35 s floor (~3x faster)".
+
+Panel D, bottom strip: Verification
+Bullets: spike count identical LFP on vs off; per-cell spike arrays identical; LFP band power equal at stride 1 vs 10. Rebuilt nestgpu exposes NESTGPU_SetRecordStride.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep measured numbers exact: 108.8 s, 35.1 s, 73.7 s, 68%, 308,826.
+The fix is native multimeter stride with a SINGLE Simulate; do NOT depict Python-side chunking as the solution (that was rejected).
+Label the ~35 s floor and 3x as a TARGET/expected where the final measurement is still being confirmed.

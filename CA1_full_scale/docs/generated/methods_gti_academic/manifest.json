@@ -1,0 +1,18 @@
+{
+  "title": "Academic Methods Figures for CA1 Codebook Compression and Fitting",
+  "figures": [
+    {"id": "fig_01", "prompt": "prompts/fig_01_compression_algorithm_comparison.txt", "image": "images/fig_01_compression_algorithm_comparison.png"},
+    {"id": "fig_02", "prompt": "prompts/fig_02_single_cell_fitting_pipeline.txt", "image": "images/fig_02_single_cell_fitting_pipeline.png"},
+    {"id": "fig_03", "prompt": "prompts/fig_03_model_reduction_methods_map.txt", "image": "images/fig_03_model_reduction_methods_map.png"},
+    {"id": "fig_04", "prompt": "prompts/fig_04_hypothesis_and_decision_ladder.txt", "image": "images/fig_04_hypothesis_and_decision_ladder.png"}
+  ],
+  "current_full_scale_canonical": "budget_weighted",
+  "best_hard_codebook_candidate": "utility_weighted_medoids",
+  "diagnostic_upper_bound": "utility_sparse2",
+  "single_cell_fit_status": {
+    "aglif": "nestgpu-fi-fit; validation passed in fitted file",
+    "adex": "analytic-fallback-after-failed-fit in current fitted file",
+    "izhikevich": "nestgpu-fi-fit alternative",
+    "dendritic_transfer": "neuron-epsp-location-compressed-fit; validation passed"
+  }
+}

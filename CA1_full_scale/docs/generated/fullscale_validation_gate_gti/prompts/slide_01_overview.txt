@@ -1,0 +1,37 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable methods-decision slide. White background, black crisp typography, muted blue/teal/orange accents, thin arrows, panel labels A-D. No stock imagery, no decorative objects, no fake data, no watermark. Preserve exact numbers and labels.
+
+TITLE TEXT: Full-scale sweep: first validation gate
+SUBTITLE TEXT: Do not interpret theta until structure, receptor kinetics, and Table 5 rates pass
+
+Panel A, left: Purpose
+Draw a three-stage gate pipeline:
+1. Structural eligibility
+2. First-order physiology
+3. Theta / phase validation
+Use labels:
+Gate 1 = cheap early rejection
+Gate 2 = biological acceptance
+
+Panel B, center: Why this order
+Make three compact callout boxes:
+Structure first: full-scale means 338,740 cells and 5,145,402,080 synapses.
+Kinetics first: 39 exact global receptor ports, max target-local ports = 13.
+Rates first: Table 5 firing rates must pass before theta claims.
+
+Panel C, right: Current receptor assurance
+Show a small readback badge:
+NEST-GPU readback PASS
+posts = 9
+checked_values = 237
+E_rev max diff = 0
+tau_rise max diff = 9.54e-08 ms
+tau_decay max diff = 7.63e-07 ms
+
+Panel D, bottom: Decision rule
+Big sentence:
+If first-order rates fail, tune drive / weights / recurrent topology before changing neuron model.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not invent additional gates.
+Do not say STP is simulated.
+Do not say theta is accepted before firing rates pass.

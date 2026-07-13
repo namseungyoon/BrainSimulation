@@ -1,0 +1,48 @@
+  [PASS] provenance/parameter_fits: 75 parameter provenance records
+  [PASS] provenance/network_structure: full-scale structure audited: 338740 cells, 68 recurrent projections, 13 afferents, sources=['CA3', 'ECIII'], afferent_topology=literal_source_graph
+  [PASS] provenance/diagnostic_runtime: diagnostic runtime provenance audited clean
+  [PASS] provenance/lfp_proxy: LFP proxy source recorded as modeldb_n_pole_reduced_domain_lfp
+  [FAIL] rate/Pyramidal: measured=9.14 Hz, target=6.00 Hz (tol=30%), band=[4.20,7.80]
+  [FAIL] rate/PV_Basket: measured=0.00 Hz, target=0.90 Hz (tol=30%), band=[0.63,1.17]
+  [PASS] rate/Bistratified: measured=16.45 Hz, target=18.00 Hz (tol=30%), band=[12.60,23.40]
+  [PASS] rate/O_LM: measured=13.81 Hz, target=17.40 Hz (tol=30%), band=[12.18,22.62]
+  [FAIL] rate/Axo: measured=23.45 Hz, target=8.90 Hz (tol=30%), band=[6.23,11.57]
+  [FAIL] rate/CCK_Basket: measured=26.54 Hz, target=54.40 Hz (tol=30%), band=[38.08,70.72]
+  [FAIL] rate/Ivy: measured=14.43 Hz, target=43.30 Hz (tol=30%), band=[30.31,56.29]
+  [FAIL] rate/Neurogliaform: measured=13.75 Hz, target=55.10 Hz (tol=30%), band=[38.57,71.63]
+  [FAIL] rate/SCA: measured=10.94 Hz, target=5.20 Hz (tol=30%), band=[3.64,6.76]
+  [WARN] cv_isi/Pyramidal: CV(ISI)=1.548, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] cv_isi/PV_Basket: CV(ISI) unavailable: insufficient spikes/data for cell type 'PV_Basket'; not a Table 5 hard gate
+  [WARN] cv_isi/Bistratified: CV(ISI)=1.621, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] cv_isi/O_LM: CV(ISI)=1.928, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] cv_isi/Axo: CV(ISI)=0.616, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] cv_isi/CCK_Basket: CV(ISI)=0.574, expected [0.7,1.4]; not a Table 5 hard gate
+  [PASS] cv_isi/Ivy: CV(ISI)=0.910, expected [0.7,1.4]; not a Table 5 hard gate
+  [PASS] cv_isi/Neurogliaform: CV(ISI)=1.315, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] cv_isi/SCA: CV(ISI)=0.652, expected [0.7,1.4]; not a Table 5 hard gate
+  [WARN] pyramidal_sparseness: 89678/89678 pyramidal cells active (100.0%); local plausibility threshold < 50%, not a Table 5 hard gate
+  [PASS] oscillation/theta_peak: theta peak=6.84 Hz (target=7.8 Hz, |err|=0.96 Hz <= 1.5); prominence=3.33x (>=3.0x), low-band-edge=False
+  [PASS] oscillation/theta_dominates_gamma: max-in-band criterion: theta peak power=0.0005304, gamma peak power=2.838e-05; integrated band power (context only): theta=0.001135, gamma=0.0004364
+  [PASS] oscillation/gamma_peak: gamma peak=58.11 Hz (paper=71.0 Hz, |err|=12.89 Hz <=20.0); prominence=9.66x (>=3.0x), low-band-edge=False
+  [PASS] oscillation/theta_gamma_cfc: CFC MI=0.04109, surrogate p=0.005 (<=0.05) or z=15.6 (>=1.645); requires validated theta/gamma peaks and >=1 s
+  [PASS] phase/Pyramidal: mean_phase=4.2 deg, target=339.7 deg, dist=24.5 deg (<=45.0), Rayleigh p=0 (<0.05)
+  [PASS] modulation/Pyramidal: theta vector strength=0.728, Table 5 target=0.740, tolerance band=[0.370,1.000]
+  [FAIL] phase/PV_Basket: no spikes or LFP data for 'PV_Basket'
+  [FAIL] modulation/PV_Basket: no spikes or LFP data for 'PV_Basket'
+  [PASS] phase/Bistratified: mean_phase=16.6 deg, target=340.0 deg, dist=36.6 deg (<=45.0), Rayleigh p=0 (<0.05)
+  [FAIL] modulation/Bistratified: theta vector strength=0.352, Table 5 target=0.760, tolerance band=[0.380,1.000]
+  [PASS] phase/O_LM: mean_phase=5.4 deg, target=334.7 deg, dist=30.7 deg (<=45.0), Rayleigh p=0 (<0.05)
+  [PASS] modulation/O_LM: theta vector strength=0.673, Table 5 target=0.760, tolerance band=[0.380,1.000]
+  [PASS] phase/Axo: mean_phase=203.2 deg, target=163.4 deg, dist=39.8 deg (<=45.0), Rayleigh p=3.72e-303 (<0.05)
+  [PASS] modulation/Axo: theta vector strength=0.087, Table 5 target=0.070, tolerance band=[0.020,0.120]
+  [PASS] phase/CCK_Basket: mean_phase=181.4 deg, target=202.8 deg, dist=21.4 deg (<=45.0), Rayleigh p=0 (<0.05)
+  [FAIL] modulation/CCK_Basket: theta vector strength=0.183, Table 5 target=0.100, tolerance band=[0.050,0.150]
+  [FAIL] phase/Ivy: mean_phase=48.3 deg, target=142.1 deg, dist=93.8 deg (<=45.0), Rayleigh p=1.13e-210 (<0.05)
+  [FAIL] modulation/Ivy: theta vector strength=0.038, Table 5 target=0.330, tolerance band=[0.165,0.495]
+  [PASS] phase/Neurogliaform: mean_phase=193.0 deg, target=176.3 deg, dist=16.7 deg (<=45.0), Rayleigh p=1.57e-96 (<0.05)
+  [PASS] modulation/Neurogliaform: theta vector strength=0.041, Table 5 target=0.070, tolerance band=[0.020,0.120]
+  [FAIL] phase/SCA: mean_phase=251.5 deg, target=197.9 deg, dist=53.6 deg (<=45.0), Rayleigh p=4.17e-161 (<0.05)
+  [FAIL] modulation/SCA: theta vector strength=0.177, Table 5 target=0.030, tolerance band=[0.000,0.080]
+  [PASS] phase/trough_group_near_zero: trough-group phases ['4.2', '5.4', '16.6'] deg; all within 90 deg of trough? True; centroid=8.7 deg
+  [FAIL] phase/rising_group_away_from_trough: rising-group phases ['48.3', '251.5', '181.4', '193.0', '203.2'] deg; all > 90 deg from trough? False; centroid=198.4 deg
+  [PASS] phase/group_ordering: trough-group centroid dist-from-zero=8.7 deg, rising-group dist-from-zero=161.6 deg; trough closer? True

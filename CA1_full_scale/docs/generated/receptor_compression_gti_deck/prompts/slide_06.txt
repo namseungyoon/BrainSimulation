@@ -1,0 +1,21 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Make it a technical debugging / QA slide. White background, dark text, orange warning accent, green fixed accent.
+
+TITLE TEXT: Critical blocker found and fixed
+SUBTITLE TEXT: Runtime must preserve assignment semantics, not only the 20-port codebook
+
+PROBLEM BOX:
+Initial runtime used tau-distance nearest assignment.
+Analysis ranking used response-loss medoid assignment.
+Result: 8 / 39 source kernels routed to different representatives.
+
+FIX BOX:
+Runtime now uses exact 39 source-kernel -> representative-port assignment table.
+
+VERIFICATION METRICS:
+assignment_mismatches = 0
+runtime_utility_loss = 0.0003440384033712691
+ranked_utility_loss = 0.0003440384033712691
+ports = 20
+
+VISUAL:
+Before/after split diagram. Before red: tau-nearest mismatch. After green: exact response-loss assignment.

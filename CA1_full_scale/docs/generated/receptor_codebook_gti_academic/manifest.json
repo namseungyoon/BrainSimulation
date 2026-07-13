@@ -1,0 +1,12 @@
+{
+  "title": "GTI Academic Receptor Codebook Compression Figures",
+  "source_ranking": "../receptor_compression_ranking.json",
+  "figures": [
+    {"id": "fig_01", "prompt": "prompts/fig_01_codebook_formalism.txt", "image": "images/fig_01_codebook_formalism.png"},
+    {"id": "fig_02", "prompt": "prompts/fig_02_decoder_comparison.txt", "image": "images/fig_02_decoder_comparison.png"},
+    {"id": "fig_03", "prompt": "prompts/fig_03_metric_stack.txt", "image": "images/fig_03_metric_stack.png"},
+    {"id": "fig_04", "prompt": "prompts/fig_04_scores_ranking.txt", "image": "images/fig_04_scores_ranking.png"}
+  ],
+  "hard_runtime_candidate": "utility_weighted_medoids",
+  "diagnostic_upper_bound": "utility_sparse2"
+}

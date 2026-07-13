@@ -1,0 +1,44 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. White background, black readable text, muted blue/green/orange accents, panel labels A-D. No stock imagery.
+
+TITLE: user_m2 kernel interface
+SUBTITLE: 어떤 상태변수와 파라미터를 NEST-GPU user-model 슬롯이 노출하는가
+
+Panel A: Scalar state variables
+Draw a state vector box:
+V_m: soma voltage
+V_d: proximal dendritic voltage
+V_dist: distal dendritic voltage
+I_adap: adaptation current
+I_dep: depolarizing/rebound current
+Caption: "These are per-neuron dynamic states."
+
+Panel B: Per-port dynamic variables
+Draw repeated port slots p = 0..N-1:
+g[p]: conductance state
+g1[p]: rising auxiliary state
+Equation chips:
+dg1/dt = -g1 / tau_rise[p]
+dg/dt = g1 - g / tau_decay[p]
+Caption: "Each receptor port has conductance dynamics."
+
+Panel C: Scalar parameters
+Draw grouped parameter boxes:
+threshold/reset: V_th, V_peak, V_reset, t_ref
+passive membrane: E_L, C_m, tau_m
+adaptation: k_adap, k1, k2, A1, A2
+dendritic coupling: dend_C_frac, dend_leak_scale, g_c, dist_C_frac, dist_leak_scale, g_c_dist
+
+Panel D: Per-port parameters
+Draw a table:
+port p | E_rev[p] | tau_rise[p] | tau_decay[p] | g0[p] | compartment[p]
+Explain:
+E_rev chooses excitatory/inhibitory driving force
+tau parameters choose cond_beta time course
+compartment chooses soma/prox/dist input domain
+
+Bottom caution:
+"This is not arbitrary Python metadata. These arrays are SetStatus payloads consumed by the compiled CUDA user_m2 kernel."
+
+Accuracy constraints:
+Do not place weight or delay in the per-port parameter table; those are connection/event fields.
+Do not claim apical/basal are explicit runtime states; current states are soma/prox/dist.

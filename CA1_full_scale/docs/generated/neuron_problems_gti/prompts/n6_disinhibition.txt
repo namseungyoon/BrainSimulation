@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: CCK is also DIS-INHIBITED -- its own GABA input is under-transferred
+SUBTITLE: The reduced model delivers too little inhibition ONTO CCK, so CCK runs hot.
+Panel A (left): a CCK soma receiving GABA from Ivy (K=96), SCA, CCK-self, Bistratified. Draw the arrows THIN/faded to show weak delivered inhibition.
+Panel B (middle): reduced-vs-source inhibitory charge into CCK -- realized-budget charge only 69%. Rows: Ivy->CCK 54% (K=96!), O_LM->CCK ~0% (kinetics compression 0.728/20.2 -> 1/8 destroys it), Bistratified->CCK 49%, SCA->CCK 46%.
+Panel C (right): correcting 5 CCK inhibitory rows (source-gated) + user_m3 depol-block drops exact-replay CCK 45.7 -> 37.8 -> 24.0 Hz. Predicts PARTIAL PING recruitment (PV ~5.5 Hz, first non-zero) but still above the 10-15 Hz release regime.

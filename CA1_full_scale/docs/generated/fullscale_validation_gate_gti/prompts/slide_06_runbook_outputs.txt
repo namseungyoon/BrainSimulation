@@ -1,0 +1,44 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Technical runbook / experiment ledger slide. White background, black text, muted green for pass artifacts, orange for HITL decisions, panel labels A-D. Preserve exact labels and values.
+
+TITLE TEXT: Sweep runbook: what each case must emit
+SUBTITLE TEXT: Make HITL decisions from comparable artifacts, not anecdotes
+
+Panel A, left: Per-case metadata
+Checklist:
+case_id
+gpu_mode: 1GPU-full or 3GPU-sharded
+seed
+duration_s
+crop_first_ms
+config hash
+parameter_provenance JSON
+diagnostic_provenance JSON
+
+Panel B, center: First gate output table
+Columns:
+Artifact | Required fields
+rate summary | mean_rate_hz, target_hz, target_band_hz, target_pass
+structure audit | total cells, total synapses, CA3/ECIII source counts
+receptor audit | global=39, max_target=13, GetStatus readback diffs
+failure triage | reject / diagnose / continue
+
+Panel C, right: Ranking score for sweep cases
+Show formula-like text:
+gate1_fail_count = number of required rate/structure/receptor failures
+rate_error_score = mean(|measured - target| / target)
+continue only if gate1_fail_count = 0
+rank among pass cases by theta_peak_error, phase_fail_count, CFC
+
+Panel D, bottom: HITL decision checkpoints
+Decision boxes:
+If Gate 1 fails: tune drive, recurrent weights, or topology.
+If Gate 1 passes but theta fails: inspect LFP proxy, phase ordering, slow inhibition.
+If both pass: promote to longer replicate run.
+
+Bottom statement:
+The first validation gate is a filter, not final biological acceptance.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not invent file names.
+Do not claim a specific sweep has passed.
+Do not hide failed cases; show them as evidence.

@@ -1,0 +1,54 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense technical architecture slide, white background, black text, muted blue/orange/teal accents, panel labels A-E. No fake screenshots.
+
+TITLE: Strategy 4 — Full-scale connectivity without materializing a 5B-edge list
+SUBTITLE: conndata_430 budgets and CA3/EC afferents are preserved, but represented as generators/bins
+
+Panel A: Original connectivity tables
+Draw source files:
+cellnumbers_101.dat -> population counts
+conndata_430.dat -> per-postsynaptic convergence, synapses_per_connection, weights in uS -> nS
+syndata_120.dat -> receptor kinetics and target sections
+Key counts:
+338,740 CA1 cells
+311,500 pyramidal cells
+454,700 external CA3/ECIII source cells
+~5B+ paper-scale contacts
+
+Panel B: Recurrent topology representation
+Draw:
+ModelDB table row -> per-cell indegree budget -> binned fast connection generator
+Label:
+recurrent_topology = modeldb_fastconn_binned
+conndata_count_mode = per_cell
+goal: reproduce budgets without storing every edge as a Python object
+
+Panel C: External afferent representation
+Draw:
+CA3 / ECIII source identities -> literal_source_graph -> spike_generator trains -> postsynaptic targets
+Label:
+afferent_topology = literal_source_graph
+external drive = 0.65 Hz paper theta-control
+source_pool is diagnostic, not final-tier
+compound shortcuts are not full-tier
+
+Panel D: Weight and event semantics
+Draw event packet:
+source id, target id, receptor port, weight_nS, delay_ms, synapses_per_connection
+Show formulas:
+recurrent effective weight = weight_nS * synapses_per_connection * compensation factors
+afferent literal graph keeps source identity and per-cell synapse budget
+inhibition = positive weight routed to GABA E_rev
+
+Panel E: Why this is efficient but still full-spec-aware
+Make a comparison table:
+Naive explicit edge list | huge memory + slow build | not needed for statistical budgets
+Binned generator | compact deterministic/provenance-aware | preserves conndata430 per-cell budget
+Literal afferent graph | source identities retained | separates no-recurrent vs recurrent diagnostics
+
+Bottom note:
+"The no-recurrent 1GPU vs 3GPU agreement showed external Poisson/input drive consistency; recurrent topology is the key equivalence surface."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not say source_pool is the full-scale final path.
+Do not imply external CA3/EC afferents are omitted.
+Do not claim every physical synapse is stored as a separate runtime object.

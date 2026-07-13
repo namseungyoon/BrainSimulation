@@ -1,0 +1,225 @@
+{
+  "comment": "Correctly computed AEIF parameters from Bezaire et al. eLife 2016 using ChatGPT formulas",
+  "formulas_used": {
+    "g_L_nS": "1000 / Rin_MOhm",
+    "C_m_pF": "tau_m_ms * g_L_nS",
+    "V_th_mV": "E_L + Delta_T + (rheobase_pA / g_L_nS)",
+    "E_L_mV": "RMP_mV"
+  },
+
+  "CA1_Pyramidal": {
+    "bezaire_values": {
+      "RMP_mV": -70.0,
+      "Rin_MOhm": 100.0,
+      "tau_m_ms": 20.0,
+      "rheobase_pA": 100.0
+    },
+    "aeif_parameters": {
+      "C_m": 200.0,
+      "g_L": 10.0,
+      "E_L": -70.0,
+      "Delta_T": 2.0,
+      "V_th": -48.0,
+      "V_reset": -65.0,
+      "t_ref": 2.0,
+      "a": 4.0,
+      "b": 80.5,
+      "tau_w": 144.0
+    }
+  },
+
+  "PV_Basket": {
+    "bezaire_values": {
+      "RMP_mV": -65.0,
+      "Rin_MOhm": 52.1,
+      "tau_m_ms": 7.0,
+      "rheobase_pA": 300.0
+    },
+    "aeif_parameters": {
+      "C_m": 134.4,
+      "g_L": 19.2,
+      "E_L": -65.0,
+      "Delta_T": 1.0,
+      "V_th": -48.4,
+      "V_reset": -60.0,
+      "t_ref": 2.0,
+      "a": 0.0,
+      "b": 0.0,
+      "tau_w": 40.0
+    }
+  },
+
+  "CCK_Basket": {
+    "bezaire_values": {
+      "RMP_mV": -70.6,
+      "Rin_MOhm": 222.4,
+      "tau_m_ms": 25.5,
+      "rheobase_pA": 80.0
+    },
+    "aeif_parameters": {
+      "C_m": 114.6,
+      "g_L": 4.495,
+      "E_L": -70.6,
+      "Delta_T": 2.0,
+      "V_th": -50.8,
+      "V_reset": -62.0,
+      "t_ref": 2.0,
+      "a": 2.0,
+      "b": 60.0,
+      "tau_w": 200.0
+    }
+  },
+
+  "Axo": {
+    "bezaire_values": {
+      "RMP_mV": -65.8,
+      "Rin_MOhm": 45.0,
+      "tau_m_ms": 8.0,
+      "rheobase_pA": 350.0
+    },
+    "aeif_parameters": {
+      "C_m": 177.8,
+      "g_L": 22.22,
+      "E_L": -65.8,
+      "Delta_T": 1.0,
+      "V_th": -48.05,
+      "V_reset": -60.0,
+      "t_ref": 1.5,
+      "a": 1.0,
+      "b": 10.0,
+      "tau_w": 25.0
+    }
+  },
+
+  "Bistratified": {
+    "bezaire_values": {
+      "RMP_mV": -67.0,
+      "Rin_MOhm": 98.8,
+      "tau_m_ms": 14.7,
+      "rheobase_pA": 350.0
+    },
+    "aeif_parameters": {
+      "C_m": 148.8,
+      "g_L": 10.12,
+      "E_L": -67.0,
+      "Delta_T": 2.0,
+      "V_th": -50.0,
+      "V_reset": -67.0,
+      "t_ref": 2.0,
+      "a": 3.0,
+      "b": 35.0,
+      "tau_w": 40.0
+    }
+  },
+
+  "Ivy": {
+    "bezaire_values": {
+      "RMP_mV": -60.0,
+      "Rin_MOhm": 100.7,
+      "tau_m_ms": 21.3,
+      "rheobase_pA": 160.0
+    },
+    "aeif_parameters": {
+      "C_m": 211.6,
+      "g_L": 9.93,
+      "E_L": -60.0,
+      "Delta_T": 2.0,
+      "V_th": -41.9,
+      "V_reset": -62.0,
+      "t_ref": 2.0,
+      "a": 1.5,
+      "b": 30.0,
+      "tau_w": 300.0
+    }
+  },
+
+  "O_LM": {
+    "bezaire_values": {
+      "RMP_mV": -68.0,
+      "Rin_MOhm": 267.7,
+      "tau_m_ms": 22.7,
+      "rheobase_pA": 20.0
+    },
+    "aeif_parameters": {
+      "C_m": 84.8,
+      "g_L": 3.735,
+      "E_L": -68.0,
+      "Delta_T": 2.0,
+      "V_th": -60.6,
+      "V_reset": -65.0,
+      "t_ref": 2.0,
+      "a": 2.0,
+      "b": 0.0,
+      "tau_w": 42.5
+    }
+  },
+
+  "SCA": {
+    "bezaire_values": {
+      "RMP_mV": -70.5,
+      "Rin_MOhm": 300.0,
+      "tau_m_ms": 28.9,
+      "rheobase_pA": 60.0
+    },
+    "aeif_parameters": {
+      "C_m": 96.3,
+      "g_L": 3.33,
+      "E_L": -70.5,
+      "Delta_T": 2.0,
+      "V_th": -52.5,
+      "V_reset": -70.5,
+      "t_ref": 2.0,
+      "a": 2.5,
+      "b": 25.0,
+      "tau_w": 45.0
+    }
+  },
+
+  "Neurogliaform": {
+    "bezaire_values": {
+      "RMP_mV": -65.0,
+      "Rin_MOhm": 150.0,
+      "tau_m_ms": 15.0,
+      "rheobase_pA": 200.0
+    },
+    "aeif_parameters": {
+      "C_m": 100.0,
+      "g_L": 6.67,
+      "E_L": -65.0,
+      "Delta_T": 2.0,
+      "V_th": -50.0,
+      "V_reset": -65.0,
+      "t_ref": 2.0,
+      "a": 1.5,
+      "b": 20.0,
+      "tau_w": 100.0
+    }
+  },
+
+  "synapse_receptor_setup": {
+    "comment": "For aeif_cond_beta_multisynapse - receptor types and kinetics",
+    "receptor_types": {
+      "AMPA_fast": {"port": 1, "E_rev": 0.0, "tau_rise": 0.2, "tau_decay": 2.0},
+      "AMPA_slow": {"port": 2, "E_rev": 0.0, "tau_rise": 1.0, "tau_decay": 5.0},
+      "GABA_fast": {"port": 3, "E_rev": -60.0, "tau_rise": 0.2, "tau_decay": 5.0},
+      "GABA_slow": {"port": 4, "E_rev": -60.0, "tau_rise": 1.0, "tau_decay": 12.0}
+    },
+    "weight_units": "nS (peak conductance)",
+    "delay_units": "ms"
+  },
+
+  "synapse_weights_from_bezaire": {
+    "comment": "Direct g_max values from Bezaire tables in nS",
+    "PV_to_Pyr": {"weight_nS": 0.0002, "receptor": "GABA_fast", "delay_ms": 1.0},
+    "CCK_to_Pyr": {"weight_nS": 0.00052, "receptor": "GABA_slow", "delay_ms": 1.5},
+    "Ivy_to_Pyr": {"weight_nS": 0.000041, "receptor": "GABA_slow", "delay_ms": 2.0},
+    "OLM_to_Pyr": {"weight_nS": 0.0011, "receptor": "GABA_slow", "delay_ms": 2.0},
+    "Axo_to_Pyr": {"weight_nS": 0.0012, "receptor": "GABA_fast", "delay_ms": 1.0},
+    "NGF_to_Pyr": {"weight_nS": 0.0003, "receptor": "GABA_slow", "delay_ms": 3.0},
+    "Pyr_to_PV": {"weight_nS": 0.0007, "receptor": "AMPA_fast", "delay_ms": 1.0},
+    "Pyr_to_CCK": {"weight_nS": 0.00052, "receptor": "AMPA_fast", "delay_ms": 1.0},
+    "Pyr_to_Ivy": {"weight_nS": 0.000405, "receptor": "AMPA_fast", "delay_ms": 1.0},
+    "Pyr_to_OLM": {"weight_nS": 0.0019, "receptor": "AMPA_fast", "delay_ms": 1.0},
+    "Pyr_to_NGF": {"weight_nS": 0.0005, "receptor": "AMPA_fast", "delay_ms": 1.5}
+  }
+}

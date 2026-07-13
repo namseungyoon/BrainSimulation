@@ -1,0 +1,35 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide with a 3-compartment neuron diagram and compartment equations. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace.
+
+TITLE TEXT: What dendrite refit does -- at the cell level
+SUBTITLE TEXT: Tune the reduced cell's passive dendrite so distal input delivers CHARGE, not just PEAK
+
+Panel A, top-left: The cell-level problem (peak/charge tradeoff)
+Draw the reduced 3-compartment neuron: soma (V_m), proximal dendrite (V_d), distal dendrite (V_dist), linked by coupling conductance g_c (and g_c_dist = 0.25 g_c).
+- The fast perisomatic AMPA is currently placed on the DISTAL dendrite (loc=dist).
+- There it makes a large LOCAL peak, but the weakly-coupled, leaky dendrite loses charge before it reaches the soma.
+- Result: somatic PEAK 110-117% but somatic CHARGE only 73-87% of source. A per-synapse scalar cannot fix this (raising it overshoots peak).
+
+Panel B, top-right: The dials -- cell properties, not per-synapse
+- dend_C_frac : dendritic capacitance fraction (currently FIXED at 0.4).
+- dend_leak_scale : dendritic leak (currently FIXED at 1.0).
+- g_c_scale : soma<->dendrite coupling (currently the ONLY dial fitted).
+- audit the fixed distal: dist_C_frac=0.5, dist_leak_scale=1, g_c_dist/g_c=0.25.
+Note: these are properties of ONE cell, so the same values must explain ALL its input rows.
+
+Panel C, bottom-left: The mechanism (why it works)
+Small compartment ODEs:
+  C_soma dV_m/dt = -leak*V_m + g_c (V_d - V_m)
+  C_dend dV_d/dt = -dend_leak_scale*leak*V_d + g_c (V_m - V_d) + I_syn
+- LOWER dendritic leak -> less current bleeds away -> more CHARGE reaches the soma WITHOUT raising peak.
+- capacitance + coupling reshape the somatic waveform -> raise the charge/peak ratio.
+
+Panel D, bottom-right: Method and goal
+- One shared parameter vector PER CELL type (PV_Basket, Bistratified, O_LM); fit ALL excitatory rows TOGETHER.
+- Hard constraints: somatic CHARGE >= 90% AND PEAK 85-115% of source NEURON.
+- Preserve intrinsic identity (held-out): input resistance R_in, membrane time constant tau_m, rheobase / f-I.
+- Source-response grounded, NOT Table 5 rate tuning. Output is a CANDIDATE, not deployed.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep dial names and fixed values: dend_C_frac=0.4, dend_leak_scale=1.0 currently fixed; g_c_scale the only one fitted now; g_c_dist=0.25 g_c.
+The fix is CELL-LEVEL passive properties, not a per-synapse gain; the same vector must satisfy every input row.
+Targets: charge >= 90%, peak 85-115%. Preserve R_in / tau_m / rheobase. Single-GPU downstream, source-grounded not rate-tuned.

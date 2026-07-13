@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments with ion channels. Keep all text legible.
+TITLE: The fix strategy -- give reduced dendrites an active regenerative current
+SUBTITLE: Add source-fitted voltage-dependent dendritic Na (+ K_dr) to the proximal/distal compartments; keep the soma as the only spike emitter.
+Panel A (left): reduced 3-compartment neuron soma/prox/dist. Add to prox and dist a regenerative inward current, fed from the native channels ch_Nav* + ch_Kdrfast.
+Panel B (middle): governing equations -- I_Na_d = gbar_Na * m_inf(V)^3 * h * (E_Na - V) with E_Na=55 mV, m instantaneous, dh/dt=(h_inf(V)-h)/tau_h ; I_Kd = gbar_Kd * n^4 * (E_K - V) with E_K=-90 mV, dn/dt=(n_inf-n)/tau_n. Dendritic active current modifies V_d/V_dist, which couple to soma via g_c. The DENDRITE DOES NOT EMIT SPIKES; soma V_m>=V_th is the only output.
+Panel C (right): design constraints -- source-grounded params (native channel densities x dendritic area, bounded), preserve passive Rin/tau + current-step f-I, connect bit-identical, opt-in per cell type. This is user_m4 (built as user_m3 was for CCK).

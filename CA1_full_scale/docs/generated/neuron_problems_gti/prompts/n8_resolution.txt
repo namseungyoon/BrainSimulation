@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: RESOLVED -- the wall is the point reduction itself
+SUBTITLE: Same recorded CCK=45 Hz inhibition: the native multicompartment cell fires, the reduced cell cannot.
+Panel A (left): side-by-side neurons. LEFT native PV/Bist/O_LM = soma + branched dendrites with ACTIVE Na/K channels (ch_Nav*, ch_Kdrfast) throughout; distal EPSPs regenerate and drive a somatic spike THROUGH the near-soma CCK shunt. RIGHT reduced user_m2 = soma + 2 PASSIVE dendrite bins; distal excitation decays, soma stuck at -58 mV subthreshold.
+Panel B (middle): 4-arm firing table under IDENTICAL streams -- A deployed 0.30/0.14/0.02 ; B exact-contact 0.30/0.15/0.02 ; C NATIVE template 15.6/8.4/1.17 (FIRES) ; D native excitation-only 108/47/5.2. Decision: B silent, C fires.
+Panel C (right): THE ANSWER -- the aglif_dend 3-domain fixed-threshold reduction misses the MIXED E/I RECRUITMENT SURFACE (active dendritic regeneration + local E/I integration). Every data/param/transfer/contact hypothesis was ruled out; the wall is the reduction.

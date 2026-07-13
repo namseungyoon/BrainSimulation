@@ -1,0 +1,25 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: The 20-port compressed receptor set
+SHOW FAMILY COUNT STRIP: AMPA_fast: 4, AMPA_slow: 2, GABA_A_fast: 3, GABA_A_slow: 10, GABA_B: 1
+SHOW A COMPACT TWO-COLUMN TABLE WITH THESE EXACT PORTS:
+00. AMPA_fast | E=0 | tr0p07 | td0p2 | dend | rise=0.07 ms | decay=0.2 ms
+01. AMPA_fast | E=0 | tr0p3 | td0p6 | dend | rise=0.3 ms | decay=0.6 ms
+02. AMPA_fast | E=0 | tr0p5 | td3 | dend | rise=0.5 ms | decay=3.0 ms
+03. AMPA_fast | E=0 | tr2 | td6p3 | dend | rise=2.0 ms | decay=6.3 ms
+04. AMPA_slow | E=0 | tr0p5 | td3 | dend | rise=0.5 ms | decay=3.0 ms
+05. AMPA_slow | E=0 | tr2 | td6p3 | dend | rise=2.0 ms | decay=6.3 ms
+06. GABA_A_fast | E=-60 | tr0p287 | td2p67 | soma | rise=0.287 ms | decay=2.67 ms
+07. GABA_A_fast | E=-60 | tr0p28 | td8p4 | soma | rise=0.28 ms | decay=8.4 ms
+08. GABA_A_fast | E=-60 | tr0p3 | td6p2 | soma | rise=0.3 ms | decay=6.2 ms
+09. GABA_A_slow | E=-60 | tr0p11 | td9p7 | dend | rise=0.11 ms | decay=9.7 ms
+10. GABA_A_slow | E=-60 | tr0p25 | td7p5 | dend | rise=0.25 ms | decay=7.5 ms
+11. GABA_A_slow | E=-60 | tr0p25 | td7p5 | soma | rise=0.25 ms | decay=7.5 ms
+12. GABA_A_slow | E=-60 | tr0p287 | td2p67 | dend | rise=0.287 ms | decay=2.67 ms
+13. GABA_A_slow | E=-60 | tr0p432 | td4p49 | dend | rise=0.432 ms | decay=4.49 ms
+14. GABA_A_slow | E=-60 | tr0p432 | td4p49 | soma | rise=0.432 ms | decay=4.49 ms
+15. GABA_A_slow | E=-60 | tr1 | td8 | dend | rise=1.0 ms | decay=8.0 ms
+16. GABA_A_slow | E=-60 | tr1 | td8 | soma | rise=1.0 ms | decay=8.0 ms
+17. GABA_A_slow | E=-60 | tr2p9 | td3p1 | dend | rise=2.9 ms | decay=3.1 ms
+18. GABA_A_slow | E=-60 | tr8 | td39 | dend | rise=8.0 ms | decay=39.0 ms
+19. GABA_B | E=-90 | tr180 | td200 | dend | rise=180.0 ms | decay=200.0 ms
+VISUAL: group rows by AMPA_fast, AMPA_slow, GABA_A_fast, GABA_A_slow, GABA_B using color bands.

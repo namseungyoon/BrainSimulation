@@ -1,0 +1,33 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable systems-profiling slide with a time table and small bar breakdown. White background, black crisp text, thin grid lines, muted blue/red accents, monospace numbers.
+
+TITLE TEXT: Why the run time jumped: GPU vs CPU time profile
+SUBTITLE TEXT: The source-faithful 3-D graph moved cost into explicit GPU connection
+
+Panel A, top: Full-scale phase table (measured, 338,740 cells, 10 s model)
+| phase | resource | time | note |
+| build-edges | 24-core CPU pool | 1682 s (28 min) | nestgpu-free, REUSABLE artifact |
+| setup + connect | GPU | 2186 s (36 min) | ~2.5 billion explicit one-to-one edges |
+| spike-setup | CPU + GPU | 19 s | vectorized (was ~11 min) |
+| run (Simulate + LFP) | GPU | 4697 s (78 min) | recording stride (was 68% LFP) |
+(NEST-GPU internal: Building 2241 s, Simulation 4660 s.)
+
+Panel B, bottom-left: Why CONNECT exploded
+- Uniform topology used NEST-GPU's built-in fast connect: < 1 s at scale 0.125.
+- Source-faithful 3-D-Gaussian topology is EXPLICIT: each of ~2.5e9 edges is pushed as an individual one-to-one connection -> 36 min GPU ingestion.
+- This is the price of biological connectivity fidelity, not a bug.
+
+Panel C, bottom-middle: Why RUN is large
+- run = GPU Simulate + LFP recording.
+- LFP analog recording was 68% of run (108.8 s vs 35.1 s at scale 0.125) via per-step Device->Host copies.
+- A native multimeter stride cut it to ~7 s; the remaining run is genuine neuron+synapse GPU compute.
+
+Panel D, bottom-right: Optimization impact
+Bars: BEFORE ~1 day  ->  AFTER ~2 h.
+- edge generation 81 min single-thread -> CPU pool + reusable artifact.
+- spike-setup 11 min -> 13 s.
+- recording 68% of run -> ~7 s.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep numbers exact: build-edges 1682 s, connect 2186 s, spike-setup 19 s, run 4697 s; ~2.5e9 edges; recording 108.8 vs 35.1 s (68%).
+The connect blow-up is because 3-D topology is EXPLICIT per-edge (vs uniform fast-connect), a fidelity cost, not a defect.
+build-edges runs on CPU (pool, nestgpu-free); connect and run are on GPU.

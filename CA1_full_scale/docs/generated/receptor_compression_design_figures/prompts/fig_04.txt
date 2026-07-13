@@ -1,0 +1,41 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Make a precise computation graph diagram for the GPU implementation. Use two swimlanes: CPU offline and GPU runtime. Clean engineering diagram, white/light background, blue for CPU, green for GPU, orange warning callouts. Large readable labels.
+
+TITLE TEXT: GPU computation graph
+SUBTITLE TEXT: Compression is offline; runtime integrates 20 receptor-port ODE channels
+
+CPU OFFLINE SWIMLANE:
+ModelDB syndata120
+-> 39 compartment-aware kernels
+-> utility weights: conductance * driving force * target priority
+-> selected 20 ports
+-> exact source-kernel -> representative-port assignment table
+-> ReceptorConfig: names, E_rev, tau_rise, tau_decay
+
+GPU BUILD SWIMLANE:
+Create neuron populations with n_ports = 20
+SetStatus per-port arrays:
+E_rev[20], tau_rise[20], tau_decay[20]
+Connect recurrent and afferent synapses with:
+weight, delay, receptor = port_id
+
+GPU RUNTIME SWIMLANE:
+pre spike event
+-> route by receptor port_id
+-> update conductance state for that port
+-> integrate double-exponential synaptic ODE
+-> compute synaptic current using E_rev
+-> update neuron membrane state
+
+WARNING CALLOUT:
+No least-squares solve runs on GPU in the current hard runtime.
+
+SPARSE2 CAVEAT CALLOUT:
+utility_sparse2 would require either two events per original synapse or a custom user model with split weights.
+
+BOTTOM LINE:
+Current deployment path = one event, one receptor id, one port ODE channel.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not imply the GPU reconstructs original 39 kernels dynamically.
+Do not say sparse2 is currently wired.
+Do not draw more than 20 runtime ports.

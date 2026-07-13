@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments with ion channels. Keep all text legible.
+TITLE: Why PV fails -- domain-average voltage cannot tell local clusters from uniform drive
+SUBTITLE: user_m4 drives the active current off the DOMAIN-AVERAGE V_d, which mixes two protocols that must behave differently.
+Panel A (top): CLUSTERED LOCAL synapses on one branch (should regenerate a dendritic spike) vs UNIFORM somatic current injection (must NOT become tonic dendritic gain). Draw both.
+Panel B (middle): the conflict -- a single domain-average V_d sees the same mean depolarization for both. Fitting the Na to recruit PV (lower activation V) makes uniform current-step injection ALSO regenerate -> breaks the native f-I (rejected). Fitting it to preserve f-I -> too weak to recruit PV.
+Panel C (bottom): conclusion -- one voltage-only gate on V_d cannot distinguish the protocols. Bistratified happens to sit where the conservative fit suffices; PV/O_LM need spatial locality. The minimal missing ingredient: a private branch-local voltage.

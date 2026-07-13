@@ -1,0 +1,33 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Use clean scientific PPT styling: white/light background, dark readable typography, blue/teal/orange accents, thin arrows, no stock imagery, no watermark. This is an infographic-diagram for a computational neuroscience engineering review. Preserve exact text and numbers.
+
+TITLE TEXT: Two compression logics
+SUBTITLE TEXT: Same 39 original synaptic kernels and 20-port budget, different runtime implications
+
+LEFT HALF TITLE: A. utility_weighted_medoids
+LEFT HALF DIAGRAM:
+39 original kernels -> utility-weighted medoid selection -> exact assignment table -> 20 NEST-GPU receptor ports
+Show many small source dots mapping one-to-one into 20 port boxes.
+Label the arrows: "one original kernel -> one representative port"
+Add formula label: decoded(x) = p_i
+Add metric badge: utility loss = 0.000344
+Add runtime badge: GPU-ready hard mapping
+Add constraint badge: effective ports = 1.000
+
+RIGHT HALF TITLE: B. utility_sparse2
+RIGHT HALF DIAGRAM:
+39 original kernels -> same selected 20 candidate ports -> nonnegative two-port decode -> best waveform estimate
+Show one source dot splitting into two port boxes with coefficients a and b, then recombining.
+Label formula exactly: estimate(t) = max(a,0) p_i(t) + max(b,0) p_j(t)
+Label solver exactly: coeffs = least_squares([p_i, p_j], target)
+Add metric badge: utility loss = 0.000261
+Add diagnostic badge: best numerical upper bound
+Add runtime caveat badge: not wired as current hard runtime
+Add efficiency badge: effective ports = 1.001
+
+BOTTOM DECISION BAR:
+Runtime choice: use utility_weighted_medoids now; keep utility_sparse2 as an upper-bound diagnostic unless GPU event splitting or a custom user model is added.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not claim sparse2 is currently deployed on GPU.
+Do not invent additional metrics.
+Do not change the strategy names.

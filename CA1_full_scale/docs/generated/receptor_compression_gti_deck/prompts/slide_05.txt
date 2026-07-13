@@ -1,0 +1,26 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Clean technical presentation style with code-path diagram. Large readable text. No invented filenames.
+
+TITLE TEXT: Runtime integration
+SUBTITLE TEXT: The ranked hard candidate is now selectable in config
+
+SHOW CONFIG SNIPPET BOX:
+receptor_port_strategy: utility_weighted_medoids
+compartment_aware_synapses: true
+syndata_variant: 120
+
+SHOW CODE PATH DIAGRAM:
+config.py
+-> parse_port_strategy
+-> receptors.py
+-> receptor_port_utility.py
+-> ReceptorConfig
+-> projections + afferents
+-> provenance
+
+SHOW THREE GUARANTEES:
+20 ports exactly
+distinct provenance hash
+no silent fallback
+
+BOTTOM NOTE:
+Without compartment_aware_synapses=True, the strategy raises a loud error.

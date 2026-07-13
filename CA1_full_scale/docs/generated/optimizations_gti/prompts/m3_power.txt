@@ -1,0 +1,33 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable spectral-methods slide with equations and a small power-spectrum plot. White background, black crisp text, thin grid lines, muted blue/red accents.
+
+TITLE TEXT: Power analysis: theta/gamma prominence and cross-frequency coupling
+SUBTITLE TEXT: A peak is only accepted if it rises above the fitted 1/f background
+
+Panel A, top-left: Power spectral density (Welch)
+Equation: P(f) = Welch(LFP; fs, nperseg), scaling = density.
+Note: nperseg = smallest power of two giving >= 0.5 Hz resolution (nperseg >= 2*fs).
+Draw a small log-log PSD with a theta bump near 5-8 Hz and a broadband 1/f slope.
+
+Panel B, top-right: Aperiodic (1/f) background + PROMINENCE
+Fit the aperiodic floor by a robust log-log regression EXCLUDING the peak band:
+log P(f) ~ a - b*log f   (fit on context freqs, |f - f_peak| > 3*resolution)
+Prominence = peak_power / background(f_peak).
+GATE: prominence >= 3x AND the peak is not at the low band edge.
+Draw the fitted straight 1/f line under the PSD and the vertical peak/background ratio.
+
+Panel C, bottom-left: Band peaks
+- theta peak = argmax P(f) in [4, 10] Hz; reject band-edge argmax.
+- gamma peak in 71 +- 20 Hz.
+- theta dominates gamma by MAX-in-band power (not integrated).
+Show measured full-scale result: theta 5.37 Hz, prominence 1.33x -> FAIL (below 3x); gamma 25.9 Hz, 1.01x -> FAIL.
+
+Panel D, bottom-right: Theta-gamma coupling (Tort MI)
+- theta phase phi(t) = angle(Hilbert(LFP_theta)); gamma amplitude A(t) = |Hilbert(LFP_gamma)|.
+- Bin phi into N bins; mean A per bin -> distribution P(A|phi).
+- MI = (log N - H(P)) / log N,  H = -sum P log P.
+- Significance: >= 199 block-permuted surrogates, require p <= 0.05 (or z >= 1.645), AND both theta and gamma peaks independently prominent.
+
+IMPORTANT TEXT CONSTRAINTS:
+Prominence = peak / fitted 1/f background at the peak; gate is >= 3x; reject low-band-edge peaks.
+theta band [4,10] Hz, gamma 71 +- 20 Hz. Keep measured theta 5.37 Hz / 1.33x, gamma 25.9 Hz / 1.01x (both FAIL).
+Tort MI uses theta PHASE and gamma AMPLITUDE with surrogate significance; do not claim CFC without prominent theta and gamma.

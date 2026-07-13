@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 1.2 -- Profile first: where does the time actually go?
+Band WHY: before optimizing, measure. Added a CA1_PHASE_TIMING gate to split build / connect / spike-setup / run(Simulate). Judgment: optimize the dominant phase, not guesses.
+Band HOW: measured at scale 0.125 -- setup/build/connect ~38 s; spike-setup 13 s; run(Simulate) = 1137 s (dominant). run scales SUBLINEAR with cells (cells^0.27; GPU util 24%->60% as the network fills).
+Band RESULT: run is dominant but sublinear -> full-scale run ~2-4 h, tractable. The other phases (spike-setup, edge-gen, recording) are the fixable overheads -- next slides. Draw a stacked bar: run huge, others small, with the cells^0.27 curve.

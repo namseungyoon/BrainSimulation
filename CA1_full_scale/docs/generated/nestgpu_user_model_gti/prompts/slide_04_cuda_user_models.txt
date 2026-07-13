@@ -1,0 +1,42 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense methods diagram. White background, dark text, muted blue/teal/orange accents. No fake screenshots. Include equations and arrays clearly.
+
+TITLE: CUDA user_m1 and user_m2 model interface
+SUBTITLE: SetStatus arrays become scalar parameters, port parameters, and RK5 state variables
+
+Draw two side-by-side panels.
+
+Left panel: user_m1 A-GLIF conductance model
+State variables:
+V_m, I_adap, I_dep
+for each port i: g_i, g1_i
+Scalar params:
+V_th, E_L, C_m, tau_m, k_adap, k1, k2, A1, A2, I_e, V_peak, V_reset, t_ref
+Port params:
+E_rev_i, tau_rise_i, tau_decay_i, g0_i
+Synaptic current:
+I_syn = sum_i g_i * (E_rev_i - V_m)
+Spike update:
+if V_m >= V_th: PushSpike(...); V_m = V_reset; I_adap += A2; I_dep = A1
+
+Right panel: user_m2 A-GLIF dendritic extension
+State variables:
+V_m, V_d, V_dist, I_adap, I_dep
+for each port i: g_i, g1_i
+Additional scalar params:
+dend_C_frac, dend_leak_scale, g_c, dist_C_frac, dist_leak_scale, g_c_dist
+Additional port param:
+compartment_i
+Compartment routing:
+compartment < 0.5 -> soma current
+0.5 <= compartment < 1.5 -> proximal dendrite current
+compartment >= 1.5 -> distal dendrite current
+
+Center bridge:
+NEST-GPU MAX_PORT_NUM = 20
+RK5 Derivatives() handles ODE
+ExternalUpdate() handles spike/reset/adaptation
+
+Bottom note:
+This is why the receptor port table and compartment vector are part of the model spec, not presentation metadata.
+
+Use panel label D.

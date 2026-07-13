@@ -1,0 +1,58 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense final methods slide, white background, black text, muted colors, panel labels A-E. Use flowcharts, matrices, and badges. No decorative art.
+
+TITLE: Strategy 6 — Validation and provenance gates
+SUBTITLE: 축약 구현의 목적은 더 강한 피팅이 아니라, 검증 가능한 full-spec emulation
+
+Panel A: Layered validation stack
+Draw vertical gate pipeline:
+1. source data gate: cellnumbers101, conndata430, syndata120
+2. receptor codebook gate: 39 -> 20 port assignment, port hash, n_ports <= 20
+3. dendritic transfer gate: source-location row-level response fidelity
+4. single-cell gate: f-I, passive features, adaptation/sag, fitted provenance
+5. network structure gate: counts, afferents, recurrent budgets, receptor ids
+6. network dynamics gate: rates, theta/gamma bands, LFP/proxy artifacts
+
+Panel B: Anti-overfitting rule
+Show decision matrix:
+Problem observed | First diagnostic | Do not do prematurely
+Low firing | no-recurrent split, drive/topology check | overfit single cells
+Bad theta | recurrent inhibition/excitation timing | blindly add compartments
+Port mismatch | codebook A/B, response loss | silently change canonical table
+GPU divergence | 1GPU vs 3GPU equivalence | accept sharding as final
+
+Panel C: Current canonical vs experimental
+Table:
+Canonical now:
+budget_weighted 20-port receptor table
+aglif_dend_cond_beta / user_m2
+literal_source_graph afferents
+modeldb_fastconn_binned recurrent topology
+static_exp2syn_no_stp
+Experimental / diagnostic:
+utility_weighted_medoids
+Izhikevich_cond_beta
+E-GLIF via custom user_m1
+2-compartment fallback
+MPI recurrent sharding
+
+Panel D: What is intentionally not claimed
+Show red-outline caution boxes:
+Not a full NEURON multicompartment runtime
+STP not implemented as a promoted canonical feature
+No silent fallback for missing receptor/dendritic mappings
+No final claim from module-level score alone
+
+Panel E: Final HITL decision checkpoint
+Draw:
+efficient implementation passes structural gates
+-> run canonical one-GPU full-scale if feasible
+-> compare hypothesis lanes across 3 GPUs
+-> promote only if network-level evidence improves and provenance remains clean
+
+Bottom statement:
+"The right target is the smallest GPU-feasible reduction that preserves paper-relevant structure and survives network-level validation."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not present experimental alternatives as deployed canonical.
+Do not call validation complete unless network-level acceptance has run.
+Do not hide static_exp2syn_no_stp.

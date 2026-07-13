@@ -1,0 +1,31 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable methods slide with equations and a laminar electrode diagram. White background, black crisp text, thin grid lines, muted blue accents.
+
+TITLE TEXT: Measuring the LFP across the whole network (point sources)
+SUBTITLE TEXT: Every neuron is a point current source; the field is their distance-weighted sum
+
+Panel A, left: Point-source field model
+Equation (volume conductor, homogeneous isotropic medium):
+LFP(x, t) = 1/(4*pi*sigma) * sum over i of  I_i(t) / |x - r_i|
+- I_i = the net synaptic/transmembrane current of neuron i (here: sum of its port currents g_p(V-E_p)).
+- r_i = position of neuron i (soma point); x = electrode position.
+- sigma = extracellular conductivity = 1/rho, rho = 333 ohm*cm.
+In code this is LFP = - sum_i w_i I_i with w_i = S*rho/(4*pi*d_i), d_i = |x - r_i|.
+
+Panel B, center: Current sub-sampling (what we actually record)
+- We record 128 x-stratified pyramidal somata (of ~89,678 pyramidal cells at full scale) inside one electrode ROI at (200, 100, 120) um.
+- Why subsample: each recorded cell x variable is a GPU->host copy every sample; the full population would be far more transfer.
+- The proxy therefore ESTIMATES the field from a spatial sample, not the whole population.
+
+Panel C, right: Extending to the full network
+- Whole-population field: sum over ALL pyramidal cells, not 128.
+- LAMINAR profile: several electrodes along depth (stratum oriens / pyramidale / radiatum / lacunosum) to capture the dipole, not one point.
+- Convergence check: recompute LFP with 128 / 256 / 512 / 1024 sampled cells and multiple electrode positions; a real signal is stable under sampling.
+Draw a pyramidal-cell layer with a vertical multi-contact electrode spanning SO/SP/SR/SLM.
+
+Panel D, bottom strip: Caveats
+Point sources at the soma approximate a cell whose current is really distributed along its morphology (line sources). Interneurons are excluded from the proxy. Final evidence needs sample-size and electrode-position convergence plus comparison to a pyramidal spike-density signal.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep the 1/(4*pi*sigma) * sum I_i/|x-r_i| form and rho = 333 ohm*cm; LFP is a distance-weighted, sign-flipped sum.
+128 sampled cells of ~89,678 pyramidal; one electrode at (200,100,120) um now; full/laminar is the extension.
+Call it a reduced point-source proxy; a real oscillation must survive sampling and electrode changes.

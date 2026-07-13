@@ -1,0 +1,20 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, concise text, diagrams, and labels. Clean technical research presentation style: white/light background, dark readable typography, subtle grid, blue/teal/orange accents. Use large legible text. Do not invent data. No watermark, no stock photo.
+
+TITLE TEXT: Receptor-port compression decision
+SUBTITLE TEXT: 39 compartment-aware synaptic kinetics -> 20 NEST-GPU receptor ports
+
+SHOW THREE BIG TAKEAWAYS:
+1. Five candidate compression strategies were implemented and ranked.
+2. Best hard runtime candidate: utility_weighted_medoids.
+3. It is now a selectable runtime strategy, but not the final canonical safe20 replacement.
+
+MAIN VISUAL:
+left-to-right pipeline with exact labels:
+ModelDB syndata120
+-> 39 source kinetics
+-> 5 compression ideas
+-> ranked 20-port candidates
+-> runtime strategy
+
+BOTTOM CALLOUT:
+Canonical final path stays budget_weighted until network-level A/B passes.

@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments with ion channels. Keep all text legible.
+TITLE: user_m4 result -- Bistratified breaks the clamp, PV/O_LM do not
+SUBTITLE: Exact clamp replay under recorded CCK=45 Hz + real excitation, 10 cells/type x 3 seeds. GPU-validated CUDA model; intrinsic f-I preserved.
+Panel A (left): grouped bar chart -- for PV / Bistratified / O_LM, three bars each: user_m2, user_m4, native. Values: PV 0.30 / 0.41 / 15.6 ; Bistratified 0.15 / 7.40 / 8.41 ; O_LM 0.02 / 0.00 / 1.17 Hz. Highlight Bistratified user_m4 bar (7.4) reaching near native (8.4) with a green check; PV/O_LM user_m4 bars flat with a red mark.
+Panel B (right): interpretation -- the dendritic-Na APPROACH is validated (Bistratified now regenerates clustered excitation and fires through the CCK shunt). But PV and O_LM stay silent. Why? -> next slide.

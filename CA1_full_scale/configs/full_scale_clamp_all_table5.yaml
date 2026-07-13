@@ -1,0 +1,37 @@
+# Full-scale diagnostic working-point screen.  Each interneuron population is
+# replaced by independent per-cell Table-5 Poisson output; pyramidal cells and
+# source-faithful outgoing projections to integrating populations remain active.
+name: ca1_full_scale_clamp_all_table5
+
+scale: 1.0
+seed: 12345
+
+duration_s: 2.5
+dt_s: 0.0001
+
+afferent_rate_hz: 0.65
+afferent_topology: literal_source_graph
+afferent_source_pool_size: 250000
+afferent_source_pool_indegree: 64
+recurrent_topology: modeldb_fastconn_binned
+
+downscale_mode: preserve-indegree
+
+backend: gpu
+neuron_model: aglif_dend_cond_beta
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_mode: all_dend
+source_location_transfer_table: src/ca1/params/source_location_transfer_syndata120_budget_weighted.json
+
+working_point_mode: clamp
+working_point_clamp_rates_hz: table5
+
+# Full cell count, diagnostic validation eligibility.
+tier: scaled
+crop_first_ms: 50.0
+
+syndata_variant: 120
+cellnumbers_index: 101
+conndata_index: 430
+conndata_count_mode: per_cell

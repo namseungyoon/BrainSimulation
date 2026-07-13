@@ -1,0 +1,52 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense methods-paper style, white background, black readable text, muted blue/teal/orange accents, panel labels A-D. Use exact technical names. No stock imagery.
+
+TITLE: Strategy 1 — Single-cell model reduction
+SUBTITLE: morphology-based NEURON cells -> GPU-feasible A-GLIF / A-GLIF-dend parameters
+
+Panel A, left: Original cell model
+Draw a detailed neuron morphology schematic labeled:
+Bezaire / ModelDB NEURON templates
+multicompartment dendrites
+ion-channel mechanisms
+cell classes: Pyramidal, PV, Axo, Bistratified, O-LM, CCK, Ivy, NGF, SCA
+Caption: "Used to define target behavior; not run as the final full-scale network."
+
+Panel B, center: Feature extraction and fitting
+Draw pipeline:
+current injection protocols -> ground_truth.json -> simulator-in-the-loop fit
+Show feature chips:
+f-I curve, rheobase, E_L, Rin, tau_m, adaptation, sag/Ih proxy, AP threshold/AHP
+Show objective components:
+low-current weighted f-I loss
+passive constraints: Rin_eff, tau_eff
+depolarization-block mask for high-current regions point models cannot reproduce
+
+Panel C, right: Deployment neuron model
+Draw NEST-GPU lowering:
+NetworkSpec.neuron_model = aglif_dend_cond_beta
+gpu_backend maps -> user_m2
+state variables: V_soma, adaptation currents, dend/prox/dist transfer states
+20 receptor conductance ports route events into soma/prox/dist domains
+Caption: "A-GLIF-dend is the current strongest GPU-feasible reduction path."
+
+Panel D, bottom: What is preserved vs what is not
+Make a two-column table:
+Preserved:
+cell-type excitability class
+rheobase-scale firing
+passive resistance/time constant
+adaptation/sag signatures where representable
+network-scale conductance event semantics
+Not preserved exactly:
+full channel-level morphology dynamics
+pyramidal high-current depolarization block
+per-branch active dendritic nonlinearities
+subcellular spike backpropagation
+
+Bottom rule:
+"Do not solve a network topology or synapse problem by overfitting single cells. Escalate to Izhikevich, E-GLIF user_m1, or 2-compartment only after network-level evidence requires it."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not say the final model is a full multicompartment cell.
+Do not claim E-GLIF is already built into NEST-GPU.
+Do not imply high-current depolarization block is solved by A-GLIF.

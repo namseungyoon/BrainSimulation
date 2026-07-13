@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 2.1 -- 3-D topology vs uniform: what actually changes?
+Band WHY: the recurrent wiring was initially uniform-random in x, but the source model places cells in 3-D and connects with a distance-dependent Gaussian rule. Question: does faithful 3-D topology change the result?
+Band HOW: implemented modeldb_fastconn_3d_gaussian (bit-identical digest 41314045, code-review APPROVE) and compared 3-D vs uniform at matched K and J (in-degree and weight).
+Band RESULT: 3-D and uniform preserve mean drive K.J -> RATES are nearly identical. 3-D changes SHARED-INPUT correlations / spatial coherence -> it affects THETA (testable only at full scale), NOT the mean-rate silence. So rate failure is a working-point problem, not a topology problem. Draw uniform cloud vs 3-D Gaussian ring, same K.

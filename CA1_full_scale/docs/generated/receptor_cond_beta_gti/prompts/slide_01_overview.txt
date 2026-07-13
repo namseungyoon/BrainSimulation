@@ -1,0 +1,33 @@
+Create one complete 16:9 academic PowerPoint slide image. White background, black crisp typography, muted blue/teal/orange accents, clean computational neuroscience diagram. Korean/English mixed technical slide. No stock art, no fake screenshots, no watermark.
+
+TITLE: Receptor port + cond_beta: 전체 신호흐름
+SUBTITLE: receptor는 출력 시냅스가 아니라, postsynaptic 입력 채널을 고르는 event-carried selector
+
+Draw one large left-to-right signal pipeline with numbered steps:
+1. presynaptic neuron spikes
+2. connection event carries {target id, weight, delay, receptor}
+3. receptor id selects postsynaptic input port p
+4. port p owns E_rev[p], tau_rise[p], tau_decay[p], conductance state g_p(t)
+5. cond_beta evolves g_p(t)
+6. current enters membrane ODE and changes V_m
+
+Show the core equations in a central equation box:
+I_syn,p(t) = g_p(t) * (E_rev[p] - V_m)
+I_syn,total = sum_p I_syn,p
+C_m dV_m/dt = leak + intrinsic terms + I_syn,total
+
+Right side: "Mental model" comparison table:
+Wrong | receptor = output synapse type
+Right | receptor = target-side input port selector
+Wrong | weight directly sets membrane voltage
+Right | weight injects conductance; E_rev and V_m determine current
+Wrong | cond_beta is a presynaptic process
+Right | cond_beta is postsynaptic input-channel dynamics
+
+Bottom callout:
+"Connection stores receptor id; neuron stores receptor-port ODE parameters and state."
+
+Accuracy constraints:
+Do not imply receptor is an output-side object.
+Do not claim voltage is directly set by the spike.
+Use receptor index as 0-based NEST-GPU port id.

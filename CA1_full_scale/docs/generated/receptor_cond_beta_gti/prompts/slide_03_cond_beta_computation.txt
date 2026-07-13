@@ -1,0 +1,40 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. White background, black typography, muted blue/teal/orange, panel labels A-D. Make the computation graph large and legible. No stock images.
+
+TITLE: cond_beta computation graph
+SUBTITLE: receptor port별 conductance state를 풀고, 그 합을 막전위 ODE에 입력
+
+Panel A: Event injection
+Draw:
+incoming spike event -> receptor port p
+weight_nS injects conductance impulse into port state
+not direct V_m jump
+
+Panel B: Beta / double-exponential conductance state
+Draw two state variables:
+g1_p(t) = rising auxiliary state
+g_p(t) = conductance state
+Use equations:
+dg1_p/dt = -g1_p / tau_rise[p]
+dg_p/dt = g1_p - g_p / tau_decay[p]
+Label: "tau_rise and tau_decay are port parameters."
+
+Panel C: Synaptic current
+Draw current computation:
+I_syn,p(t) = g_p(t) * (E_rev[p] - V_domain)
+For user_m2 show domain selector:
+compartment tag -> soma V_m, proximal V_d, distal V_dist
+For simpler cond_beta models show:
+V_domain = V_m
+
+Panel D: Membrane integration
+Draw membrane equation block:
+C_m dV_m/dt = leak + adaptation + intrinsic current + sum_p I_syn,p
+NEST-GPU RK5 / adaptive integration where applicable
+spike/reset logic after threshold crossing
+
+Bottom takeaway:
+"cond_beta is input-side channel dynamics. It controls V_m only through the synaptic current term."
+
+Accuracy constraints:
+Do not show cond_beta as an output waveform emitted by the presynaptic cell.
+Do not imply weight alone determines current direction.

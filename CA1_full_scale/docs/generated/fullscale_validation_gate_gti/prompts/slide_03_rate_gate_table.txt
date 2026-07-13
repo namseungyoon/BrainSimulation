@@ -1,0 +1,33 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense quantitative table slide, white paper background, black readable text, subtle grid, muted green pass band, muted red fail outside band, panel labels A-B. Preserve exact values.
+
+TITLE TEXT: Gate 1B: first-order firing-rate targets
+SUBTITLE TEXT: Bezaire Table 5 model rates, hard gate = target ±30%
+
+Panel A: Main table
+Create a large exact table with columns:
+Cell type | Target Hz | PASS band Hz | Priority diagnostic
+Rows exactly:
+Pyramidal | 6.0 | 4.20 - 7.80 | recurrent excitation balance
+PV_Basket | 0.9 | 0.63 - 1.17 | basket inhibition timing
+Bistratified | 18.0 | 12.60 - 23.40 | dendritic inhibition balance
+O_LM | 17.4 | 12.18 - 22.62 | avoid O-LM over-firing
+Axo | 8.9 | 6.23 - 11.57 | axo-axonic recruitment
+CCK_Basket | 54.4 | 38.08 - 70.72 | high-rate CCK drive
+Ivy | 43.3 | 30.31 - 56.29 | slow inhibition participation
+Neurogliaform | 55.1 | 38.57 - 71.63 | NGF slow inhibition
+SCA | 5.2 | 3.64 - 6.76 | SCA afferent balance
+
+Panel B, bottom: Computation formula
+Show:
+mean_rate_hz = total spikes / n_cells / analysis_window_s
+analysis_window_s = duration_s - crop_first_ms / 1000
+PASS if target * 0.70 <= measured <= target * 1.30
+
+Right callout:
+Use all-cell mean rate for the first gate.
+If ROI metadata is present, report validation_mean_rate_hz separately.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not convert rates to percentages.
+Do not remove any cell type.
+Do not invent additional rate targets.

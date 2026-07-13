@@ -1,0 +1,27 @@
+{
+  "title": "NEST-GPU user_m2 skeleton vs CA1 project interpretation",
+  "generated_for": "CA1 bsb-test HITL explanation",
+  "date": "2026-07-09",
+  "generator": "gti 0.3.1",
+  "slide_count": 6,
+  "core_claims": [
+    "user_m2 is a NEST-GPU-provided user-model slot / registered CUDA model surface.",
+    "The CA1 project maps aglif_dend_cond_beta to user_m2.",
+    "The biological interpretation, receptor table, source-location transfer, and validation provenance are project-level layers.",
+    "The current user_m2 kernel contains soma/proximal/distal voltage states and per-port compartment tags.",
+    "Built-in aeif_cond_beta_multisynapse is multi-receptor but single-compartment; user_m2 is the reduced dendritic extension used here."
+  ],
+  "source_evidence": [
+    ".venv/include/nestgpu/user_m2.h",
+    ".venv/include/nestgpu/user_m2_kernel.h",
+    "src/ca1/sim/gpu_backend.py",
+    "src/ca1/sim/aglif_dend.py",
+    "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+  ],
+  "accuracy_constraints": [
+    "Do not describe user_m2 as a fully built-in CA1 biological model.",
+    "Do not describe user_m2 as a model name invented only by the CA1 project.",
+    "Do not imply NESTML is the current NEST-GPU user model definition path.",
+    "Do not claim apical/basal full morphology is preserved exactly."
+  ]
+}

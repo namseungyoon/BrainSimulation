@@ -1,0 +1,29 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue and muted red and muted green accents. Include small neuron drawings (soma + dendrite) and a spatial map of neuron positions with distance-dependent connections.
+
+TITLE TEXT: Why source-faithful 3-D topology: shared input makes theta
+SUBTITLE TEXT: The neuron-simulation reason behind the GPU crash fix (commit bf9fb00)
+
+Panel A, left: WHY (neuroscience)
+Header: "Rhythm = correlated synaptic input, not single-cell property"
+Draw two nearby pyramidal neurons that receive OVERLAPPING presynaptic sources (shared input) -> their membrane potentials co-fluctuate -> population synchrony -> theta ~7.8 Hz and gamma ~71 Hz.
+Label: "Goal (Bezaire 2016): intrinsic theta/gamma from arrhythmic 0.65 Hz Poisson drive only."
+Red note: "uniform (distance-blind) wiring gives WRONG shared-input correlation (off by 10-61x) -> no prominent theta."
+
+Panel B, center: HOW (how the network is wired in simulation)
+Draw a 3-D spatial layer of neurons. For one postsynaptic cell, draw 5 concentric Gaussian rings out to 4c; ~87% of its presynaptic sources fall in the innermost ring.
+Labels: "each post cell samples presynaptic cells by 3-D Euclidean distance", "source-specific spread: c ~ 250 um local CA1, 2000 um CA3, 1000 um ECIII", "in-degree K preserved".
+Small caption: "nearby cells therefore SHARE many of the same sources -> the correlation that drives theta."
+
+Panel C, right: GPU technical challenge
+Header: "Distance-dependent wiring = explicit per-edge connections"
+Draw many individual edges being pushed into the GPU (NEST-GPU).
+Red chip: "generating them fast needs a CPU process pool, but NEST-GPU loads a fork-unsafe MPI/PSM library (libinfinipath) -> the pool crashes the process at teardown (SIGSEGV)."
+
+Panel D, bottom strip: How it was solved
+Sentence: "3-D edge generation runs single-process under the GPU backend (CA1_TOPOLOGY_MAX_WORKERS=1); pool only in a separate nestgpu-free process. No crash; edges bit-identical." Commit bf9fb00.
+
+IMPORTANT TEXT CONSTRAINTS:
+theta ~7.8 Hz, gamma ~71 Hz; drive is arrhythmic 0.65 Hz Poisson (no rhythmic input).
+Keep "shared-input correlation off by 10-61x" and "~87% innermost ring".
+Do not claim topology changes mean firing RATES; it changes CORRELATION / synchrony.
+Keep library name exactly "libinfinipath".

@@ -1,0 +1,45 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense technical methods figure, white background, black crisp typography, muted blue/teal/orange/purple accents, thin arrows, panel labels A-F. This is a Korean/English mixed technical slide: keep exact code names in English, explanatory labels concise. No decorative stock art, no fake screenshots, no watermark.
+
+TITLE: Full-spec emulation under GPU constraints
+SUBTITLE: 원 논문 ModelDB/NEURON full specification을 그대로 복제하지 않고, paper-scale 구조를 보존하며 효율화한 전략
+
+Make a large systems diagram with two horizontal layers.
+
+TOP LAYER: "Original paper / ModelDB specification"
+Show six source boxes:
+1. 338,740 CA1 cells, 311,500 pyramidal
+2. ~5B+ synapses from conndata_430 + cellnumbers_101
+3. multicompartment NEURON morphology and ion-channel mechanisms
+4. syndata_120: pathway kinetics, section masks, E_rev, rise/decay
+5. CA3 + ECIII external Poisson afferents: 454,700 sources, 0.65 Hz theta-control
+6. spatial synapse placement and dendritic filtering
+
+BOTTOM LAYER: "Current efficient NEST-GPU emulation"
+Show six corresponding strategy boxes:
+A. A-GLIF-dend reduction: aglif_dend_cond_beta -> NEST-GPU user_m2
+B. 39 compartment-aware kinetics -> 20 receptor ports, budget_weighted canonical
+C. source-location transfer table instead of per-synapse full morphology
+D. literal_source_graph afferents and modeldb_fastconn_binned recurrent topology
+E. positive weights, inhibition via negative E_rev receptor channels
+F. provenance + validation gates: rates, theta/LFP harness, port hash, transfer checks
+
+Draw arrows from each original source box to the corresponding efficient representation. Add a central caption:
+"Not arbitrary simplification: each deviation is a typed reduction with an explicit validation/provenance gate."
+
+Right side: compact "HITL decision ledger" with three columns:
+Changed from original | Why | Guardrail
+Rows:
+multicompartment NEURON -> A-GLIF-dend | GPU full scale | single-cell + network validation
+39 kernels -> 20 ports | NEST-GPU port limit | codebook/provenance hash
+explicit 5B connection list -> binned generator | memory/time | conndata430 budgets retained
+full morphology placement -> transfer table | efficient dendritic effect | row-level response fidelity
+MPI 3GPU recurrent sharding -> diagnostic only | speed study | final-equivalence not assumed
+
+Bottom caution strip:
+"Current canonical full-scale config: budget_weighted, literal_source_graph, modeldb_fastconn_binned, static_exp2syn_no_stp. Experimental candidates are not silently promoted."
+
+IMPORTANT ACCURACY CONSTRAINTS:
+Do not claim the final network is full NEURON.
+Do not claim STP is implemented.
+Do not claim 3-GPU recurrent sharding is final-equivalent.
+Do not call utility_weighted_medoids canonical.

@@ -1,0 +1,54 @@
+Create one complete 16:9 academic scientific figure plate, not a marketing slide. Dense, methods-paper style, white background, black text, panel labels A-D, thin arrows, muted blue/teal/orange/purple. The purpose is to visualize the single-cell fitting method used to reduce morphology-based NEURON cells into NEST-GPU point-neuron parameters.
+
+TITLE: Morphology-to-point-neuron fitting pipeline
+SUBTITLE: NEURON ground truth -> NEST-GPU batched forward model -> CMA-ES restart packing -> validation gate
+
+Panel A, upper left, ground truth extraction:
+Draw:
+Bezaire / ModelDB NEURON templates
+-> current injection protocol
+-> ground_truth.json
+List extracted features:
+f-I rates over 8 currents
+rheobase
+E_L, Rin, tau_m
+sag
+adaptation ratio
+AP threshold and AHP
+Caption: morphology is used to define target features, not to run the final network.
+
+Panel B, upper right, batched NEST-GPU forward model:
+Draw a GPU batch diagram:
+candidates x currents -> one NEST-GPU Simulate call -> spike trains -> rates and passive features
+Add exact implementation phrases:
+restart-packing
+multi-GPU round-robin workers
+3 A40 workers available for sweeps
+zero deployment-model mismatch: candidates are evaluated in the deployment simulator
+
+Panel C, lower left, objective function:
+Show loss components:
+f-I z-score loss
+adaptation-ratio loss
+analytic passive constraints: Rin_eff and tau_eff
+low-current up-weighting
+depolarization-block masking for regions a point model cannot reproduce
+For A-GLIF show:
+free dimensions include V_th, V_reset, t_ref, C_m, tau_m, k_adap, k1, k2, A1, A2
+For AdEx show:
+free dimensions include V_th, Delta_T, V_reset, t_ref, a, b, tau_w, g_L, C_m
+
+Panel D, lower right, validation and model status:
+Table with rows:
+A-GLIF / user_m1 | fitted on NEST-GPU | 9 cell types | validation passed in fitted file | current strongest fitted point-neuron path
+AdEx / aeif | CMA-ES attempted | analytic fallback after failed fit in current fitted file | useful baseline, not current best fit
+Izhikevich | fitted alternative | nestgpu-fi-fit provenance | expressivity diagnostic / fallback candidate
+Dendritic transfer user_m2 | EPSP source-location compressed fit | validation passed | preserves source-location response effects without full multicompartment
+
+Bottom statement:
+The fitting method is not "fit a rate only"; it is feature-constrained, simulator-in-the-loop, provenance-gated parameter reduction.
+
+IMPORTANT CONSTRAINTS:
+Do not claim final biological acceptance.
+Do not claim morphology is simulated in the final point-neuron network.
+Do not omit validation/provenance.

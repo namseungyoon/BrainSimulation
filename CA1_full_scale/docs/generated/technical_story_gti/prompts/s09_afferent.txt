@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 2.2 -- Afferent budget: use the paper's numbers verbatim
+Band WHY: a tempting "fix" is to cap each afferent's synapse count to the presynaptic population size. That silently changes the drive and is scientifically wrong.
+Band HOW: Afferent.synapses_per_cell is taken verbatim from conndata (total_synapses / N_post) and NOT capped to presynaptic size. Connectivity uses conndata_430 per-cell in-degree / weight / synapses-per-connection / receptor for all 9 cell types + 12 afferents (CA3 Schaffer + ECIII perforant).
+Band RESULT: the drive matches the source model exactly (e.g. ECIII->Neurogliaform = 58240 is correct, not a bug). No hidden rate knob. This keeps the working-point diagnosis honest. Show a conndata row -> synapses_per_cell with "no cap" stamp.

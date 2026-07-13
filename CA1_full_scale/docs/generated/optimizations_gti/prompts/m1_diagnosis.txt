@@ -1,0 +1,32 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience diagnosis slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace numbers.
+
+TITLE TEXT: What we measured: why PV is silent (cause) and the theta result (effect)
+SUBTITLE TEXT: A self-introduced reduction constant, fit to peak, lost the somatic charge
+
+Panel A, left: THE CAUSE (an artificial reduction constant)
+Header: "transfer_scale is not a paper parameter"
+- Source conductance 0.7 nS/contact is authoritative (Bezaire ModelDB conndata_430).
+- transfer_scale = 0.2379 is a SELF-INTRODUCED reduction constant (full morphology -> reduced 3-compartment), fit to match EPSP shape.
+- Applied as: deployed_gmax = source_gmax x transfer_scale => 0.7 x 0.2379 = 0.167 nS.
+- Fit objective (dendritic_transfer_fit.py): loss = peak_z^2 + area_z^2, but the excitatory row is placed on the weakly-coupled DISTAL dendrite (loc=dist).
+
+Panel B, center: THE MEASUREMENT (paired probe, source NEURON vs reduced user_m2)
+Small table (Pyr->PV AMPA, 32 draws, dt 0.025 ms):
+| quantity | reduced / source |
+| integral-g | 23.8% |
+| EPSP peak | 31-57% |
+| somatic CHARGE | 22-26% |
+Callout: "matching peak did NOT protect somatic charge; soma routing recovers charge to only 26%."
+
+Panel C, right: THE EFFECT (full-scale 3-D run)
+- PV_Basket 0.00 Hz, Bistratified 0.02 Hz, O_LM 0.00 Hz (targets 0.9 / 18 / 17.4).
+- theta peak 5.37 Hz, prominence 1.33x (need >=3x) -> FAIL.
+- The paper's primary PING interneurons are dynamically dead.
+
+Panel D, bottom strip: THE CAUSAL CHAIN
+theta fail 1.33x -> not topology (3-D == uniform) -> working point (interneurons silent) -> not dendritic routing (perisomatic-parking refuted) -> CHARGE loss from a peak-fit reduction constant -> interneurons below threshold.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep numbers exact: source 0.7 nS, transfer_scale 0.2379, deployed 0.167 nS; integral-g 23.8%, charge 22-26%; PV 0.00 / Bist 0.02 / O_LM 0.00 Hz; theta 5.37 Hz / 1.33x.
+Say transfer_scale is self-introduced (reduction), NOT a Bezaire paper value; source 0.7 nS IS authoritative.
+Do not claim Ih is the fix.

@@ -1,0 +1,13 @@
+{
+  "deck": "dendritic_model_gti",
+  "title": "Active-dendrite reduced neuron models toward the CA1 interneuron working point",
+  "date": "2026-07-13",
+  "slides": [
+    {"n": 1, "file": "d1_limit.png", "topic": "Reduction limit: passive dendrites can't spike through the shunt"},
+    {"n": 2, "file": "d2_fix_strategy.png", "topic": "Fix strategy: dendritic regenerative Na/K current"},
+    {"n": 3, "file": "d3_m4_result.png", "topic": "user_m4 result: Bistratified recruited, PV/O_LM not"},
+    {"n": 4, "file": "d4_why_pv_fails.png", "topic": "Why PV fails: domain-average V_d can't distinguish local vs uniform"},
+    {"n": 5, "file": "d5_m5_branchlocal.png", "topic": "user_m5: branch-local active voltage per domain"},
+    {"n": 6, "file": "d6_stack.png", "topic": "Full model stack: user_m2->m3->m4->m5 + corrections -> theta"}
+  ]
+}

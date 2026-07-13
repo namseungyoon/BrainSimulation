@@ -1,0 +1,45 @@
+{
+  "slides": [
+    {
+      "slide": "01",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_01.txt"
+    },
+    {
+      "slide": "02",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_02.txt"
+    },
+    {
+      "slide": "03",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_03.txt"
+    },
+    {
+      "slide": "04",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_04.txt"
+    },
+    {
+      "slide": "05",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_05.txt"
+    },
+    {
+      "slide": "06",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_06.txt"
+    },
+    {
+      "slide": "07",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_07.txt"
+    },
+    {
+      "slide": "08",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_08.txt"
+    },
+    {
+      "slide": "09",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_09.txt"
+    },
+    {
+      "slide": "10",
+      "prompt": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_gti_fullslide/prompts/slide_10.txt"
+    }
+  ],
+  "source_summary": "/home/seonghwankim/workspace_studio/bsb-test/docs/generated/safe20_syndata120_summary.json"
+}

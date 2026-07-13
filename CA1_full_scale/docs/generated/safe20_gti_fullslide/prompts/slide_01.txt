@@ -1,0 +1,10 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Safe20 synaptic port model
+SUBTITLE TEXT: syndata120 CA1 network, NEST-GPU receptor-port reduction
+KEY FACTS TO SHOW AS FOUR BIG METRIC CARDS:
+97 synapse entries
+105 receptor component rows
+39 typed + compartment unique components
+20 compressed receptor ports
+BOTTOM PROVENANCE TEXT: compartment-aware, budget-weighted, SHA 26774704...e46c
+VISUAL: left-to-right compression funnel: biological synapse table -> 39 compartment-aware kinetics -> 20 GPU receptor ports -> full-scale simulation.

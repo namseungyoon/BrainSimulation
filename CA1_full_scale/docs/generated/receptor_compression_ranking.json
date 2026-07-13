@@ -1,0 +1,67 @@
+{
+  "variant": 120,
+  "n_original_items": 39,
+  "n_budget": 20,
+  "scores": [
+    {
+      "strategy": "utility_sparse2",
+      "rank_objective": 0.00026065117514035636,
+      "utility_loss": 0.00026059672089977974,
+      "conductance_loss": 0.003093265440034187,
+      "uniform_loss": 0.14448141965320616,
+      "max_item_loss": 0.9412537862714208,
+      "n_ports": 20,
+      "effective_ports_per_item": 1.0010447990363929,
+      "worst_original": "GABA_A_slow:E-60:tr9:td39:dend",
+      "worst_decoded": "GABA_A_slow:E-60:tr0.728:td20.2:dend+GABA_A_slow:E-60:tr2.9:td3.1:dend"
+    },
+    {
+      "strategy": "utility_weighted_medoids",
+      "rank_objective": 0.0003440384033712691,
+      "utility_loss": 0.0003440384033712691,
+      "conductance_loss": 0.0039051119890498387,
+      "uniform_loss": 0.18163612807738583,
+      "max_item_loss": 1.0776602405454698,
+      "n_ports": 20,
+      "effective_ports_per_item": 1.0,
+      "worst_original": "GABA_A_slow:E-60:tr9:td39:dend",
+      "worst_decoded": "GABA_A_slow:E-60:tr0.728:td20.2:dend"
+    },
+    {
+      "strategy": "conductance_weighted_medoids",
+      "rank_objective": 0.0004219157922484375,
+      "utility_loss": 0.0004219157922484375,
+      "conductance_loss": 0.0036916080617375117,
+      "uniform_loss": 0.19699603065361532,
+      "max_item_loss": 0.7619409506416598,
+      "n_ports": 20,
+      "effective_ports_per_item": 1.0,
+      "worst_original": "GABA_A_fast:E-60:tr1:td8:soma",
+      "worst_decoded": "GABA_A_fast:E-60:tr0.08:td4.8:soma"
+    },
+    {
+      "strategy": "uniform_medoids",
+      "rank_objective": 0.05155088414714503,
+      "utility_loss": 0.05155088414714503,
+      "conductance_loss": 0.08629698327967908,
+      "uniform_loss": 0.11272850044163991,
+      "max_item_loss": 0.42276665612708947,
+      "n_ports": 20,
+      "effective_ports_per_item": 1.0,
+      "worst_original": "GABA_A_fast:E-60:tr1:td8:soma",
+      "worst_decoded": "GABA_A_fast:E-60:tr0.3:td6.2:soma"
+    },
+    {
+      "strategy": "current_safe20",
+      "rank_objective": 0.35161438344980506,
+      "utility_loss": 0.35161438344980506,
+      "conductance_loss": 0.2453203556818324,
+      "uniform_loss": 0.24317171136558244,
+      "max_item_loss": 1.7006565872554,
+      "n_ports": 20,
+      "effective_ports_per_item": 1.0,
+      "worst_original": "GABA_A_fast:E-60:tr0.18:td0.45:soma",
+      "worst_decoded": "GABA_A_fast:E-60:tr0.287:td2.67:soma"
+    }
+  ]
+}

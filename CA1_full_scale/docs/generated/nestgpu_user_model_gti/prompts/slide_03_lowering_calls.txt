@@ -1,0 +1,46 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Dense technical slide, white background, black text, muted colors. Use code-path diagram plus minimal pseudocode. No invented APIs.
+
+TITLE: Lowering NetworkSpec into NEST-GPU calls
+SUBTITLE: the Python boundary where biological spec becomes GPU node state
+
+Layout: three vertical lanes.
+
+Lane 1: Population creation
+Show pseudocode:
+receptors = spec.receptors
+n_ports = receptors.n_ports()
+model_name = _nestgpu_model_name(spec)
+assert n_ports <= 20 for user_m1/user_m2
+nodes = ngpu.Create(model_name, count, n_ports)
+
+Lane 2: Status transport
+Show two SetStatus boxes:
+scalar_status = _neuron_status(spec, cell_type, params)
+ngpu.SetStatus(nodes, scalar_status)
+
+receptor_status = {
+  E_rev: list(receptors.E_rev),
+  tau_rise: list(receptors.tau_rise),
+  tau_decay: list(receptors.tau_decay),
+  compartment: aglif_dend_compartments(...) for user_m2
+}
+ngpu.SetStatus(nodes, receptor_status)
+
+Lane 3: Synaptic event routing
+Show:
+port_idx = receptors.port_index(proj.receptor)
+syn_spec = {
+  weight: weight_nS,
+  delay: delay_ms,
+  receptor: port_idx
+}
+ngpu.Connect(pre_nodes, post_nodes, conn_spec, syn_spec)
+
+Add a small recurrent vs afferent split:
+recurrent weight = weight_nS * synapses_per_connection * weight_compensation * post_current_gain
+afferent literal graph weight = weight_nS * synapses_per_connection * post_current_gain
+
+Bottom caution strip:
+CPU NEST receptor_type is 1-based; NEST-GPU user-model receptor is 0-based. Do not share raw port IDs across backends without conversion.
+
+Use panel label C.

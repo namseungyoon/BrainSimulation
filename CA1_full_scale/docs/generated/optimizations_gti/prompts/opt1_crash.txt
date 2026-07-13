@@ -1,0 +1,30 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable engineering before-after slide. White background, black crisp text, thin grid lines, muted blue and muted red accents, small monospace code labels.
+
+TITLE TEXT: Enabling 3-D topology on GPU: the multiprocessing teardown crash
+SUBTITLE TEXT: NEST-GPU pulls in a fork-unsafe MPI/PSM library that segfaults when a process pool shares the process
+
+Panel A, left, red-tinted (BEFORE - crash):
+Draw a single process box. Inside, top: "import nestgpu" arrow to a red library chip labeled "libinfinipath (MPI/PSM), fork-unsafe".
+Below, a ProcessPool spawns worker forks AFTER that import.
+Red lightning on the fork: "SIGSEGV in on_exit handler".
+Tiny stack trace box (monospace): on_exit -> libinfinipath -> pthread_cond_wait
+Bottom red note: "deadlock; leaked GPU memory; run never finishes"
+Small caption: 4 fixes tried and rejected: spawn, forkserver-before-nestgpu, disable OpenBLAS/PSM threads, max_workers=1
+
+Panel B, right, blue-tinted (AFTER - fixed):
+Draw the same process box but single-threaded: "3-D edge generation runs single-process (serial) under the GPU backend".
+Chip: "CA1_TOPOLOGY_MAX_WORKERS = 1 (default) -> no pool, no fork, no crash".
+Second chip: "forkserver booted ONLY when opted in, and BEFORE nestgpu import".
+Blue note: "normal completion = NO crash. Earlier crashes were timeout-SIGTERM teardown artifacts."
+
+Panel C, bottom band: Evidence
+Three small badges in a row:
+Badge 1: edges bit-identical, digest sha256 4131 4045 ...
+Badge 2: full pytest suite GREEN
+Badge 3: commit bf9fb00
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not claim the ProcessPool runs inside the GPU/nestgpu process.
+Keep the library name exactly "libinfinipath".
+Do not invent speed numbers on this slide; this slide is about correctness, not speed.
+Use only the four rejected fixes listed. Do not add others.

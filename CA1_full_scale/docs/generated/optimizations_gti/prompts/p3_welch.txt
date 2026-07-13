@@ -1,0 +1,31 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable signal-analysis slide with two small spectra and equations. White background, black crisp text, thin grid lines, muted blue/red/green accents.
+
+TITLE TEXT: Does theta-band power mean a real oscillation?
+SUBTITLE TEXT: Welch power alone can lie; only a peak above the 1/f floor is a rhythm
+
+Panel A, top-left: What Welch actually computes
+- Welch PSD = average of periodograms over overlapping windows: P(f) = mean_k |FFT(w * x_k)|^2.
+- Averaging REDUCES variance of the estimate; it does NOT create structure.
+- It gives the distribution of power over frequency, nothing about phase or rhythmicity by itself.
+
+Panel B, top-right: Band power is NOT an oscillation
+Draw two spectra side by side, same theta-band integrated power:
+(1) pure 1/f aperiodic noise -- sloped line, NO peak;
+(2) a real rhythm -- 1/f PLUS a sharp theta bump.
+Caption in red: "Integrated theta-band power is high in BOTH. Band power alone cannot tell them apart."
+
+Panel C, bottom-left: The correct test = PROMINENCE
+- Fit the 1/f aperiodic floor, then Prominence = peak_power / background(f_peak).
+- A rhythm requires a NARROW peak that rises >= 3x above its own 1/f background, not at the band edge.
+- Plus: sustained across the run, and phase-locked (nonuniform spike phase, Rayleigh p<0.05; modulation depth).
+Our full-scale result: a bump exists but prominence = 1.33x -> band power without a true oscillation.
+
+Panel D, bottom-right: Spikes vs LFP -- two windows on the same rhythm
+- Spike-based: population spike-density -> PSD shows the firing-rate rhythm.
+- LFP-based: synaptic field -> PSD shows the sub-threshold/synaptic rhythm.
+- A genuine theta should appear PROMINENT in BOTH and be phase-consistent between them; agreement guards against a proxy artifact (recall the earlier 68 Hz that was an 8-cell LFP sampling artifact).
+
+IMPORTANT TEXT CONSTRAINTS:
+Welch = averaged windowed periodogram; averaging cuts variance, does not invent peaks.
+The key point: integrated band power is high even for 1/f noise; a REAL oscillation is a prominent (>=3x) narrow peak above the fitted 1/f, sustained and phase-locked.
+Keep our measured prominence = 1.33x (not a true oscillation). Mention the past 68 Hz 8-cell LFP-sampling artifact as why spike/LFP agreement matters.

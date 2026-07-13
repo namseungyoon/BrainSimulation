@@ -1,0 +1,9 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Decision matrix for model fidelity vs GPU feasibility
+CREATE MATRIX WITH ROWS:
+Full 39-component model | highest raw fidelity | exceeds safe port budget | likely heavier GPU path
+Safe20 port model | keeps typed + compartment structure | fits 20 ports | current recommended CA1 GPU path
+Over-compressed few ports | fastest | loses kinetics | not acceptable for theta mechanism
+2-compartment fallback | more biology | much more cost | only after point-model failure diagnosis
+HIGHLIGHT ROW: Safe20 port model
+BOTTOM TEXT: Use safe20 unless validation shows a specific missing kinetic mechanism.

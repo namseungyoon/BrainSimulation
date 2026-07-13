@@ -1,0 +1,14 @@
+{
+  "_comment": "Registry of generated network/simulation artifacts. All artifacts are gitignored and regenerable from configs + seed via `ca1 build` / `ca1 sim`. Correct future artifacts are added here with {config, seed, git_sha, sha256, n_cells_per_type}. The entries below are LEGACY binaries produced by the pre-restructure buggy builders; they were deleted during the restructure because they are stale and known-wrong, and the new builder regenerates them correctly.",
+  "schema_version": 1,
+  "artifacts": [],
+  "deleted_legacy_artifacts": [
+    {"path": "ca1_model/output/full_scale/ca1_full_scale.hdf5", "bytes": 6097634209, "produced_by": "build_full_ca1.py (legacy)", "defects": ["only 8191 cells (mislabeled full-scale)", "Neurogliaform population silently dropped (8 of 9 types)", "placement stats corrupted by .items()/.keys() bug"], "status": "deleted-stale"},
+    {"path": "ca1_complete_network.hdf5", "bytes": 2503208941, "produced_by": "build_complete_ca1.py (legacy)", "defects": ["only 19 connectivity types (missing excitatory pyr_to_* / pv_to_*)", "inferior superseded build"], "status": "deleted-stale"},
+    {"path": "ca1_scaled_1_50.hdf5", "bytes": 272517434, "produced_by": "build_scaled_ca1.py (legacy)", "defects": ["AllToAll wiring (connection prob 1.0 vs true ~0.0026)"], "status": "deleted-stale"},
+    {"path": "ca1_model/ca1_simple_network.hdf5", "bytes": 71389885, "produced_by": "ca1_simple_config.json (legacy)", "defects": ["only 3 cell types, AllToAll, hand-picked weights"], "status": "deleted-stale"},
+    {"path": "network.hdf5", "bytes": 6581768, "produced_by": "my_first_model (BSB tutorial)", "defects": ["not a CA1 model (base_type/top_type tutorial artifact)"], "status": "deleted-stale"},
+    {"path": "ca1_small_test.hdf5", "bytes": 2628924, "produced_by": "test_small_ca1.py (legacy)", "defects": ["only 2 connectivity types (abandoned partial build)"], "status": "deleted-stale"},
+    {"path": "ca1_model/output/test/quick_test.hdf5", "bytes": 1798031, "produced_by": "quick_sim_test.py (legacy)", "defects": ["66-cell throwaway smoke stub"], "status": "deleted-stale"}
+  ]
+}

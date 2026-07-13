@@ -1,0 +1,5 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience/HPC slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Every slide MUST have three clearly labeled horizontal bands: "판단 근거 (WHY)", "방법 (HOW)", "결과 (RESULT)". Keep all text legible.
+TITLE: Act 1.1 -- The GPU kept crashing at teardown
+Band WHY: full-scale edge generation used a multiprocessing pool for speed, but the run SIGSEGV'd at exit. Judgment: the crash was at teardown, not compute -- a library conflict, not our logic.
+Band HOW: traced it to libinfinipath (MPI/PSM), pulled in by nestgpu, whose fork-unsafe on_exit handler faults when a multiprocessing forkserver/pool coexists -- even with 0 live workers. Fix: run 3-D edge generation single-process under the GPU backend by default (CA1_TOPOLOGY_MAX_WORKERS>1 opts in).
+Band RESULT: normal completion = NO crash. Earlier "crashes" were all timeout-SIGTERM teardown artifacts. The run is now stable end-to-end. Draw the fork+on_exit conflict as two colliding icons.

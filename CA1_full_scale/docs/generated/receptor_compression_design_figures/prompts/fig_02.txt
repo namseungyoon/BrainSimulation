@@ -1,0 +1,37 @@
+Create one complete 16:9 PowerPoint slide image, not a background. Make it a dense but readable mathematical metric-definition slide for a technical research meeting. White/light background, dark readable typography, blue/teal/orange accents. Use boxes for formulas and a small schematic kernel curve. Preserve exact symbols and coefficients.
+
+TITLE TEXT: What the evaluation metrics mean
+SUBTITLE TEXT: A response-space loss is weighted by network utility and by runtime efficiency
+
+TOP LEFT FORMULA BOX: Synaptic response kernel
+g(t) = exp(-t / tau_decay) - exp(-t / tau_rise)
+then peak-normalize g(t)
+time grid: 0 to 500 ms, 5001 samples
+
+TOP RIGHT FORMULA BOX: response_loss(target, estimate)
+shape + 0.35 * area + 0.2 * peak + 0.2 * t_peak
+
+MIDDLE ROW: Define the four terms
+shape = L1 distance between normalized |g(t)| distributions
+area = |log area_target - log area_estimate|
+peak = |log peak_target - log peak_estimate|
+t_peak = |argmax_target - argmax_estimate| / N
+
+BOTTOM LEFT FORMULA BOX: Utility weight
+utility_weight = conductance_budget * |E_rev - V_operating| * target_multiplier
+V_operating = -55 mV
+target multipliers:
+Pyramidal 4.0; PV_Basket 2.5; O_LM 2.5; CCK_Basket 2.0; SCA 2.0
+
+BOTTOM RIGHT FORMULA BOX: Ranking objective
+utility_loss = weighted average(response_loss, utility_weight)
+effective_ports = weighted average(number of decoded ports, utility_weight)
+rank_objective = utility_loss * [1 + 0.2 * max(0, effective_ports - 1)]
+
+RIGHT EDGE MINI NOTE:
+Lower is better. The objective is not only reconstruction fidelity; it also prices biological importance and runtime shape.
+
+TEXT ACCURACY CONSTRAINTS:
+Do not omit the 0.35, 0.2, 0.2 coefficients.
+Do not change V_operating.
+Do not invent p-values or validation statistics.

@@ -1,0 +1,2 @@
+{"deck":"technical_story_gti","title":"CA1 재현 기술 여정 (판단근거->방법->결과)","date":"2026-07-13",
+ "slides":["s01 개요","s02 GPU 크래시","s03 프로파일","s04 spike-setup","s05 edge-gen 분리","s06 recording","s07 zero-copy connect","s08 3D 토폴로지","s09 afferent 예산","s10 측정 정직성","s11 발화실패 진단1","s12 CCK 클램프","s13 근본원인(축소 한계)","s14 수정 스택+로드맵"]}

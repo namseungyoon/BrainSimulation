@@ -1,0 +1,128 @@
+{
+  "Pyramidal": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 3.993,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "PV_Basket": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 3.535,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "CCK_Basket": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 1.848,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "Axo": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 3.395,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "Bistratified": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit-proximal-afferent-preserving",
+    "g_c_scale": 6.226,
+    "note": "Wave284: conndata430 Bistratified proximal-afferent-preserving g_c carried-forward; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "Ivy": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 80.294,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "O_LM": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 17.905,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 6,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "SCA": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 3.395,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 10,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  },
+  "Neurogliaform": {
+    "dend_C_frac": 0.4,
+    "dend_leak_scale": 1.0,
+    "fit_provenance": "neuron-epsp-location-compressed-fit",
+    "g_c_scale": 22.838,
+    "note": "Wave284: conndata430 cell-level g_c carried-forward from NEURON Exp2Syn morphology fit; final dendritic response validated by source-location row transfer scales.",
+    "validation": {
+      "covered_rows": 8,
+      "evidence_path": ".omo/ulw-loop/g002-continuation/evidence/source_location_m2_row_probe_wave131/summary.jsonl",
+      "method": "user_m2-row-level-source-location-response-fidelity",
+      "passed": true,
+      "source_location_table": "src/ca1/params/source_location_transfer_syndata120_budget_weighted.json"
+    }
+  }
+}

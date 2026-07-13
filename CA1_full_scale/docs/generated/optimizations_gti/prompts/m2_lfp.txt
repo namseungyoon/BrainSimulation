@@ -1,0 +1,32 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable methods slide with equations. White background, black crisp text, thin grid lines, muted blue accents. Include a multi-compartment pyramidal neuron, an electrode, and clean mathematical formulas.
+
+TITLE TEXT: Computing the LFP proxy from compartment currents
+SUBTITLE TEXT: n-pole point-source approximation over 128 sampled pyramidal cells
+
+Panel A, left: Per-compartment port currents
+Draw the reduced 3-compartment neuron: soma (V_m), proximal dendrite (V_d), distal dendrite (V_dist), each with conductance-based synaptic ports (AMPA, GABA_A, GABA_B).
+Equation: I_p(t) = g_p(t) * (V_comp(p)(t) - E_p)
+where g_p is the recorded port conductance, V_comp the compartment voltage, E_p the reversal (AMPA 0 mV, GABA_A -60, GABA_B -90).
+Per-cell current: I_i(t) = sum over ports p of I_p(t).
+
+Panel B, center: n-pole LFP sum
+Big equation:
+LFP(t) = - sum over i of  w_i * I_i(t)
+Point-source weight:
+w_i = (S * rho) / (4*pi*d_i)
+with rho = 333 ohm*cm (extracellular resistivity), S a fixed point-source scale, d_i the distance from cell i's soma position to the electrode.
+Note: sampled cells i = 128 x-stratified pyramidal cells inside the electrode ROI.
+
+Panel C, right: Geometry
+Draw an electrode at the ModelDB default position; several pyramidal somata at distances d_1, d_2, ... d_i; arrows weighting each current by 1/d_i.
+Label: "closer cells contribute more; contributions summed and sign-flipped."
+
+Panel D, bottom strip: Conventions and caveats
+- 0-degree phase convention: LFP trough (most negative) = 0 deg.
+- This is a reduced proxy: synaptic port currents + soma-position point sources, not morphological transmembrane line sources.
+- Recorded every 1 ms (multimeter stride 10 at dt 0.1 ms); ~14 samples per 71 Hz gamma cycle.
+
+IMPORTANT TEXT CONSTRAINTS:
+Keep rho = 333 ohm*cm; 128 sampled pyramidal cells; reversals AMPA 0 / GABA_A -60 / GABA_B -90 mV.
+LFP has a leading minus sign (sign-flipped sum). Weight ~ 1/distance (point source).
+Call it a reduced proxy, not a full morphological LFP.

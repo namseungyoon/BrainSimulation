@@ -1,0 +1,7 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers.
+TITLE: RESULT -- intrinsic theta + gamma emerge from arrhythmic input (full scale)
+SUBTITLE: 338,740-cell CA1, 0.65 Hz arrhythmic Poisson ONLY, source-grounded model stack, no Table-5 tuning
+Panel A, top-left: the deployed stack that broke the fixed point -- CCK=user_m3 (Na depol-block) + all 5 GABA-into-CCK dis-inhibition rows; Bistratified=user_m4 (dendritic-Na); O_LM=user_m5 (branch-local voltage); PV=user_m2 (silent); SCA-refit. connect bit-identical.
+Panel B, top-right: OSCILLATION GATES PASS -- draw a power spectrum with a sharp theta peak at 6.84 Hz (prominence 3.33x over the 1/f aperiodic fit) and a gamma peak at 58 Hz (prominence 9.66x); annotate theta-gamma CFC MI=0.041, surrogate p=0.005, z=15.6. Label "prominent, coupled, from arrhythmic input".
+Panel C, bottom-left: WORKING POINT SHIFTED (baseline -> stack) -- Bistratified 0.02 -> 16.5 Hz (target 18), O_LM 0.00 -> 13.8 Hz (target 17.4), CCK 45+ -> 26.5 Hz. Pyramidal/Bistratified/O_LM phase-locked in the theta trough group. Small theta-oscillation raster/phase clock.
+Panel D, bottom-right: remaining (honest) -- PV still 0 Hz (needs genuine multicompartment, in progress); secondary interneurons Axo/Ivy/NGF/SCA still on unfixed user_m2 (next targets). 24 PASS / 16 FAIL; the CORE goal (emergent theta+gamma) achieved for the first time.

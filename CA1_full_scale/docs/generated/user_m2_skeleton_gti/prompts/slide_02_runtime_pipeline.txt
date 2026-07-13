@@ -1,0 +1,44 @@
+Create one complete 16:9 academic technical PowerPoint slide image. White background, black text, muted blue/teal/orange accents, panel labels A-D. No decorative art.
+
+TITLE: Runtime lowering pipeline into user_m2
+SUBTITLE: YAML/NetworkSpec의 생물학적 이름이 NEST-GPU CUDA 모델 호출로 내려가는 경로
+
+Panel A: Configuration layer
+Draw code-style config box:
+neuron_model: aglif_dend_cond_beta
+backend: gpu
+compartment_aware_synapses: true
+receptor_port_strategy: budget_weighted
+source_location_transfer_table: source_location_transfer_syndata120_budget_weighted.json
+
+Panel B: Backend model mapping
+Draw exact mapping table:
+aglif_cond_beta -> user_m1
+aglif_dend_cond_beta -> user_m2
+aeif_cond_beta_multisynapse -> built-in model
+izhikevich_cond_beta -> built-in model
+
+Panel C: Population creation and status transport
+Draw pseudocode:
+model_name = _nestgpu_model_name(spec)
+n_ports = receptors.n_ports()
+nodes = ngpu.Create(model_name, count, n_ports)
+ngpu.SetStatus(nodes, scalar_status)
+ngpu.SetStatus(nodes, receptor_status)
+For user_m2 receptor_status includes:
+E_rev, tau_rise, tau_decay, compartment
+
+Panel D: Connection event routing
+Draw:
+proj.receptor -> receptors.port_index(...) -> port_idx
+ngpu.Connect(pre, post, conn_spec, {weight, delay, receptor: port_idx})
+Add note:
+receptor is a target-side input port selector
+NEST-GPU user ports are 0-based
+
+Bottom statement:
+"The project never sends 'aglif_dend_cond_beta' to NEST-GPU directly; it lowers that biological contract to user_m2."
+
+Accuracy constraints:
+Do not imply user_m2 is selected by NEST-GPU from biological CA1 metadata.
+Do not omit the compartment array for user_m2.

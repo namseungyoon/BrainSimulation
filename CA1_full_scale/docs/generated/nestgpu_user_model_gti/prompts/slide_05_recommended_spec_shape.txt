@@ -1,0 +1,48 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. White background, black text, muted colors. Make it look like a rigorous implementation design figure.
+
+TITLE: Recommended spec handoff shape
+SUBTITLE: make the user model replayable, auditable, and backend-safe
+
+Draw a large schema diagram titled Versioned UserModelSpec.
+
+Top row: immutable identity
+schema_version
+model_name
+neuron_model
+source_commit or source hash
+receptor_table_sha256
+
+Middle left: arrays passed to ngpu.SetStatus
+node_scalar_arrays:
+  V_th[], E_L[], C_m[], tau_m[]
+  k_adap[], k1[], k2[]
+  A1[], A2[], I_e[]
+  V_peak[], V_reset[], t_ref[]
+port_arrays:
+  E_rev[n_ports]
+  tau_rise[n_ports]
+  tau_decay[n_ports]
+  compartment[n_ports] for user_m2
+
+Middle right: graph records passed to ngpu.Connect
+population_table:
+  cell_type, count, node range
+projection_table:
+  pre, post, rule, indegree, weight, delay, receptor_port
+afferent_table:
+  source, post, topology, rate or spike source, indegree, weight, delay, receptor_port
+
+Bottom row: validation gates
+1. n_ports <= 20 for user_m1/user_m2
+2. every receptor string resolves to exactly one 0-based port_id
+3. inhibitory weights are positive and inhibition is encoded by E_rev
+4. no nearest-port fallback after codebook selection
+5. CPU-vs-GPU or trace-level smoke check for changed model specs
+
+Right-side mini flow:
+YAML -> NetworkSpec -> UserModelSpec -> Create/SetStatus/Connect -> SimResult provenance
+
+Bottom headline:
+Good handoff format = exact arrays + exact graph + exact provenance, not an informal description.
+
+Use panel label E.

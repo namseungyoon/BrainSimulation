@@ -1,0 +1,27 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue and muted red accents. Include a multi-compartment pyramidal neuron drawing (soma + proximal + distal dendrite), an LFP electrode, and a small theta/gamma power-spectrum plot.
+
+TITLE TEXT: Why record an LFP proxy, and how, on GPU
+SUBTITLE TEXT: The neuron-simulation reason behind the multimeter-stride fix (commit 885dc44)
+
+Panel A, left: WHY (neuroscience)
+Header: "Theta and gamma are read out from the field, not single spikes"
+Draw a local field potential as the summed synaptic/transmembrane currents of many pyramidal cells. Show a small spectrum with a theta peak (~7.8 Hz) and a gamma bump (~71 Hz).
+Label: "the deliverable is a PROMINENT theta peak in the LFP; we must record a field proxy to measure it."
+
+Panel B, center: HOW (how the LFP proxy is computed)
+Draw the reduced 3-compartment neuron used in simulation: soma (V_m), proximal dendrite (V_d), distal dendrite (V_dist), with conductance-based synapses (AMPA, GABA_A, GABA_B ports).
+Labels: "sample 128 pyramidal cells", "per compartment: voltage x synaptic conductance -> port current", "n-pole LFP = distance-weighted sum of these currents".
+
+Panel C, right: GPU technical challenge
+Header: "Reading analog variables off the GPU every timestep"
+Draw the multimeter copying 128 cells x (V_m, V_d, V_dist + per-port g) from GPU device memory to host with a blocking cudaMemcpy EVERY step (100,000 steps for 10 s).
+Red chip: "this analog readout was 68% of run() (108.8 s vs 35.1 s without it) - it dwarfed the neuron dynamics."
+
+Panel D, bottom strip: How it was solved
+Sentence: "A native multimeter SAMPLING STRIDE records every N steps under a single Simulate (1 ms is plenty for 71 Hz gamma). Spikes exactly unchanged (308,826); recording cost ~84 s -> ~7 s." Commit 885dc44 (rebuilt nestgpu).
+
+IMPORTANT TEXT CONSTRAINTS:
+theta ~7.8 Hz, gamma ~71 Hz. Neuron model is a reduced 3-compartment adaptive model (soma V_m, proximal V_d, distal V_dist).
+Receptor ports: AMPA, GABA_A, GABA_B only.
+Keep numbers exact: 128 cells, 68%, 108.8 s, 35.1 s, 308,826.
+The fix is native multimeter stride with a SINGLE Simulate (not Python chunking).

@@ -1,0 +1,40 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience methods+results slide with equations, a cell list, and a before/after table. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace numbers.
+
+TITLE TEXT: Charge-matched transfer: reviving the silent interneurons
+SUBTITLE TEXT: Re-derive the reduction constant to match somatic PEAK and CHARGE, not peak alone
+
+Panel A, top-left: The fit (equations)
+Header: "Match the source cell's somatic response, both peak and charge"
+- Reduced deployed conductance: deployed_gmax = source_gmax x transfer_scale.
+- Old fit matched EPSP PEAK only -> charge lost.
+- New objective (equal weight, NOT firing rate):
+  loss = (peak_ratio - 1)^2 + (charge_ratio - 1)^2
+  where peak_ratio = reduced_peak / source_peak, charge_ratio = reduced_charge / source_charge.
+- Search over: transfer_scale (<= 1) AND a graded soma/prox/dist allocation of the port conductance.
+
+Panel B, top-right: Cell groups (who is silent and why)
+Header: "The paper's primary PING interneurons"
+Silent at full scale (target Hz): PV_Basket 0.00 (0.9), Bistratified 0.02 (18), O_LM 0.00 (17.4).
+Their excitatory drive rows audited: Pyr->PV, Pyr->Bistratified, Pyr->O_LM (recurrent AMPA), plus CA3->/ECIII-> afferent AMPA. These are fast perisomatic inputs (rise 0.07-0.11 ms).
+
+Panel C, bottom-left: Method
+- Paired probe: source NEURON cell (ModelDB hoc) vs reduced user_m2 CPU replay, identical conductance barrage, 32 location draws, dt 0.025 ms.
+- Measure integral-g, EPSP peak, somatic voltage area, voltage-clamp CHARGE.
+- Derive transfer per row; write a CANDIDATE file (not deployed) for later GPU small-loop validation. Conclusion stable dt 0.05 vs 0.025.
+
+Panel D, bottom-right: Performance (old -> new, % of source)
+Table (peak% / charge%):
+| row | old | new |
+| Pyr->PV | 31 / 22 | 111 / 87 |
+| Pyr->Bistratified | 22 / 20 | 105 / 95 |
+| ECIII->Bistratified | 15 / 11 | 112 / 86 |
+| Pyr->O_LM | 118 / 151 | 94 / 123 |
+| CA3->PV | 170 / 105 | 118 / 73 |
+Green note: "charge restored on most rows -> interneurons can reach threshold."
+Red note: "under transfer_scale <= 1, CA3->PV stays 73% -> PV afferent still needs a measured reduction-loss correction."
+
+IMPORTANT TEXT CONSTRAINTS:
+The fit matches PEAK AND CHARGE with equal weight; it is source-response grounding, NOT Table 5 rate tuning.
+Keep numbers: Pyr->PV 22->87% charge, Pyr->Bist 20->95%, ECIII->Bist 11->86%, CA3->PV 73%.
+transfer_scale <= 1 (a reduction constant); the candidate is NOT deployed, it awaits GPU small-loop validation.
+Silent cells: PV_Basket 0.00, Bistratified 0.02, O_LM 0.00 Hz.

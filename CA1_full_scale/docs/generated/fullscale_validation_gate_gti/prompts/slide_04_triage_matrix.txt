@@ -1,0 +1,39 @@
+Create one complete 16:9 academic scientific PowerPoint slide image. Technical troubleshooting matrix for simulation sweeps. White background, crisp black text, muted orange warning labels, blue arrows, green pass icons. Panel labels A-C. Preserve exact threshold text.
+
+TITLE TEXT: Sweep triage: reject, diagnose, or continue
+SUBTITLE TEXT: The first gate identifies parameter regions worth full theta analysis
+
+Panel A, left: Immediate reject signals
+Make a red/orange table:
+Signal | Likely cause | First action
+Pyramidal near 0 Hz | insufficient recurrent / afferent excitation | raise excitation or inspect source graph
+Pyramidal > ~10 Hz | excessive excitation or weak inhibition | reduce excitation or strengthen PV/O-LM
+PV_Basket near 0 Hz or > ~2 Hz | basket recruitment mismatch | inspect PV inputs and weights
+O_LM > 25 Hz | O-LM over-firing regression | inspect O-LM intrinsic and GABA balance
+CCK/Ivy/NGF/SCA all high | afferent drive or inhibitory scaling too strong | inspect CA3/ECIII and slow inhibition
+
+Panel B, center: Recurrent vs no-recurrent split
+Draw a fork:
+no-recurrent strong and 1GPU≈3GPU
+then afferent drive is credible
+if recurrent run diverges
+then recurrent topology / weights / receptor routing dominate
+
+Include exact prior diagnostic statement:
+no-recurrent 1GPU vs 3GPU matched: Pyramidal 40.96 vs 40.96 Hz
+
+Panel C, right: Continue criteria
+Checklist:
+all nine cell types inside Table 5 ±30% band
+no receptor mapping missing
+no NEST-GPU readback mismatch above float32 tolerance
+no diagnostic provenance blockers
+no hidden fallback path
+
+Bottom decision:
+Only continue to theta / phase gate after Gate 1A and Gate 1B pass.
+
+IMPORTANT TEXT CONSTRAINTS:
+Do not say high no-recurrent rates are final accepted rates.
+Do not imply 3GPU sharding is required if 1GPU full fits memory.
+Do not invent unmeasured speedup claims.

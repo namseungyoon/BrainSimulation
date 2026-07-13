@@ -1,0 +1,12 @@
+Create one complete 16:9 PowerPoint slide image, not a background. The slide itself must contain the title, data blocks, diagrams, and labels. Use a clean technical research presentation style: white or light background, dark readable typography, subtle grid, blue/teal/orange accents. IMPORTANT: preserve the exact numbers and short labels below; do not invent extra counts or fake names. Use large legible text, not tiny paragraphs. If there is too much text, prioritize the numeric facts and table labels. No watermark, no decorative stock photo, no irrelevant objects. Output should look like a polished scientific PPT slide screenshot.
+TITLE TEXT: Examples preserved by safe20 mapping
+SHOW TABLE WITH TWO COLUMNS: original connection component | compressed port
+ROWS:
+- CA3->Pyramidal AMPA: AMPA_fast E=0 rise=0.5 decay=3 dend -> port 02
+- ECIII->Pyramidal AMPA: AMPA_slow E=0 rise=0.5 decay=3 dend -> port 04
+- PV_Basket->Pyramidal GABA_A: GABA_A_fast E=-60 rise=0.3 decay=6.2 soma -> port 08
+- Axo->Pyramidal GABA_A: GABA_A_fast E=-60 rise=0.28 decay=8.4 soma -> port 07
+- Neurogliaform->targets GABA_B: GABA_B E=-90 rise=180 decay=200 dend -> port 19
+- CCK_Basket->Pyramidal split: same kinetics may need dend and soma ports -> ports 10/11
+RIGHT SIDE DIAGRAM: CA3 and ECIII excitatory inputs, PV/Axo fast inhibition, NGF slow GABA_B, CCK soma/dend split.
+BOTTOM CALLOUT: External CA3 and ECIII Poisson afferents are included in the port mapping.

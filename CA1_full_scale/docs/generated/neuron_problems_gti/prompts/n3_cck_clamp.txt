@@ -1,0 +1,6 @@
+Create one complete 16:9 academic scientific PowerPoint slide image, not a background. Dense but readable computational-neuroscience slide. White background, black crisp text, thin grid lines, muted blue/red/green accents, small monospace for numbers. Draw neurons as soma + labeled dendrite compartments. Keep all text legible.
+TITLE: CCK Basket is the dominant clamp
+SUBTITLE: Exact network-clamp replay -- drive one PING cell with ALL recorded E+I streams, then remove one inhibitory source at a time.
+Panel A (left): a PV/Bist/O_LM soma with converging GABA_A inputs (E_rev = -60 mV) from CCK, Ivy, SCA. CCK arrow thick/red (dominant); Ivy/SCA thin.
+Panel B (middle): single-omission rescue table. all E+I: PV 0.33, Bist 0.18, O_LM 0.09 Hz. drop CCK only: PV 11.45, Bist 7.84, O_LM 13.63 (LARGE rescue). drop Ivy / drop SCA: negligible (~0.3/0.2). no inhibition: 66/25/20.
+Panel C (right): conclusion -- inhibition collapses PING >99%; removing CCK alone rescues them. CCK Basket delivers the potent soma-directed GABA clamp. GPU exact-clamp confirmed identical on the real backend.

@@ -1,0 +1,42 @@
+Create one complete 16:9 academic PowerPoint slide image. White background, black crisp typography, muted blue/teal/orange accents. Korean/English mixed technical slide. No stock art, no fake screenshots, no watermark.
+
+TITLE: What is user_m2?
+SUBTITLE: NEST-GPU가 제공하는 user-model 슬롯 위에, 프로젝트가 CA1 A-GLIF-dend 해석을 얹은 구조
+
+Make a two-layer architecture diagram.
+
+Top layer: "NEST-GPU provided surface"
+Show boxes:
+user_m2 registered model name
+user_m2.h class skeleton
+user_m2_kernel.h CUDA Derivatives / ExternalUpdate
+RungeKutta5 integration
+Create("user_m2", count, n_ports)
+SetStatus(nodes, scalar params + receptor arrays)
+MAX_PORT_NUM = 20
+
+Bottom layer: "CA1 project interpretation"
+Show boxes:
+neuron_model: aglif_dend_cond_beta
+gpu_backend mapping: aglif_dend_cond_beta -> user_m2
+cell-type A-GLIF-dend parameters
+20-port receptor table
+source-location transfer table
+validation / provenance gates
+
+Center callout:
+"user_m2 is not merely invented by this project, and it is not a ready-made CA1 model. It is a NEST-GPU user-model slot currently carrying the CA1 reduced dendritic equations."
+
+Right side: "Terminology guardrail" table:
+Question | Correct answer
+Is user_m2 a NEST-GPU model name? | Yes, provided by NEST-GPU
+Is aglif_dend_cond_beta a NEST-GPU built-in name? | No, project-level model name
+Is the biological CA1 meaning automatic? | No, supplied by project params/tables
+Can user_m2 be repurposed? | Yes, by editing/rebuilding the user model kernel
+
+Bottom takeaway:
+"Think: NEST-GPU slot + CUDA kernel surface + project-specific biological contract."
+
+Accuracy constraints:
+Do not say user_m2 is a full original NEURON morphology model.
+Do not say user_m2 was only invented in Python.
