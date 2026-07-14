@@ -76,3 +76,7 @@ like_slice_CA1/_e3_tune.log
 like_slice_CA1/_e3_tune.err
 like_slice_CA1/_sc_smoke.log
 like_slice_CA1/11_schaffer/figures/_e3_io.npy
+
+# WSL CoreNEURON 임시 헬퍼 스크립트(로컬 전용)
+like_slice_CA1/_wsl_*.sh
+like_slice_CA1/_wsl_*.py
