@@ -8,6 +8,22 @@
 - **저리스크 1순위 = CoreNEURON "CPU 모드"** — WSL2 없이 현재 Windows에서 mod 재컴파일만으로 **2~7× 가속**, 확률 시냅스 그대로 유지. 지금 검증 가능.
 - **GPU는 규모를 키울 때(전 슬라이스급) 가치**. 2000세포 소규모는 GPU 이득 제한적.
 
+## 진행 로그 (2026-07-14, WSL2 GPU 빌드 착수)
+결정: WSL에 **NEURON 9.0.1(최신)** 별도 설치(Windows 8.2.7과 별개, WSL 독립 실행이라 버전 매칭 불필요) · **MPI off**(단일 GPU) · **Python 3.11(conda)** · **sm_86**.
+
+| 단계 | 상태 |
+| --- | --- |
+| WSL2 + Ubuntu 26.04 (VERSION 2, 커널 6.18) | ✅ |
+| **GPU 패스스루** (WSL2 내 nvidia-smi → A6000 48GB) | ✅ 확인 |
+| CUDA 툴킷 12.6 (`nvcc` V12.6.85) | ✅ |
+| NVIDIA HPC SDK 26.5 (`nvc++` 26.5-0) | ✅ |
+| 빌드 의존성 + Miniconda py3.11.15 (conda-forge) | ✅ |
+| NEURON 9.0.1 소스 clone (`--recursive`) | ✅ |
+| cmake GPU 설정 | 🔄 진행중(파이썬 의존성 jinja2 등 설치 후 재설정) |
+| make 빌드 → mod 컴파일 → GPU 실행 검증 | ⬜ 남음 |
+
+함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
+
 ## 1. 현재 상태 (실측 확인)
 | 항목 | 값 | 확인 |
 |---|---|---|
