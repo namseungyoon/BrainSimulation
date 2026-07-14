@@ -20,8 +20,10 @@
 | 빌드 의존성 + Miniconda py3.11.15 (conda-forge) | ✅ |
 | NEURON 9.0.1 소스 clone (`--recursive`) | ✅ |
 | cmake GPU 설정 | ✅ 성공 (GPU Support ON · `-gpu=cuda13.2,cc86 -acc` · nvc++ 26.5 · CUDA 13.2.78) |
-| make 빌드 (nvc++ GPU 컴파일) | 🔄 진행중 |
-| mod 컴파일(nrnivmodl -coreneuron) → GPU 실행 검증 | ⬜ 남음 |
+| make 빌드 (nvc++ GPU 컴파일) | ✅ 완료 (`~/nrn-gpu` 설치) |
+| import 검증 | ✅ NEURON 9.0.1 + coreneuron(`.enable`·`.gpu` 존재) |
+| mod 컴파일(nrnivmodl -coreneuron) — 확률 시냅스 GPU 관문 | 🔄 다음 |
+| GPU 스모크 → 벤치(배속) → 시간예측 → E1-G/E2-c-G/전슬라이스-G | ⬜ |
 
 함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
 
