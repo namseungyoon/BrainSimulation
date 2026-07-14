@@ -22,8 +22,10 @@
 | cmake GPU 설정 | ✅ 성공 (GPU Support ON · `-gpu=cuda13.2,cc86 -acc` · nvc++ 26.5 · CUDA 13.2.78) |
 | make 빌드 (nvc++ GPU 컴파일) | ✅ 완료 (`~/nrn-gpu` 설치) |
 | import 검증 | ✅ NEURON 9.0.1 + coreneuron(`.enable`·`.gpu` 존재) |
-| mod 컴파일(nrnivmodl -coreneuron) — 확률 시냅스 GPU 관문 | 🔄 다음 |
-| GPU 스모크 → 벤치(배속) → 시간예측 → E1-G/E2-c-G/전슬라이스-G | ⬜ |
+| mod 컴파일(nrnivmodl -coreneuron) — 확률 시냅스 GPU 관문 | ❌ **GPU 컴파일 벽** |
+| GPU 스모크 → 벤치 → E1-G/E2-c-G/전슬라이스-G | ⬜ (GPU 경로 재검토 필요) |
+
+**② 관문 결과 (2026-07-14, 중요)**: NMODL_PYLIB 설정으로 코드생성은 통과했으나, **nvc++ GPU 컴파일에서 우리 BBP 시냅스 mod(Det·Prob 모두) 실패** — `NVC++-S-1067 Cannot determine bounds for array: nc_type/tsyn/u/R`(NET_RECEIVE 배열 GPU 바운드 불가, 알려진 EMS-GPU 이슈 #638 계열). 채널 mod(cagk·cacum 등)도 별도로 `oinf/tau` GLOBAL→RANGE 요구. → **현 mod 그대로는 CoreNEURON GPU 불가.** 대안: (a) CoreNEURON **CPU**(gcc, 2–7×, mod 그대로 됨) (b) neurodamus-models의 GPU호환 최신 EMS mod로 교체 (c) mod 수정(GLOBAL→RANGE·배열 바운드). NEURON 9.0.1 GPU 빌드·import·GPU 패스스루는 정상(재사용 가능).
 
 함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
 
