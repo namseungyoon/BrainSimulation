@@ -29,6 +29,8 @@
 
 **진행 (2026-07-14) — CoreNEURON CPU 성공**: 채널 mod 13개(cagk·cal·can·cat·hd·kad·kap·kdb·kdr·kdrb·kmb·na3·nax)의 rate 임시변수 **GLOBAL→RANGE 포팅**(상수는 GLOBAL 유지·semantics 보존) + NMODLHOME 교정 → **CoreNEURON CPU에서 전 mod(시냅스 포함) 컴파일 성공·`special` 생성** ✅. 시냅스 mod는 CPU에선 무수정 통과(확률 시냅스 OK). **GPU는 추가로 시냅스 지연연결 vector 가드(#638) 필요.** 결과 동일성은 NEURON vs CoreNEURON 대조로 검증 예정(GLOBAL→RANGE는 rate 임시값이라 값 불변).
 
+**검증 완료 (2026-07-14)**: 대표 PC IClamp 실행을 일반 NEURON vs CoreNEURON CPU로 대조 → **비트-동일**(스파이크 1·발화 68.200ms·Vmax 28.076·Vmin −73.478 완전 일치). 채널 GLOBAL→RANGE 포팅이 결과 불변임을 실증. (단일세포·결정론; 시냅스 포함 네트워크 통계 검증은 벤치 단계에서.) 다음: 3실험(E1-G·E2-c-G·E2-c 전슬라이스-G)을 CoreNEURON CPU로 — 10코어 MPI 매칭 위해 WSL에 MPI 재빌드(openmpi) 필요 → 벤치(배속)→시간예측→실행.
+
 함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
 
 ### GPU 재실행 목표 (기존 실험 번호 + `-G`, 검증·벤치 통과 후)
