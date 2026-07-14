@@ -62,6 +62,9 @@ def argval(flag, default):
 
 
 def main():
+    global CSVDIR
+    if "--outdir" in sys.argv:                    # 벤치/임시 출력 분리(실측 데이터 보호)
+        CSVDIR = os.path.join(HERE, sys.argv[sys.argv.index("--outdir") + 1])
     if RANK == 0:
         os.makedirs(OUT, exist_ok=True); os.makedirs(CSVDIR, exist_ok=True)
     pc.barrier()
@@ -70,6 +73,7 @@ def main():
     tstop = float(argval("--tstop", "1000"))
     seg_ms = float(argval("--seg_ms", "100"))
     coarse = "--coarse" in sys.argv
+    use_cn = "--coreneuron" in sys.argv          # WSL CoreNEURON(CPU/GPU) 가속 엔진
     n_seg = int(round(tstop / seg_ms))
     vm_khz = float(argval("--vm_khz", "0"))       # 0=끔. 20 → 소마 막전위 20kHz 기록
     vm_cells_n = int(argval("--vm_cells", "-1"))  # 랭크별 기록 세포수(-1=소유 전부)
@@ -193,6 +197,10 @@ def main():
     # ── 실행 (증분 세그먼트: 매 세그먼트 CSV 저장 → 중간 크래시 시 진행분 보존) ──
     h.celsius = 34.0; h.cvode_active(0); h.dt = net.DT
     pc.set_maxstep(10)
+    if use_cn:
+        from neuron import coreneuron
+        coreneuron.enable = True; coreneuron.verbose = 0
+        log("[CoreNEURON] 가속 엔진 활성화 (CPU 백엔드)")
     h.finitialize(-70.0)
     log(f"[3/4 실행] 증분 psolve {n_seg}세그먼트 (seg={seg_ms}ms, dt={net.DT}) …")
     t_run0 = time.time()

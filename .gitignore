@@ -52,6 +52,7 @@ like_slice_CA1/_full_run.err
 like_slice_CA1/_full_run.pid
 like_slice_CA1/_bench_mpi.log
 like_slice_CA1/_bench_mpi2.log
+like_slice_CA1/_win_bench.log
 like_slice_CA1/_mpitest.py
 like_slice_CA1/_mpitest2.py
 like_slice_CA1/09_run/figures/_test_firing.gif

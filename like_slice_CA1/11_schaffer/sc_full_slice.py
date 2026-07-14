@@ -81,8 +81,12 @@ def main():
     sc_pc = int(argval("--sc_pc", "60")); sc_int = int(argval("--sc_int", "40"))
     sc_g_pc = float(argval("--sc_g_pc", "1.0")); sc_g_int = float(argval("--sc_g_int", "1.0"))
     no_inh = "--no_inh" in sys.argv
+    use_cn = "--coreneuron" in sys.argv          # WSL CoreNEURON(CPU/GPU) 가속 엔진
     vm_khz = float(argval("--vm_khz", "0")); vm_cells_n = int(argval("--vm_cells", "5"))
 
+    global CSVDIR
+    if "--outdir" in sys.argv:                    # 벤치/임시 출력 분리(실측 데이터 보호)
+        CSVDIR = os.path.join(HERE, sys.argv[sys.argv.index("--outdir") + 1])
     if RANK == 0:
         os.makedirs(CSVDIR, exist_ok=True)
     pc.barrier()
@@ -177,7 +181,12 @@ def main():
             f.write(f"N={N} tstop={tstop} seg_ms={seg_ms} dt={dt} det={det} sc_rate={sc_rate} "
                     f"build={t_build:.0f}s wire={t_wire:.0f}s sc={t_sc:.0f}s\n")
 
-    h.celsius = 34.0; h.cvode_active(0); h.dt = dt; pc.set_maxstep(10); h.finitialize(-70.0)
+    h.celsius = 34.0; h.cvode_active(0); h.dt = dt; pc.set_maxstep(10)
+    if use_cn:
+        from neuron import coreneuron
+        coreneuron.enable = True; coreneuron.verbose = 0
+        log("[CoreNEURON] 가속 엔진 활성화 (CPU 백엔드)")
+    h.finitialize(-70.0)
     log(f"[4/4 실행] 증분 psolve {n_seg}세그(seg={seg_ms:.0f}ms, dt={dt}) …")
     t_run0 = time.time()
     for s in range(n_seg):
@@ -204,7 +213,7 @@ def main():
             with open(os.path.join(CSVDIR, "PROGRESS.txt"), "a", encoding="utf-8") as f:
                 f.write(msg + "\n")
     t_sim = time.time() - t_run0; t_sim_max = float(pc.allreduce(t_sim, 2))
-    log(f"===== 구동 {t_sim_max/3600:.2f}h (dt={dt} det={det}) =====")
+    log(f"===== 구동 {t_sim_max:.1f}s ({t_sim_max/3600:.2f}h) (dt={dt} det={det}) =====")
 
     # ── 랭크0 병합 + 발화율 요약 ────────────────────────────────────────────
     if RANK == 0:
