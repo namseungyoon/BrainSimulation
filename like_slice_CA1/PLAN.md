@@ -97,6 +97,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **근거**: in vivo CA1 PC ~0.3–2Hz(Mizuseki & Buzsáki 2013).
 - **⚠️ 한계·주의**: "몇 배"는 밴드 따라 9~37배(견고X). "정상상태 20.1Hz"=E+I 혼합(PC 아님). "층별 발화율"=세포조성(SO/SR/SLM 전량 INT, n=24~29). 0.30~1.0 미표집→"bimodal" 미확정.
 - **결론**: baseline 과활성(PC 18.3Hz)·생리적 저발화 구간 부재 확인 → **MEA용 조용한 슬라이스 baseline 채택** 결정(방향성 견고, 정량 배수는 밴드 의존).
+- **E1-G (GPU 재실행 ⬜)**: 전 슬라이스 baseline 1초를 GPU·확률적 TM 시냅스로 재실행(CPU 66.6h 대비 배속 측정). CoreNEURON GPU 빌드·검증 후 → `GPU_SETUP_PLAN.md`.
 
 ### E2. Schaffer collateral(CA3→CA1) 경로 🔄 (E2-a·E2-b ✅ / E2-c ⬜)
 - **목표**: CA3 SC 입력을 명시적 시냅스로 배선 — 조용한 슬라이스에 자극원 제공.
@@ -106,6 +107,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **근거**: Romani PC당 SC ~20,878(±5,867)·INT ~12,714·CA3 267,238세포·층분포(SR67.9/SO24.7/SP7.1/SLM0.3%). fiber ~800=수렴비율 7.8% 보존. 시냅스 ~1/350 축소+전도도 보정.
 - **⚠️ 한계·주의**: SC=Ecker E2 대용(Romani 전용 SC-PC 0.85nS·τ0.4/12·NRRP12 아님, kinetics 다름). E2-a baseline 오염(진값 0.17mV)·Use=0.5로 유효 0.30nS. 전도도·fiber수=튜닝/설계값(측정 아님). **E2-c 지속구동은 감소 보정값**: SC 60시냅스(실제 ~20,000의 1/350)로 지속 발화시키려 fiber 150Hz·SC→PC 10nS로 세게 몲 → PC 10.6Hz는 **in-vivo(~1–2Hz)보다 높음**(검증용). SC→INT 3nS는 약해 정상상태 INT 0.2Hz(피드포워드 억제 미미). subset 2,000세포(전 슬라이스 아님).
 - **결론**: CA3 부재를 가상 SC fiber로 대체하는 배선법 확립·3단 검증(EPSP 크기 근사 E2-a·볼리 반응 E2-b·포아송 지속발화 E2-c). **SC 경로가 조용한 슬라이스를 구동함 확인.** 전도도·fiber수·구동빈도=보정 튜닝값, 전 슬라이스 배선은 GPU 과제.
+- **E2-c-G · E2-c 전슬라이스-G (GPU ⬜)**: E2-c(2,000세포+SC 9초)를 GPU·확률적 TM 시냅스로 재실행(결정론→**확률로 변경**), 그리고 전 슬라이스+SC 1초(E2-c 전슬라이스-G)도 GPU로 → `GPU_SETUP_PLAN.md`.
 
 ### E3. SC 자극 I-O + 억제 차단 ✅ subset 완료(피드포워드 억제 작동)
 - **목표**: SC 세기별 자극→발화 PC I-O 곡선. 정상 vs 억제차단 비교로 피드포워드 억제가 반응을 조절함을 확인(Romani Fig.4).
