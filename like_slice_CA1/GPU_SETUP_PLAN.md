@@ -19,8 +19,9 @@
 | NVIDIA HPC SDK 26.5 (`nvc++` 26.5-0) | ✅ |
 | 빌드 의존성 + Miniconda py3.11.15 (conda-forge) | ✅ |
 | NEURON 9.0.1 소스 clone (`--recursive`) | ✅ |
-| cmake GPU 설정 | 🔄 진행중(파이썬 의존성 jinja2 등 설치 후 재설정) |
-| make 빌드 → mod 컴파일 → GPU 실행 검증 | ⬜ 남음 |
+| cmake GPU 설정 | ✅ 성공 (GPU Support ON · `-gpu=cuda13.2,cc86 -acc` · nvc++ 26.5 · CUDA 13.2.78) |
+| make 빌드 (nvc++ GPU 컴파일) | 🔄 진행중 |
+| mod 컴파일(nrnivmodl -coreneuron) → GPU 실행 검증 | ⬜ 남음 |
 
 함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
 
