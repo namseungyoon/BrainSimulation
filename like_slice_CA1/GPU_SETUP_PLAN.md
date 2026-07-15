@@ -25,7 +25,8 @@
 | mod 컴파일(nrnivmodl -coreneuron) — 확률 시냅스 GPU 관문 | ❌ **GPU 컴파일 벽** |
 | **CoreNEURON CPU: MPI 재빌드 → 벤치(배속 5.83×) → 시간예측** | ✅ 완료 (하단 ★★) |
 | GPU 경로(시냅스 mod #638 포팅) | ⬜ 보류(느린 트랙) |
-| CPU로 3실험(E1-G/E2-c-G/전슬라이스-G) 실행 | ⬜ 사용자 선택 대기 |
+| **E2-c 전 슬라이스 실규모(17,647·1초·확률+SC)** | ✅ 완주 9.57h (PC 13.50Hz) |
+| E1-G·E2-c-G(기존 실험 재실행) | ⬜ 생략(벤치로 증명됨) |
 
 **② 관문 결과 (2026-07-14, 중요)**: NMODL_PYLIB 설정으로 코드생성은 통과했으나, **nvc++ GPU 컴파일에서 우리 BBP 시냅스 mod(Det·Prob 모두) 실패** — `NVC++-S-1067 Cannot determine bounds for array: nc_type/tsyn/u/R`(NET_RECEIVE 배열 GPU 바운드 불가, 알려진 EMS-GPU 이슈 #638 계열). 채널 mod(cagk·cacum 등)도 별도로 `oinf/tau` GLOBAL→RANGE 요구. → **현 mod 그대로는 CoreNEURON GPU 불가.** 대안: (a) CoreNEURON **CPU**(gcc, 2–7×) (b) mod 수정(GLOBAL→RANGE·배열 바운드). NEURON 9.0.1 GPU 빌드·import·GPU 패스스루는 정상(재사용 가능).
 
@@ -55,7 +56,9 @@
 | **E2-c-G** | 2,000+SC·9초·결정 | 54.49h | **~9.3h** |
 | **E2-c 전슬라이스-G** | 17,647+SC·1초·결정 | ~68h(추정) | **~12h**(밴드 10-14h) |
 
-(예측=Windows 실측÷5.83. 규모 확대 시 CoreNEURON 벡터화가 개선돼 실제는 더 빠를 여지→보수적. 각 실행이 첫 세그먼트 후 자체 ETA 출력해 확정.) 다음: 사용자 선택 실험을 실행→결과 스파이크/발화율을 Windows 실측과 대조.
+(예측=Windows 실측÷5.83. 규모 확대 시 CoreNEURON 벡터화가 개선돼 실제는 더 빠를 여지→보수적. 각 실행이 첫 세그먼트 후 자체 ETA 출력해 확정.)
+
+**★ 실행 결과 (2026-07-15)**: 사용자 결정 — GPU 보류라 `-G` 명명 폐기, **E2-c 전 슬라이스**만 실규모 실행(E1-G·E2-c-G는 기존 실험 재실행이라 배속·정확성 벤치로 이미 증명돼 생략). 시냅스는 **확률 방출**(det 말자는 지시). **완주: 9.57h**(예측 ~12h보다 빠름), 스파이크 222,046·발화 99%·**PC 13.50Hz·INT 5.11Hz**·층별 SP 12.74/SO 4.50/SLM 3.41/SR 1.83Hz. 분석 `11_schaffer/e2c_full_perspectives.py`(그림 3종). 운영 함정 3종 해결: ①OOM(피크~70GB>WSL기본48GB)→`.wslconfig` 84GB ②하네스 백그라운드 장시간 잡 종료→**setsid 완전분리** ③절전→keep-awake. **Random123 세그먼트 경고 무해 실증**(4세그 vs 단일 psolve 100% 비트-동일). Notion 02페이지에 결과 섹션+그림 placeholder 추가.
 
 함정 기록: ①conda 기본채널 ToS → `--override-channels -c conda-forge`로 회피 ②Ubuntu 26.04 Python 3.14 너무 최신 → conda py3.11 사용 ③NEURON 9 빌드에 `jinja2` 등 필요 → `pip install -r nrn_requirements.txt`. ④탐색기 `\\wsl$` 접근 글리치(9P)는 빌드 무관.
 
