@@ -24,7 +24,8 @@
 | import 검증 | ✅ NEURON 9.0.1 + coreneuron(`.enable`·`.gpu` 존재) |
 | mod 컴파일(nrnivmodl -coreneuron) — 확률 시냅스 GPU 관문 | ❌ **GPU 컴파일 벽** |
 | **CoreNEURON CPU: MPI 재빌드 → 벤치(배속 5.83×) → 시간예측** | ✅ 완료 (하단 ★★) |
-| GPU 경로(시냅스 mod #638 포팅) | ⬜ 보류(느린 트랙) |
+| GPU 경로 Stage A: #638 시냅스 가드 → 컴파일 | ✅ 성공(2026-07-23) |
+| GPU 경로: 확률 시냅스 Random123 GPU **런타임** | ❌ psolve 커널 세그폴트 → 클라우드 A6000 선검증中 |
 | **E2-c 전 슬라이스 실규모(17,647·1초·확률+SC)** | ✅ 완주 9.57h (PC 13.50Hz) |
 | E1-G·E2-c-G(기존 실험 재실행) | ⬜ 생략(벤치로 증명됨) |
 

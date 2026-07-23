@@ -200,7 +200,10 @@ def main():
     if use_cn:
         from neuron import coreneuron
         coreneuron.enable = True; coreneuron.verbose = 0
-        log("[CoreNEURON] 가속 엔진 활성화 (CPU 백엔드)")
+        use_gpu = "--gpu" in sys.argv
+        if use_gpu:
+            coreneuron.gpu = True
+        log(f"[CoreNEURON] 가속 엔진 활성화 ({'GPU' if use_gpu else 'CPU'} 백엔드)")
     h.finitialize(-70.0)
     log(f"[3/4 실행] 증분 psolve {n_seg}세그먼트 (seg={seg_ms}ms, dt={net.DT}) …")
     t_run0 = time.time()
