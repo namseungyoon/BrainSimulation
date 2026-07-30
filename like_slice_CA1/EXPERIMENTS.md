@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | E1 | Baseline 발화율·구동 검증 | ✅ 완료 |
 | E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c subset✅·전슬라이스⬜ |
-| E3 | SC 자극 I-O + 억제 차단 | ✅ subset 완료(피드포워드 억제 작동, gap 71%p) |
+| E3 | SC 자극 I-O + 억제 차단 | ✅ subset(E3a·E3b, gap 71%p) · E3c 전슬라이스 GPU 결정론 I-O ✅(gap 93.7%p) |
 | E4 | 세포외 LFP/fEPSP 계산기 | ⬜ 예정 |
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
 | E6 | 내측중격(MS) theta | ⬜ 예정 |
@@ -48,8 +48,9 @@
 | E2-c | 포아송 지속구동 9초 (subset 2,000세포) | 🔄 subset✅ | `sc_full_slice.py` · `sc_full_analysis.py` · `sc_input_viz.py` | `11_schaffer/figures/E2c_sc_input.png` · `E2c_full_firing.png` |
 | **E3** | *SC 자극 I-O + 억제 차단* | | `11_schaffer/` | |
 | E3(개념) | 피드포워드 억제 회로 개념도 | ✅ | `e3_concept.py` | `11_schaffer/figures/E3_concept.png` |
-| E3-a | I-O 곡선 + 억제 차단 결과 | ✅ | `sc_io_curve.py` | `11_schaffer/figures/E3a_sc_io_curve.png` |
-| E3-b | 튜닝 전/후 비교 | ✅ | `e3_tuning_compare.py` | `11_schaffer/figures/E3b_tuning_comparison.png` |
+| E3a | I-O 곡선 + 억제 차단 결과 | ✅ | `sc_io_curve.py` | `11_schaffer/figures/E3a_sc_io_curve.png` |
+| E3b | 튜닝 전/후 비교 | ✅ | `e3_tuning_compare.py` | `11_schaffer/figures/E3b_tuning_comparison.png` |
+| E3c | 전슬라이스 GPU 결정론 I-O + 억제 차단 | ✅ gap 93.7%p | `sc_gpu_io.py` · `e3c_io_plot.py` | `11_schaffer/figures/E3c_io_curve.png` |
 | **E4** | *세포외 LFP/fEPSP* | ⬜ | (예정, LFPykit 기반) | |
 | **E5** | *theta 변조 SC + PAC* | ⬜ | (예정) | |
 | **E6** | *내측중격 theta* | ⬜ | (예정) | |
