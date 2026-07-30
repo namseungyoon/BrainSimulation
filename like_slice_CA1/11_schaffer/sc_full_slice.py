@@ -41,7 +41,7 @@ from common.cell_loader import load_cell               # noqa: E402
 from synapse_pair import build_synapse                 # noqa: E402
 import params_table3 as P3                             # noqa: E402
 
-MODELS = os.path.join(SHARED, "models")
+MODELS = os.environ.get("MODELS_DIR") or os.path.join(SHARED, "models")   # WSL 네이티브 복사로 9P I/O 회피용 오버라이드
 CSVDIR = os.path.join(HERE, "sc_full_spikes")
 CELLS = os.path.join(ROOT, "05_placement", "slice_cells.npz")
 PRUNED = os.path.join(ROOT, "07_connectivity", "pruned_connectivity.npz")
@@ -149,10 +149,21 @@ def main():
 
     # ── SC 포아송 섬유(랭크별 독립·재현) + SC 시냅스 ──────────────────────────
     t0 = time.time(); fibers = []
-    for k in range(n_fiber):
-        ns = h.NetStim(); ns.interval = 1000.0 / sc_rate; ns.number = 1e9; ns.start = 0; ns.noise = 1.0
-        r = h.Random(); r.Random123(RANK * 100000 + k, 7, 0); r.negexp(1); ns.noiseFromRandom(r)
-        fibers.append(ns); keeph += [ns, r]
+    # GPU: NetStim의 Random123 포아송 노이즈가 CoreNEURON GPU psolve 커널서 세그폴트(RC=139).
+    #      → noise=0(주기적, GPU 정상) + 섬유별 위상·주기 무작위화(빌드타임 host RNG, 런타임 RNG 없음)로
+    #        비동기 구동을 근사. (엄밀 포아송은 향후 PatternStim.)  CPU는 기존 Random123 포아송 유지.
+    if "--gpu" in sys.argv:
+        frng = np.random.RandomState(9000 + RANK); ivl = 1000.0 / sc_rate
+        for k in range(n_fiber):
+            ns = h.NetStim(); ns.number = 1e9; ns.noise = 0.0
+            ns.interval = ivl * frng.uniform(0.7, 1.3)      # 주기 지터(빌드타임)
+            ns.start = frng.uniform(0.0, ivl)               # 위상 무작위(빌드타임)
+            fibers.append(ns); keeph += [ns]
+    else:
+        for k in range(n_fiber):
+            ns = h.NetStim(); ns.interval = 1000.0 / sc_rate; ns.number = 1e9; ns.start = 0; ns.noise = 1.0
+            r = h.Random(); r.Random123(RANK * 100000 + k, 7, 0); r.negexp(1); ns.noiseFromRandom(r)
+            fibers.append(ns); keeph += [ns, r]
     prm = P3.CLASSES[SC_CLASS]; scrng = np.random.RandomState(7000 + RANK); n_sc = 0
     for g in my:
         is_pc = gtype[g] == "PC"; k_syn = sc_pc if is_pc else sc_int; gnS = sc_g_pc if is_pc else sc_g_int

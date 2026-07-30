@@ -5,7 +5,7 @@
 
 ## 번호 규칙
 - `E{주제}` = 주제 (예: E2 = Schaffer collateral 경로)
-- `E{주제}-{a,b,c…}` = 그 주제 안의 하위 실험. 새 궁금증이 생기면 d, e… 로 확장.
+- `E{주제}.{1,2,3…}` = 그 주제 안의 하위 실험. 새 궁금증이 생기면 .3, .4… 로 확장. **(2026-07 변경: 기존 `-a/-b/-c` 접미사 → `.1/.2` 점번호. E1~E3 기존 하위는 그림 파일명 호환 위해 `-a/-b/-c` 유지, E8부터 점번호 적용)**
 - 그림 파일 = `E{주제}{letter}_설명.png|gif` (예: `E2a_sc_epsp.png`, `E3b_tuning_comparison.png`)
 - 폴더 = GitHub 구조(주제별 번호 폴더), 번호 = Notion 정렬용. 둘을 이 표가 연결.
 
@@ -31,9 +31,9 @@
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
 | E6 | 내측중격(MS) theta | ⬜ 예정 |
 | E7 | ACh 신경조절 | ⬜ 예정 |
-| E8 | LTP/LTD (칼슘 가소성) | ⬜ 예정 |
+| E8 | LTP/LTD (칼슘 가소성) | 🔄 E8.1 mod ✅(rho=Python 3e-5) · E8.2 결정론 GPU ✅(전슬라이스 17,647세포 1초 완주·PC 12.37Hz·psolve 1.35h) |
 | E9 | 실측 MEA 대조 | ⬜ 예정 |
-| E10 | STDP 곡선 (Wittenberg & Wang 2006) | ⬜ 예정 (모델=신규 장기가소성 mod) |
+| E10 | STDP 곡선 (Wittenberg & Wang 2006) | ⬜ 예정 (모델=신규 장기가소성 mod, E8과 공유) |
 
 ## 상세 색인 (하위 실험 ↔ 코드 ↔ 그림)
 
@@ -54,7 +54,9 @@
 | **E5** | *theta 변조 SC + PAC* | ⬜ | (예정) | |
 | **E6** | *내측중격 theta* | ⬜ | (예정) | |
 | **E7** | *ACh 신경조절* | ⬜ | (예정) | |
-| **E8** | *LTP/LTD 칼슘 가소성* | ⬜ | (예정, `papers/02` Graupner + 신규 mod) | |
+| **E8** | *LTP/LTD 칼슘 가소성* | 🔄 | `papers/02` Graupner + 신규 mod | |
+| E8.1 | Chindemi(2022)식 결정론 칼슘 가소성 시냅스 mod (ρ 이중안정 + 결정론 TM 전달) 구축·검증 | ✅ rho=Python 일치(3e-5) | `shared/mechanisms/GBPlasticitySyn.mod` · `papers/02/validate_gbmod.py` | |
+| E8.2 | 결정론 시냅스 GPU 포팅 (Det\* RANGE 리팩터+가드) + **전슬라이스 GPU 풀런** | ✅ 전슬라이스 17,647세포 1초 완주(스파이크 201,200·발화 99%·PC 12.37Hz·INT 3.45Hz·psolve 1.35h) | `_wsl_det_gpu.py`·`_wsl_mpi_gpu_fullrun_n4.sh` · `sc_det_gpu/fullscale_n4` | |
 | **E9** | *실측 MEA 대조* | ⬜ | (예정, SpikeInterface) | |
 | **E10** | *STDP (Wittenberg & Wang 2006)* | ⬜ | (예정, 신규 장기가소성 NMODL + `papers/02` Wittenberg fit) | |
 

@@ -150,13 +150,14 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **근거**: Romani ACh Hill 용량반응.
 - **⚠️ 한계·주의**: 기계론(Im/KM mod)은 현 23 me-model 보유 여부 선확인 필요.
 
-### E8. LTP/LTD (칼슘 기반 가소성) ⬜ 예정
+### E8. LTP/LTD (칼슘 기반 가소성) 🔄 (E8.1 설계 · E8.2 결정론 GPU 포팅 ✅)
 - **목표**: SC 자극(TBS/LFS)에 시냅스 weight 변화 재현.
-- **방법·입력**: Graupner-Brunel 칼슘모델(`papers/02` 보유)+STDP 데모(`demos/02_NEURON/02_STDP.py`)를 회로 weight 훅에 연결. 단일연결 검증→회로.
-- **검증지표**: TBS 후 fEPSP slope 증가(LTP)·저빈도 후 감소(LTD).
-- **결과·상태**: 미실행.
-- **근거**: Chindemi 2022(상세망 칼슘 가소성)·Ecker 2025(네트워크 유발 LTP)·Graupner 2012.
-- **⚠️ 한계·주의**: 저[Ca]o(1mM) in vitro 조건 필요.
+- **핵심 구조(2026-07-24 확정)**: Graupner 모델은 **전달 모델이 아니라 가소성-전용 학습규칙**(효능 ρ만 변조, AMPA/NMDA 동역학 없음 — `papers/02/plasticity_model.py` 코드 대조 확인). 따라서 시냅스를 "대체"하는 게 아니라 **[전달 시냅스(AMPA/NMDA)] × [Graupner ρ 가중치 변조]** 결합 구조. 이는 Chindemi 2022가 Blue Brain 미세회로(163,271세포)에 적용한 방식과 동일: **결정론 이중안정 ρ + TM 전달**. Ecker/Reimann eLife(2024/25)는 211,712세포 전 흥분성 쌍에 적용 → 우리 계열에서 네트워크 규모 배치 입증.
+- **방법·입력**: (E8.1) Graupner-Brunel 칼슘모델(`papers/02`, Wittenberg2006 fit)을 **결정론(σ=0) NMODL POINT_PROCESS**로 이식 — 칼슘 c ODE + ρ 이중안정(STATE, `DERIVATIVE cnexp`) + AMPA/NMDA 이중지수 전달 컨덕턴스 + `w=w0+ρ(w1−w0)` 스케일. pre 지연 D는 `net_send(D,2)` 단일 self-event(벡터 큐 금지=#638 회피), post는 소마 역치 NetCon. 단일연결 검증→회로. (E8.2) 위 mod가 GPU에서 돌려면 **결정론 전달이 GPU 친화**(Random123 불필요)임을 먼저 실증 — 기존 `DetAMPANMDA/DetGABAAB`의 `R/Pr/u/tsyn`를 NET_RECEIVE 인자→RANGE로 옮기고(#1067 회피, Prob* 방식) 지연연결 가드(#638) 후 CoreNEURON GPU(nvc++ 26.5) 컴파일+실행.
+- **검증지표**: (E8.1) 신규 mod 단일 시냅스 출력이 오프라인 `integrate_rho`(σ=0)와 일치; TBS 후 ρ 분포 UP 이동(LTP)·저빈도 후 DOWN(LTD). (E8.2) Det\* mod GPU 컴파일 통과(NVC++-S 0) + repro 실행 RC=0(vs 확률 시냅스 Random123 세그폴트 RC=139) + GPU빌드 CPU모드=CPU 비트-동일.
+- **결과·상태**: **E8.1 ✅ mod 구축·검증(2026-07-24)** — `shared/mechanisms/GBPlasticitySyn.mod` 작성(칼슘 c + ρ 이중안정 + AMPA/NMDA 전달, derivimplicit·net_send 단일 self-event·RNG 없음, Wittenberg2006 기본값). `papers/02/validate_gbmod.py`로 50Hz pre-post 프로토콜에서 **rho(t)가 Python `integrate_rho`(σ=0)와 일치**(mod 0.81598 vs Python 0.81598, 최대차 3e-5; 칼슘 최댓값도 일치, c의 1-샘플 점프-엣지 아티팩트 제외). **E8.2 ✅ 결정론 시냅스 GPU 포팅 실증(2026-07-24)** — `_wsl_det_gpu.py`로 원본 무변경·WSL `~/mods_det_gpu` 복사본에 가드+RANGE 리팩터 7개 앵커 적용 → nvc++ 26.5 GPU 빌드 **컴파일 통과(NVC++-S 0)** + repro **GPU 실행 RC=0 완주**(A6000·cell-permute type 1) · CPU 대조 RC=0. 확률 시냅스 Random123 GPU 세그폴트(RC=139) 대비 → **결정론 전달은 GPU 실행 가능 실증**. **★ 전슬라이스 완주(2026-07-24)**: 17,647세포·1초·결정론·SC를 A6000 GPU로 완주 — 스파이크 201,200·발화 99%·PC 12.37Hz·INT 3.45Hz·psolve 1.35h(층별 SP 11.55/SO 3.61/SLM 3.03/SR 1.96Hz; CPU 확률판 PC 13.50과 동일 대역·층별 순서 일치). **3관문 해결**: ①SC 포아송 GPU 세그폴트 진범=**NetStim Random123**(시냅스 아님; noise=0·위상무작위 빌드타임 구동으로 우회, 엄밀 포아송은 향후 PatternStim) ②OOM(호스트 pinned>84GB) → 랭크 **-n 4**로 컨텍스트 절감 ③분리실행 → **`Start-Process wsl.exe -e bash <script>`**(스크립트 `exec>log` 자체 리다이렉트)가 harness·세션 무관 3h 완주(설정: nrn-gpu MPI 재빌드 `~/nrn-gpu-mpi`·`~/mods_full_gpu_mpi`·`~/models_native`). `_wsl_mpi_gpu_fullrun_n4.sh`·출력 `sc_det_gpu/fullscale_n4`.
+- **근거**: Chindemi 2022(상세망 결정론 ρ + 확률 TM, GPU/CoreNEURON은 future work로 명시)·Ecker/Reimann eLife 2024/25(네트워크 규모 유발 가소성)·Graupner 2012(칼슘 이중안정 원본, 단일 시냅스 STDP 검증)·Higgins 2014(이중안정=기억안정 기전).
+- **⚠️ 한계·주의**: (1) **Romani에서 벗어남** — Romani는 확률 방출. 결정론 전달+Graupner ρ로 가는 이유: LTP가 요구하는 메커니즘 + GPU 실현성 + MEA는 집단 평균 신호(방출 변동 제거는 방어 가능한 단순화). "논문 X(확률 방출)→우리 Y(결정론 전달+ρ)→이유" 명시. Blue Brain 자신도 네트워크판 ρ는 결정론. (2) Graupner는 **초기 유도(분 단위)만** — 태깅-포획/공고화(시간~일) 없음. τ≈688s라 짧은 런에선 ρ 거의 불변(유도 신호 측정용). (3) Det\* RANGE 리팩터는 per-netcon→per-instance 이동 = 우리 모델(시냅스당 netcon 1개)에선 동치, 원본 BBP 대비 변경점. (4) 저[Ca]o(1mM) in vitro 조건 필요. (5) "가소성 규칙 GPU 실행"은 문헌상 아직 프런티어(Chindemi도 CoreNEURON GPU 미실증).
 
 ### E9. 실측 MEA fEPSP 대조 ⬜ 예정 (최종)
 - **목표**: in silico fEPSP·LTP를 실측 HD-MEA와 정량 비교.
