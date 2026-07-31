@@ -124,7 +124,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **E4a ✅ (2026-07-31, 무의존 LSA 계산기)**: `h.CVode().use_fast_imem(1)`+per-seg `i_membrane_`(nA) 기록 → **자체 LSA(line-source) 전달행렬**(numpy만, LFPykit 미설치) → V=M·I(mV). 상세형태 대표 PC(723세그먼트)에 SC 40시냅스 SR 동기볼리. 결과: SR **음성 -0.55µV**·slope -0.641µV/ms, 깊이 **source-sink-source 삼중극**(반전 84·331µm), 전류보존 ΣI/max|I|=1.2e-14, PPR 0.56(depression, E2 대용). **7-에이전트 적대검증 통과**(LSA=Holt&Koch 오차1e-16·독립재구현 재현). `12_lfp/`.
 - **E4b ⬜ 예정**: MEA 슬라이스 3층 영상법(Ness 2015 RecMEAElectrode: σ_T0.3/σ_S1.5/σ_G0/h300µm/n20, W_TS=-2/3) + 다수 정렬 PC 앙상블로 집단 mV급 fEPSP.
 - **검증지표**: SR 전극 음성 fEPSP(sink) + 극성반전(삼중극) + paired-pulse 비율. (E4a 충족)
-- **근거**: Holt&Koch 1999(LSA)·LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·Colbert&Levy 1992·Teleńczuk 2019(단일세포 sub-µV). 원 계획 `h.cvode…`는 8.2.7서 실패→`h.CVode()` 정정, LFPy 전면이식 회피→무의존 자체 LSA.
+- **근거**: Holt&Koch 1999(LSA)·LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·Colbert&Levy 1992·Teleńczuk 2020(J Physiol, 단일세포 sub-µV). 원 계획 `h.cvode…`는 8.2.7서 실패→`h.CVode()` 정정, LFPy 전면이식 회피→무의존 자체 LSA.
 - **⚠️ 한계·주의**: 단일세포 sub-µV(집단 mV=향후 앙상블)·무한매질(MEA 영상법=E4b)·coarse nseg=1 부적합→상세형태 세포만 사용(723세그먼트)·PPR은 E2 대용 시냅스라 depression(실 SC PPF 아님).
 
 ### E5. theta 변조 SC 입력 + theta-nested gamma(PAC) ⬜ 예정
