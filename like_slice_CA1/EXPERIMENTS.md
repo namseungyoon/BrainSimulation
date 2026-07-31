@@ -27,7 +27,7 @@
 | E1 | Baseline 발화율·구동 검증 | ✅ 완료 |
 | E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c subset✅·전슬라이스⬜ |
 | E3 | SC 자극 I-O + 억제 차단 + 발화율 보정 | ✅ subset(E3a·E3b, gap 71%p) · E3c 전슬라이스 GPU I-O ✅(gap 93.7%p) · E3d 생리 발화율 보정 ✅(sc_g_pc≈7.5nS→~1Hz) |
-| E4 | 세포외 LFP/fEPSP 계산기 | ⬜ 예정 |
+| E4 | 세포외 LFP/fEPSP 계산기 | 🔄 E4a ✅(무의존 LSA·SR 음성 fEPSP·삼중극·적대검증 통과) · E4b MEA 예정 |
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
 | E6 | 내측중격(MS) theta | ⬜ 예정 |
 | E7 | ACh 신경조절 | ⬜ 예정 |
@@ -52,7 +52,9 @@
 | E3b | 튜닝 전/후 비교 | ✅ | `e3_tuning_compare.py` | `11_schaffer/figures/E3b_tuning_comparison.png` |
 | E3c | 전슬라이스 GPU 결정론 I-O + 억제 차단 | ✅ gap 93.7%p | `sc_gpu_io.py` · `e3c_io_plot.py` | `11_schaffer/figures/E3c_io_curve.png` |
 | E3d | SC 세기 생리적 발화율 보정(문헌 대조+전슬라이스 GPU 스윕) | ✅ **sc_g_pc≈7.5nS→PC~1Hz**(문헌 0.88Hz 정합) | `sc_gpu_calib.py` | (콘솔/`calib_gpc.npy`) |
-| **E4** | *세포외 LFP/fEPSP* | ⬜ | (예정, LFPykit 기반) | |
+| **E4** | *세포외 LFP/fEPSP* | 🔄 | `12_lfp/` (무의존 LSA) | |
+| E4a | fEPSP 순방향 계산기 (LSA·SR 음성 fEPSP·삼중극·PPR) | ✅ 적대검증 통과 | `lfp_calc.py`·`e4a_fepsp.py`·`e4a_plot.py`·`test_lfp_sanity.py` | `12_lfp/figures/E4a_fepsp.png`·`E4a_placement.png` |
+| E4b | MEA 슬라이스 3층 영상법 + 집단 fEPSP | ⬜ 예정 | (E4a 기반, Ness2015 RecMEA) | |
 | **E5** | *theta 변조 SC + PAC* | ⬜ | (예정) | |
 | **E6** | *내측중격 theta* | ⬜ | (예정) | |
 | **E7** | *ACh 신경조절* | ⬜ | (예정) | |

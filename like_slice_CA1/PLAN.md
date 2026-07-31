@@ -79,7 +79,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 | E1 | Baseline 발화율·구동 검증 | ✅ 완료 |
 | E2 | Schaffer collateral 경로 | 🔄 E2-a·E2-b ✅ / E2-c subset 검증✅·전슬라이스⬜ |
 | E3 | SC 자극 I-O + 억제 차단 | ✅ subset 완료(피드포워드 억제 작동, gap 71%p) |
-| E4 | 세포외 LFP/fEPSP 계산기 | ⬜ 예정 |
+| E4 | 세포외 LFP/fEPSP 계산기 | 🔄 E4a ✅(무의존 LSA·SR fEPSP·삼중극) · E4b MEA 예정 |
 | E5 | theta 변조 SC 입력 + PAC | ⬜ 예정 |
 | E6 | 내측중격(MS) theta | ⬜ 예정 |
 | E7 | ACh 신경조절 | ⬜ 예정 |
@@ -119,13 +119,13 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 - **E3c (전슬라이스 GPU 결정론 I-O · ✅ 완주, 2026-07-30)** — 결과: 억제 gap 93.7%p(subset 71%p보다 강함)·control 100%서 26.6% vs block 60%서 94% 급포화·R=0.797·psolve 12회 ~2h44m. `sc_gpu_io.py`·그림 `E3c_io_curve.png`. 방법: subset(1,200·확률·CPU) I-O+억제차단을 **전슬라이스(17,647·결정론·GPU)**로 확장. E2-c 전슬라이스 GPU 완주로 실현 가능(과거 "전슬라이스 스윕 ~56h 비현실" 한계 해소). 방법: 결정론 전슬라이스 모델 **1회 빌드 → SC 볼리 활성비율(5~100%)×억제 정상/차단 루프 psolve(볼리 ~100ms 저렴) → [10,60)ms PC 발화 측정**(한 프로세스서 build-once-run-many). Start-Process 분리실행. 볼리 I-O 프로토콜(`sc_io_curve`)을 GPU 전슬라이스 파이프라인(`sc_full_slice`)에 이식 필요. ⚠️ 결정론=시행변동 없음(깨끗한 I-O·확률판과 성격 다름)·전도도/활성비율 튜닝값 유지.
 - **결론**: **피드포워드 억제가 SC 반응 이득을 조절함을 subset 재현**(정상 vs 억제차단 gap 71%p, Romani Fig.4 기전). SC→PC 세기 "적정 창"이 관건. 튜닝값·시그모이드·1,200 subset 한계 → 기전 정성 재현, 정량·전 슬라이스는 향후.
 
-### E4. 세포외 LFP/fEPSP 계산기 ⬜ 예정 (E2-c·E3 완성 후)
-- **목표**: 막전류→가상 MEA 전극전위, SC 자극에 SR층 음성 fEPSP(sink) 재현.
-- **방법·입력**: `use_fast_imem(1)`+per-seg `i_membrane_` 기록 → LFPykit `CellGeometry` → `RecMEAElectrode`(슬라이스 3층) → V=M·I → `pc.py_allreduce`. 대상세포 nseg 세분.
-- **검증지표**: SR 전극 음성 fEPSP(sink) 파형 + paired-pulse 비율.
-- **결과·상태**: 미실행.
-- **근거**: LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·BlueRecording 2025(456k CA1 적용). LFPy 전면이식 회피→LFPykit 코어+우리 글루.
-- **⚠️ 한계·주의**: coarse nseg=1 근거리 왜곡·활성함수 불가 → 대상세포만 세분 필요.
+### E4. 세포외 LFP/fEPSP 계산기 🔄 (E4a ✅ · E4b 예정)
+- **목표**: 막전류→가상 전극 세포외전위, SC 자극에 SR층 음성 fEPSP(sink) 재현.
+- **E4a ✅ (2026-07-31, 무의존 LSA 계산기)**: `h.CVode().use_fast_imem(1)`+per-seg `i_membrane_`(nA) 기록 → **자체 LSA(line-source) 전달행렬**(numpy만, LFPykit 미설치) → V=M·I(mV). 상세형태 대표 PC(723세그먼트)에 SC 40시냅스 SR 동기볼리. 결과: SR **음성 -0.55µV**·slope -0.641µV/ms, 깊이 **source-sink-source 삼중극**(반전 84·331µm), 전류보존 ΣI/max|I|=1.2e-14, PPR 0.56(depression, E2 대용). **7-에이전트 적대검증 통과**(LSA=Holt&Koch 오차1e-16·독립재구현 재현). `12_lfp/`.
+- **E4b ⬜ 예정**: MEA 슬라이스 3층 영상법(Ness 2015 RecMEAElectrode: σ_T0.3/σ_S1.5/σ_G0/h300µm/n20, W_TS=-2/3) + 다수 정렬 PC 앙상블로 집단 mV급 fEPSP.
+- **검증지표**: SR 전극 음성 fEPSP(sink) + 극성반전(삼중극) + paired-pulse 비율. (E4a 충족)
+- **근거**: Holt&Koch 1999(LSA)·LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·Colbert&Levy 1992·Teleńczuk 2019(단일세포 sub-µV). 원 계획 `h.cvode…`는 8.2.7서 실패→`h.CVode()` 정정, LFPy 전면이식 회피→무의존 자체 LSA.
+- **⚠️ 한계·주의**: 단일세포 sub-µV(집단 mV=향후 앙상블)·무한매질(MEA 영상법=E4b)·coarse nseg=1 부적합→상세형태 세포만 사용(723세그먼트)·PPR은 E2 대용 시냅스라 depression(실 SC PPF 아님).
 
 ### E5. theta 변조 SC 입력 + theta-nested gamma(PAC) ⬜ 예정
 - **목표**: CA1이 입력 theta(8Hz) 추종하는지 + gamma의 theta 위상결합(PAC).
