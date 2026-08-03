@@ -122,7 +122,7 @@ ca1sim (h5py 3.16 · scipy 1.15.3 · numpy 2.2.6 설치됨). 추가: `pip instal
 ### E4. 세포외 LFP/fEPSP 계산기 🔄 (E4a ✅ · E4b 예정)
 - **목표**: 막전류→가상 전극 세포외전위, SC 자극에 SR층 음성 fEPSP(sink) 재현.
 - **E4a ✅ (2026-07-31, 무의존 LSA 계산기)**: `h.CVode().use_fast_imem(1)`+per-seg `i_membrane_`(nA) 기록 → **자체 LSA(line-source) 전달행렬**(numpy만, LFPykit 미설치) → V=M·I(mV). 상세형태 대표 PC(723세그먼트)에 SC 40시냅스 SR 동기볼리. 결과: SR **음성 -0.55µV**·slope -0.641µV/ms, 깊이 **source-sink-source 삼중극**(반전 84·331µm), 전류보존 ΣI/max|I|=1.2e-14, PPR 0.56(depression, E2 대용). **7-에이전트 적대검증 통과**(LSA=Holt&Koch 오차1e-16·독립재구현 재현). `12_lfp/`.
-- **E4b ⬜ 예정**: MEA 슬라이스 3층 영상법(Ness 2015 RecMEAElectrode: σ_T0.3/σ_S1.5/σ_G0/h300µm/n20, W_TS=-2/3) + 다수 정렬 PC 앙상블로 집단 mV급 fEPSP.
+- **E4b 🔄 (MoI ✅ 검증, 2026-08)**: `lfp_calc.moi_point_matrix` — 유리(z=0,절연)-조직-식염수 3층 영상법(Ness 2015). 적대검증 3중 독립재구현 기계정밀 일치·버그0(극한 h→∞·W_TS=0→정확히 2.0배·표준 1.770·W_TS=−2/3, sanity 고정). 상세 PC를 MEA 프레임 회전·정렬 N개 복제 합산 → 집단 fEPSP. `e4b_fepsp.py`·`e4b_mea_layout.py`. **결과**: 단일 0.028µV(=무한×1.9), 정렬+동기 N=15000→35µV @19,099/mm²(실제 CA1 밀도 근접). **★정직(적대검증 정정)**: 실측 0.1~1mV 대비 3~30x 미달 = **밀도 아님(충분) → 세포당 진폭**(이상화 볼리·E2 대용 시냅스·단일깊이·유리전극 원거리). 두께: 계획 h300µm이나 full-size 세포(~700µm) 수용 위해 실행 h811µm(실측 300~400µm는 세포 절단); 두께는 경계반사(과대)·소스거리(과소) 상반효과라 분리해석. MEA 8×8@200µm(1400µm)는 슬라이스 면(2577×1082µm)에 부분적합(31/64 조직 위, CA1 곡선). 절대 mV는 세포당 진폭 현실화 후 과제.
 - **검증지표**: SR 전극 음성 fEPSP(sink) + 극성반전(삼중극) + paired-pulse 비율. (E4a 충족)
 - **근거**: Holt&Koch 1999(LSA)·LFPy/LFPykit(Lindén 2014)·Ness 2015(슬라이스-MEA forward)·Colbert&Levy 1992·Teleńczuk 2020(J Physiol, 단일세포 sub-µV). 원 계획 `h.cvode…`는 8.2.7서 실패→`h.CVode()` 정정, LFPy 전면이식 회피→무의존 자체 LSA.
 - **⚠️ 한계·주의**: 단일세포 sub-µV(집단 mV=향후 앙상블)·무한매질(MEA 영상법=E4b)·coarse nseg=1 부적합→상세형태 세포만 사용(723세그먼트)·PPR은 E2 대용 시냅스라 depression(실 SC PPF 아님).

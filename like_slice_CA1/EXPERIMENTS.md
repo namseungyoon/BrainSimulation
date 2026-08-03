@@ -54,7 +54,7 @@
 | E3d | SC 세기 생리적 발화율 보정(문헌 대조+전슬라이스 GPU 스윕) | ✅ **sc_g_pc≈7.5nS→PC~1Hz**(문헌 0.88Hz 정합) | `sc_gpu_calib.py` | (콘솔/`calib_gpc.npy`) |
 | **E4** | *세포외 LFP/fEPSP* | 🔄 | `12_lfp/` (무의존 LSA) | |
 | E4a | fEPSP 순방향 계산기 (LSA·SR 음성 fEPSP·삼중극·PPR) | ✅ 적대검증 통과 | `lfp_calc.py`·`e4a_fepsp.py`·`e4a_plot.py`·`test_lfp_sanity.py` | `12_lfp/figures/E4a_fepsp.png`·`E4a_placement.png` |
-| E4b | MEA 슬라이스 3층 영상법 + 집단 fEPSP | ⬜ 예정 | (E4a 기반, Ness2015 RecMEA) | |
+| E4b | MEA 3층 영상법 + 정렬 앙상블 집단 fEPSP | 🔄 MoI ✅적대검증 · 스케일 실증(절대 mV는 진폭 현실화 과제) | `e4b_fepsp.py`·`e4b_mea_layout.py`·`lfp_calc.moi_point_matrix` | `12_lfp/figures/E4b_mea_ensemble.png`·`E4b_mea_layout.png` |
 | **E5** | *theta 변조 SC + PAC* | ⬜ | (예정) | |
 | **E6** | *내측중격 theta* | ⬜ | (예정) | |
 | **E7** | *ACh 신경조절* | ⬜ | (예정) | |
