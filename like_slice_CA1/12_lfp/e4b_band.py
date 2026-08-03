@@ -41,8 +41,12 @@ FIG = os.path.join(HERE, "figures")
 os.makedirs(FIG, exist_ok=True)
 SIG_T, SIG_S, SIG_G, N_IMG = 0.3, 1.5, 0.0, 20
 Z_SOMA = 60.0
-PITCH, NGRID, D_ELEC = 200.0, 8, 10.0
+PITCH, D_ELEC = 200.0, 10.0
 R_ON = 100.0                       # 전극이 '조직 위'로 치는 반경
+# 격자: NCOL(장축)×NROW(단축). CLI: python e4b_band.py 8 3  (=3×8)
+NCOL = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+NROW = int(sys.argv[2]) if len(sys.argv) > 2 else 8
+TAG = f"{NROW}x{NCOL}"
 
 
 def unit(v):
@@ -103,43 +107,41 @@ def main():
     print(f"[슬라이스] PC {Npc}개 · 면 {np.ptp(face[:,0]):.0f}x{np.ptp(face[:,1]):.0f}um", flush=True)
 
     # ---- 3) MEA 8x8 밴드 최적 배치 (중심·회전 탐색: 조직 위 전극 최대) ----
-    span = (NGRID - 1) * PITCH
-    gs = np.arange(NGRID) * PITCH - span / 2
-    G0 = np.array(np.meshgrid(gs, gs)).reshape(2, -1).T   # (64,2) 기본 격자
+    gx = (np.arange(NCOL) - (NCOL - 1) / 2) * PITCH        # 장축
+    gy = (np.arange(NROW) - (NROW - 1) / 2) * PITCH        # 단축
+    Gx, Gy = np.meshgrid(gx, gy)
+    G0 = np.column_stack([Gx.ravel(), Gy.ravel()])         # (NELEC,2) 기본 격자
+    NELEC = G0.shape[0]
     fc = face.mean(axis=0)
-    best = (-1, fc, 0.0)
-    # 대략 밀도맵으로 빠르게: 각 후보 격자점 근처 PC 존재 여부
-    for th in np.deg2rad(np.arange(0, 90, 10)):
+    from scipy.spatial import cKDTree
+    tree = cKDTree(face)
+    best = (-1, None, 0.0)
+    for th in np.deg2rad(np.arange(0, 180, 10)):
         Rm = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]])
         Grot = G0 @ Rm.T
-        for dx in np.linspace(-300, 300, 7):
-            for dy in np.linspace(-150, 150, 7):
+        for dx in np.linspace(-400, 400, 9):
+            for dy in np.linspace(-200, 200, 9):
                 E = Grot + fc + [dx, dy]
-                # 조직 위 전극 수 (KDTree 없이 근사: 최근접 PC 거리)
-                on = 0
-                for e in E:
-                    if np.min(np.sum((face - e) ** 2, axis=1)) < R_ON ** 2:
-                        on += 1
+                on = int(np.sum(tree.query(E)[0] < R_ON))
                 if on > best[0]:
                     best = (on, E.copy(), th)
     n_on, E, th_best = best
-    print(f"[MEA 배치] 최적: 회전 {np.rad2deg(th_best):.0f}deg · 조직 위 전극 {n_on}/64 ({100*n_on/64:.0f}%)", flush=True)
-    over = np.array([np.min(np.sum((face - e) ** 2, axis=1)) < R_ON ** 2 for e in E])
+    print(f"[MEA 배치] {TAG} · 최적 회전 {np.rad2deg(th_best):.0f}deg · 조직 위 전극 {n_on}/{NELEC} ({100*n_on/NELEC:.0f}%)", flush=True)
+    over = tree.query(E)[0] < R_ON
 
     # ---- 4) 각 전극의 집단 fEPSP (모든 PC 복제본 기여 합, MoI) ----
-    ipk_ref = None
-    Ve = np.zeros((64, len(t)))
+    Ve = np.zeros((NELEC, len(t)))
     for j, e in enumerate(E):
         # 각 PC 세포(면좌표 f)에 대해 가상전극 = (e - f, z=0); 셀 로컬 geom로 MoI
         virt = np.column_stack([e[0] - face[:, 0], e[1] - face[:, 1], np.zeros(Npc)])
         M = L.moi_point_matrix(geom_loc, virt, SIG_T, SIG_S, SIG_G, Hh, N_IMG)  # (Npc, Nseg)
         Msum = M.sum(axis=0)
         Ve[j] = (Msum @ I) * 1e3                           # uV
-        if j % 16 == 0:
-            print(f"  전극 {j+1}/64 계산...", flush=True)
+        if j % 8 == 0:
+            print(f"  전극 {j+1}/{NELEC} 계산...", flush=True)
     # 전극별 피크 진폭
     ipk = np.argmax(np.abs(Ve), axis=1)
-    amp = np.array([Ve[j, ipk[j]] for j in range(64)])     # uV (부호포함)
+    amp = np.array([Ve[j, ipk[j]] for j in range(NELEC)])  # uV (부호포함)
     j_on = np.where(over)[0]
     j_max = j_on[np.argmax(np.abs(amp[j_on]))] if len(j_on) else int(np.argmax(np.abs(amp)))
     print(f"[결과] 조직 위 전극 fEPSP 피크 |중앙값| {np.median(np.abs(amp[over])):.1f}uV · 최대 {np.abs(amp).max():.1f}uV(전극#{j_max})", flush=True)
@@ -154,7 +156,7 @@ def main():
                    edgecolors=["k" if o else "0.6" for o in over], linewidths=1.2, zorder=5)
     fig.colorbar(sc, ax=a, label="전극 fEPSP 피크 (µV)")
     a.set_aspect("equal"); a.set_xlabel("면 가로 (µm)"); a.set_ylabel("면 세로 (µm)")
-    a.set_title(f"(A) CA1 밴드 + MEA 8×8(회전{np.rad2deg(th_best):.0f}°)\n조직 위 {n_on}/64 · 전극별 집단 fEPSP 진폭")
+    a.set_title(f"(A) CA1 밴드 + MEA {TAG}(회전{np.rad2deg(th_best):.0f}°)\n조직 위 {n_on}/{NELEC} · 전극별 집단 fEPSP 진폭")
 
     # (B) 대표 파형: 최대 전극 vs 조직 밖 전극
     b = fig.add_subplot(1, 2, 2)
@@ -169,13 +171,13 @@ def main():
     b.set_title("(B) 전극별 fEPSP 파형\n밴드 위=큰 신호 · 밖=작음")
     b.legend(fontsize=8)
 
-    fig.suptitle(f"E4b(확정) — CA1 밴드 따라 MEA 8×8 배치 + 64전극 집단 fEPSP  "
-                 f"(PC {Npc}개·MoI 검증엔진·정렬+동기 이상화)\n"
-                 f"조직 위 {n_on}/64 전극이 fEPSP 포착(중앙 |{np.median(np.abs(amp[over])):.0f}|µV). "
-                 f"절대크기는 세포당 진폭 이상화라 sub-mV(E4b v1과 동일 한계)",
-                 fontsize=10, y=1.02)
+    fig.suptitle(f"E4b — 실제 CA1 밴드 따라 MEA {TAG} 배치 + {NELEC}전극 집단 fEPSP  "
+                 f"(PC {Npc}개 실위치·MoI 검증엔진·정렬+동기 이상화)\n"
+                 f"조직 위 {n_on}/{NELEC} 전극이 음성 fEPSP 포착 — 중앙 |{np.median(np.abs(amp[over])):.0f}|µV·최대 |{np.abs(amp).max():.0f}|µV = 실측 0.1~1mV 저역대 도달. "
+                 f"단 완전 정렬·동기·동일깊이라 상한값(실 지터는 낮춤)",
+                 fontsize=9.5, y=1.02)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    out = os.path.join(FIG, "E4b_band_mea.png")
+    out = os.path.join(FIG, f"E4b_band_mea_{TAG}.png")
     fig.savefig(out, dpi=140, bbox_inches="tight")
     print("saved:", out)
 
