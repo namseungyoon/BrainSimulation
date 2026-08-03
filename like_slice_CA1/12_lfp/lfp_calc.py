@@ -126,6 +126,39 @@ def psa_matrix(geom, electrodes, sigma=0.3):
     return M
 
 
+def moi_point_matrix(geom, electrodes, sigma_T=0.3, sigma_S=1.5, sigma_G=0.0,
+                     h=800.0, n_img=20):
+    """MEA 슬라이스 3층 영상법(method of images, Ness 2015) 전달행렬 M[j,i].
+
+    기하: 전극은 유리(MEA)면 z=0 · 조직 슬라이스 z∈[0,h] · 식염수 z>h.
+    유리 절연(sigma_G=0) 표준 -> 소스가 유리면에서 완전 반사(전위 2배).
+    식염수 경계 반사계수 W_TS=(sigma_T-sigma_S)/(sigma_T+sigma_S) (기본 -2/3)로 영상급수.
+
+      M = (1/4πσ_T) [ 2·g(z') + 2·Σ_{n=1}^{n_img} W_TS^n ( g(2nh−z') + g(2nh+z') ) ],
+      g(w) = 1/√(ρ² + w²),  ρ=전극과 소스의 수평거리, z'=소스 높이(슬라이스 내로 클램프).
+
+    전제: 전극은 z=0 평면. 소스(세그먼트)는 슬라이스 내부(0<z'<h). 단위 nA·µm·S/m -> mV.
+    극한 검증: h→∞ 또는 W_TS=0 이면 M → 2×(무한매질 점전류원)  (유리 반사 2배).
+    """
+    mid = geom["mid"]
+    rad = geom["radius"]
+    E = np.atleast_2d(np.asarray(electrodes, float))
+    W = (sigma_T - sigma_S) / (sigma_T + sigma_S)
+    dx = E[:, 0][:, None] - mid[:, 0][None, :]
+    dy = E[:, 1][:, None] - mid[:, 1][None, :]
+    rho2 = dx * dx + dy * dy                       # (J, N)
+    zc = np.clip(mid[:, 2], 0.0, h)[None, :]       # (1, N) 소스 높이
+    radb = rad[None, :]
+
+    def g(w):
+        return 1.0 / np.maximum(np.sqrt(rho2 + w * w), radb)
+
+    S = 2.0 * g(zc)
+    for n in range(1, n_img + 1):
+        S = S + 2.0 * (W ** n) * (g(2 * n * h - zc) + g(2 * n * h + zc))
+    return S / (4.0 * np.pi * sigma_T)
+
+
 def compute_lfp(M, imem):
     """V = M @ I.  imem (N_seg, N_t) nA -> V (N_elec, N_t) mV."""
     return M @ np.asarray(imem)

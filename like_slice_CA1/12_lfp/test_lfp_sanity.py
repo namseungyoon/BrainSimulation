@@ -82,6 +82,19 @@ def main():
     print(f"(5) 원거리 감쇠 V(r=1e5um)={Vfar*1e6:.4f} nV -> {'OK' if abs(Vfar) < 1e-4 else 'FAIL'}")
     ok &= abs(Vfar) < 1e-4
 
+    # (6) MEA 영상법(MoI) 극한: 유리면 z=0, 소스 z'=100, 전극 rho=150
+    from lfp_calc import moi_point_matrix
+    gm = dict(mid=np.array([[0.0, 0.0, 100.0]]), radius=np.array([1.0]))
+    em = [[150.0, 0.0, 0.0]]
+    inf = 1.0 / (4 * np.pi * sigma * np.sqrt(150 ** 2 + 100 ** 2))   # 무한매질 점전류원
+    m_big = moi_point_matrix(gm, em, sigma_T=sigma, sigma_S=1.5, h=1e7, n_img=20)[0, 0]   # h->inf -> 2x
+    m_w0 = moi_point_matrix(gm, em, sigma_T=sigma, sigma_S=sigma, h=800, n_img=20)[0, 0]   # W_TS=0 -> 2x
+    m_std = moi_point_matrix(gm, em, sigma_T=sigma, sigma_S=1.5, h=800, n_img=20)[0, 0]     # 식염수 -> <2x
+    r_big, r_w0, r_std = m_big / inf, m_w0 / inf, m_std / inf
+    print(f"(6) MoI h->inf ratio={r_big:.4f}(2.0?) · W_TS=0 ratio={r_w0:.4f}(2.0?) · 표준 ratio={r_std:.3f}(1<..<2?)"
+          f" -> {'OK' if (abs(r_big-2)<1e-3 and abs(r_w0-2)<1e-3 and 1 < r_std < 2) else 'FAIL'}")
+    ok &= abs(r_big - 2) < 1e-3 and abs(r_w0 - 2) < 1e-3 and (1 < r_std < 2)
+
     print("=" * 48)
     print("SANITY:", "ALL PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
