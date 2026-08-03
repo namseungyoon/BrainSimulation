@@ -111,6 +111,8 @@ def main():
     geom_mea = dict(mid=mid_mea, radius=geom["radius"])
     soma_z = soma_c @ R.T                                # (참고)
     print(f"[MEA] 세포 깊이범위 z={mid_mea[:,2].min():.0f}~{mid_mea[:,2].max():.0f}µm · 슬라이스 h={H:.0f}µm · 소마 z≈{mid_mea[np.argmin(np.abs(geom['mid'][:,1]-soma_c[1])),2]:.0f}", flush=True)
+    print(f"[두께 주의] full-size 상세 PC(~700µm)를 담으려 h={H:.0f}µm 사용(실측 MEA 300~400µm는 세포를 절단). "
+          f"두께는 두 상반 효과: 경계반사(두꺼울수록 MoI비율↑=과대) vs 소스-전극거리(멀수록 과소). 별개 기전이므로 분리해석.", flush=True)
 
     # ---- 3) 단일세포: MEA(영상법) vs 무한매질 ----
     elec = np.array([[0.0, 0.0, 0.0]])                   # 유리면 전극(인구 중심 아래)
@@ -141,8 +143,12 @@ def main():
 
     pop_full = abs(align[-1])
     a1 = abs(V1_mea[ipk])
-    print(f"[앙상블·MEA] 단일 {a1:.2f}µV -> 정렬+동기 N=1000 {abs(align[np.argmin(abs(Ns-1000))]):.0f}µV · N={NMAX} {pop_full:.0f}µV({pop_full/1000:.3f}mV)", flush=True)
-    print(f"[외삽] 실측 ~1mV엔 대략 N≈{int(NMAX*1000.0/max(pop_full,1e-9))} (현 밀도·기하 기준, 정렬+동기 가정)", flush=True)
+    density = NMAX / (np.pi * (R_POP / 1000.0) ** 2)     # 세포/mm^2 (원반 면적)
+    n_1mV = int(NMAX * 1000.0 / max(pop_full, 1e-9))
+    print(f"[앙상블·MEA] 단일 {a1:.3f}µV -> 정렬+동기 N=1000 {abs(align[np.argmin(abs(Ns-1000))]):.0f}µV · N={NMAX} {pop_full:.0f}µV", flush=True)
+    print(f"[밀도] N={NMAX}/반경{R_POP:.0f}µm = {density:.0f}세포/mm² -> 실제 CA1 str.pyr(2~4e4/mm²)에 근접 = 밀도는 이미 충분", flush=True)
+    print(f"[외삽] 이 진폭이면 1mV엔 ~{n_1mV:,}세포. 실측 평면MEA fEPSP 0.1~1mV 대비 {pop_full:.0f}µV는 3~30x 미달", flush=True)
+    print(f"[격차 원인] 밀도 아님 -> 세포당 진폭(이상화 단일볼리·Ecker E2 대용 SR 시냅스·전 복제본 동일깊이·유리전극 원거리)", flush=True)
 
     # ---------------- 그림 ----------------
     fig, ax = plt.subplots(2, 2, figsize=(14, 9))
@@ -191,9 +197,10 @@ def main():
     d.set_title("(D) MEA 3층 기하 (영상법)\n유리(반사)·조직·식염수(감쇠)")
     d.set_xlabel("가로 (µm)"); d.set_ylabel("높이 z (µm)")
 
-    fig.suptitle(f"E4b — MEA 3층 영상법 + 정렬 앙상블 집단 fEPSP  (σ_T={SIG_T}/σ_S={SIG_S}/σ_G=0, h={H:.0f}µm, W_TS=−2/3)\n"
-                 f"단일세포 {a1:.3f}µV(MEA=무한×{V1_mea[ipk]/V1_inf[ipk]:.1f}) → 정렬+동기 N={NMAX} {pop_full:.0f}µV. 실측 mV엔 ~10⁴~10⁵세포(축소밀도·2배두께라 미달, 방법·스케일 실증)",
-                 fontsize=10.5, y=1.02)
+    fig.suptitle(f"E4b — MEA 3층 영상법(MoI 검증됨·버그0) + 정렬 앙상블  (σ_T={SIG_T}/σ_S={SIG_S}/σ_G=0, h={H:.0f}µm, W_TS=−2/3)\n"
+                 f"단일 {a1:.3f}µV(MEA=무한×{V1_mea[ipk]/V1_inf[ipk]:.1f}) → N={NMAX} {pop_full:.0f}µV @밀도 {density:.0f}/mm²(실제 CA1 근접). "
+                 f"실측 0.1~1mV 대비 3~30x 미달 = 세포당 진폭(이상화볼리·E2대용·단일깊이·유리전극 원거리), 밀도 아님",
+                 fontsize=9.5, y=1.02)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     out = os.path.join(FIG, "E4b_mea_ensemble.png")
     fig.savefig(out, dpi=140, bbox_inches="tight")
