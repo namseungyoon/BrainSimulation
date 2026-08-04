@@ -27,14 +27,26 @@ kind = str(D["kind"]); N = int(D["N"]); stim_elec = int(D["stim_elec"]); rec_j =
 E = D["E"]; over = D["over"]; r_stim = float(D["r_stim"])
 
 
+LAY_COL = {"SO": "#2980b9", "SP": "#c0392b", "SR": "#27ae60", "SLM": "#8e44ad"}
+el_layer = D["el_layer"].astype(str) if "el_layer" in D.files else None
+
+
 def elec_inset(ax):
-    ax.scatter(E[over, 0], E[over, 1], s=40, c="0.8", edgecolors="0.5")
-    ax.scatter(E[~over, 0], E[~over, 1], s=20, c="none", edgecolors="0.8")
-    ax.scatter(E[stim_elec, 0], E[stim_elec, 1], s=90, marker="*", c="#c0392b", label="자극", zorder=5)
-    ax.scatter(E[rec_j, 0], E[rec_j, 1], s=70, marker="s", c="#1f6fb2", label="기록", zorder=5)
-    ax.add_patch(plt.Circle((E[stim_elec, 0], E[stim_elec, 1]), r_stim, fill=False, ec="#c0392b", ls="--", lw=1))
-    ax.set_aspect("equal"); ax.legend(fontsize=7, loc="upper right"); ax.set_title("전극 배치", fontsize=9)
-    ax.set_xlabel("µm", fontsize=8); ax.tick_params(labelsize=7)
+    if el_layer is not None:                               # 층별 색(전극이 어느 층 위인가)
+        for Ln, col in LAY_COL.items():
+            m = (el_layer == Ln) & over
+            if m.any():
+                ax.scatter(E[m, 0], E[m, 1], s=55, c=col, edgecolors="0.3", label=Ln, alpha=0.85)
+    else:
+        ax.scatter(E[over, 0], E[over, 1], s=40, c="0.8", edgecolors="0.5")
+    ax.scatter(E[~over, 0], E[~over, 1], s=18, c="none", edgecolors="0.8")
+    ax.scatter(E[stim_elec, 0], E[stim_elec, 1], s=190, marker="*", facecolor="none",
+               edgecolors="k", linewidths=1.6, label="자극", zorder=6)
+    ax.scatter(E[rec_j, 0], E[rec_j, 1], s=150, marker="s", facecolor="none",
+               edgecolors="k", linewidths=1.6, label="기록", zorder=6)
+    ax.set_aspect("equal"); ax.legend(fontsize=6.5, loc="upper right", ncol=2, framealpha=0.9)
+    ax.set_title(f"전극 배치(층별) · 자극#{stim_elec} 기록#{rec_j}", fontsize=9)
+    ax.set_xlabel("면 가로 µm", fontsize=8); ax.tick_params(labelsize=7)
 
 
 if kind == "io":

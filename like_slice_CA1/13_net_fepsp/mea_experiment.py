@@ -272,12 +272,15 @@ def main():
 
     # ---- 막전류 기록 + 전달행렬 (저장된 기하 재사용) ----
     t0 = time.time(); uvs = []; thks = []; rads = []; vecs = []
+    cseg = []                                                # (세포 g, 세그 시작, 끝) — 전극당 기여 세포 수 계산용
     cv = h.CVode(); cv.use_fast_imem(1)
     for g in my:
         cg = cellgeom[g]
+        i0 = len(vecs)
         uvs.append(cg["uv"]); thks.append(cg["thk"]); rads.append(cg["geom"]["radius"])
         for seg in cg["geom"]["segs"]:
             v = h.Vector(); v.record(seg._ref_i_membrane_, rec_dt); vecs.append(v)
+        cseg.append((g, i0, len(vecs)))
     uv = np.vstack(uvs) if uvs else np.zeros((0, 2))
     thk = np.concatenate(thks) if thks else np.zeros(0)
     rads = np.concatenate(rads) if rads else np.zeros(0)
@@ -306,11 +309,13 @@ def main():
         spt.resize(0); spg.resize(0)
         h.finitialize(-70.0); pc.psolve(tstop)
         I = np.array([np.asarray(v) for v in vecs]) if vecs else None
+        # ★기록 길이는 부동소수 반올림으로 nt와 1 어긋날 수 있다 → 0으로 덮지 말고 실제 길이를 쓴다.
+        #   (예전 코드는 불일치 시 전체를 0으로 만들어 PPF에서 fEPSP가 사라짐)
         Ve_local = (M_rank @ I) * 1e3 if (I is not None and I.size) else np.zeros((NELEC, nt))
-        if Ve_local.shape[1] != nt:
-            Ve_local = np.zeros((NELEC, nt))
         if NHOST > 1:
-            parts = pc.py_allgather(Ve_local.tolist()); Ve = np.sum([np.array(p) for p in parts], axis=0)
+            parts = [np.array(p) for p in pc.py_allgather(Ve_local.tolist())]
+            L0 = min(p.shape[1] for p in parts)                # rank 간 길이 통일(최솟값)
+            Ve = np.sum([p[:, :L0] for p in parts], axis=0)
         else:
             Ve = Ve_local
         nspk = int(pc.allreduce(len(spt), 1))
@@ -323,6 +328,31 @@ def main():
         dep = float(pc.allreduce(dep, 2))
         return Ve, nspk, dep
 
+    def contrib_stats(j, ip):
+        """전극 j·시각 ip에서 **세포별 기여**로 유효 세포 수 Neff와 유효반경(90%) 산출.
+        Neff=(Σ|c|)²/Σ|c|² (participation ratio) · 전 rank 합산."""
+        I = np.array([np.asarray(v) for v in vecs]) if vecs else None
+        if I is None or not I.size or ip >= I.shape[1]:
+            return 0.0, 0.0, 0
+        cvals = []; cdist = []
+        for (g, a, b) in cseg:
+            cvals.append(abs(float(M_rank[j, a:b] @ I[a:b, ip])))
+            cdist.append(float(np.linalg.norm(cellgeom[g]["uv"].mean(0) - E2d[j])))
+        cvals = np.array(cvals); cdist = np.array(cdist)
+        # rank별 (합, 제곱합) 및 거리정렬 기여 → 전역 합산(근사: 반경 히스토그램)
+        s1 = float(pc.allreduce(float(cvals.sum()), 1)); s2 = float(pc.allreduce(float((cvals ** 2).sum()), 1))
+        nz = int(pc.allreduce(int((cvals > 1e-12).sum()), 1))
+        neff = (s1 * s1 / s2) if s2 > 0 else 0.0
+        # 90% 반경: 반경 구간별 기여합을 allreduce로 모아 누적
+        edges = np.arange(0, 2600, 100.0)
+        hist = np.zeros(len(edges) - 1)
+        for k in range(len(edges) - 1):
+            m = (cdist >= edges[k]) & (cdist < edges[k + 1])
+            hist[k] = float(pc.allreduce(float(cvals[m].sum()), 1))
+        cum = np.cumsum(hist) / max(hist.sum(), 1e-12)
+        r90 = float(edges[1:][np.searchsorted(cum, 0.9)]) if cum[-1] >= 0.9 else float(edges[-1])
+        return neff, r90, nz
+
     tarr = np.arange(nt) * rec_dt
     out = os.path.join(FIG, f"_mea_{tag}.npz")
     rec_j = rec_idx[int(np.argmin([np.linalg.norm(E2d[j] - E2d[stim_elec]) for j in rec_idx]))] if rec_idx else 0
@@ -330,9 +360,16 @@ def main():
     if protocol == "io":
         rows = []; waves = []
         log(f"{'세기(섬유)':>10} {'slope(µV/ms)':>13} {'amp(µV)':>9} {'창내최대|Ve|':>12} {'스파이크':>7} {'소마탈분극mV':>12}")
+        neff = r90 = 0.0; nz = 0
         for lv in io_levels:
             na = max(1, int(round(lv * n_fiber)))
             Ve, nspk, dep = run_once(na, [stim_t])
+            tarr = np.arange(Ve.shape[1]) * rec_dt       # 실제 기록 길이에 맞춤(nt와 1 어긋날 수 있음)
+            if lv == io_levels[-1]:                      # 최대 세기에서 전극당 기여 세포 수(전 rank 참여)
+                wi = np.where((tarr >= stim_t) & (tarr <= stim_t + 30.0))[0]
+                ipk_g = int(wi[np.argmax(np.abs(Ve[rec_j][wi]))]) if len(wi) else 0
+                neff, r90, nz = contrib_stats(rec_j, ipk_g)
+                log(f"[전극당 기여] 기록전극#{rec_j}: 유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
             if RANK == 0:
                 fe = measure_fepsp(tarr, Ve[rec_j], stim_t, 30.0)
                 w = (tarr >= stim_t) & (tarr <= stim_t + 30.0)
@@ -345,25 +382,42 @@ def main():
             np.savez(out, kind="io", levels=R[:, 0], nact=R[:, 1], slope=R[:, 2], amp=R[:, 3],
                      nspk=R[:, 4], pk_abs=R[:, 5], waves=np.array(waves), twin=tarr[(tarr >= stim_t) & (tarr <= stim_t + 30.0)],
                      stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N, n_fiber=n_fiber,
-                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx))
+                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx),
+                     neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
+                     n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
+                     s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
+                     Hh=Hh, nhost=NHOST, det=det)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
-        rows = []
+        rows = []; waves = []; neff = r90 = 0.0; nz = 0
         na = max(1, int(round(float(argval('--io_test', '0.4')) * n_fiber)))   # 테스트 세기
-        log(f"{'ISI(ms)':>8} {'slope1':>9} {'slope2':>9} {'PPR':>6}")
+        log(f"{'ISI(ms)':>8} {'slope1':>9} {'slope2':>9} {'PPR':>6} {'스파이크':>7} {'탈분극mV':>9}")
         for isi in ppf_isi:
             Ve, nspk, dep = run_once(na, [stim_t, stim_t + isi])
+            tarr = np.arange(Ve.shape[1]) * rec_dt       # 실제 기록 길이에 맞춤
+            if isi == ppf_isi[0]:                        # 첫 ISI에서 전극당 기여 세포 수(전 rank)
+                wi = np.where((tarr >= stim_t) & (tarr <= stim_t + 30.0))[0]
+                ipk_g = int(wi[np.argmax(np.abs(Ve[rec_j][wi]))]) if len(wi) else 0
+                neff, r90, nz = contrib_stats(rec_j, ipk_g)
+                log(f"[전극당 기여] 기록전극#{rec_j}: 유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
             if RANK == 0:
+                waves.append(Ve[:, (tarr >= stim_t - 10) & (tarr <= stim_t + isi + 40)])
                 f1 = measure_fepsp(tarr, Ve[rec_j], stim_t, min(isi, 30.0))
                 f2 = measure_fepsp(tarr, Ve[rec_j], stim_t + isi, 30.0)
                 ppr = abs(f2["slope"]) / max(abs(f1["slope"]), 1e-9)
-                rows.append((isi, f1["slope"], f2["slope"], ppr))
-                log(f"{isi:>8.0f} {f1['slope']:>9.3f} {f2['slope']:>9.3f} {ppr:>6.2f}")
+                rows.append((isi, f1["slope"], f2["slope"], ppr, nspk, dep))
+                log(f"{isi:>8.0f} {f1['slope']:>9.4f} {f2['slope']:>9.4f} {ppr:>6.2f} {nspk:>7} {dep:>9.2f}")
         if RANK == 0:
             R = np.array(rows, float)
             np.savez(out, kind="ppf", isi=R[:, 0], slope1=R[:, 1], slope2=R[:, 2], ppr=R[:, 3],
-                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N)
+                     nspk=R[:, 4], dep=R[:, 5],
+                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N,
+                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx),
+                     neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
+                     n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
+                     s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
+                     Hh=Hh, nhost=NHOST, det=det, io_test=na)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     pc.barrier(); pc.done()
