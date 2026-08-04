@@ -146,6 +146,11 @@ def main():
     j_max = j_on[np.argmax(np.abs(amp[j_on]))] if len(j_on) else int(np.argmax(np.abs(amp)))
     print(f"[결과] 조직 위 전극 fEPSP 피크 |중앙값| {np.median(np.abs(amp[over])):.1f}uV · 최대 {np.abs(amp).max():.1f}uV(전극#{j_max})", flush=True)
 
+    # GIF/재활용용 캐시 (NEURON+MoI 재계산 회피)
+    np.savez(os.path.join(FIG, f"_e4b_band_{TAG}.npz"),
+             t=t, Ve=Ve, E=E, over=over, amp=amp, face=face,
+             ncol=NCOL, nrow=NROW, th=float(th_best), n_on=n_on, npc=Npc, j_max=j_max)
+
     # ---------------- 그림 ----------------
     fig = plt.figure(figsize=(15, 6.2))
     # (A) 밴드 + MEA 진폭맵
