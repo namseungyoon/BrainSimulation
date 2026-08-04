@@ -118,6 +118,14 @@ def main():
     tag = argval("--tag", protocol)
     io_levels = [float(x) for x in argval("--io_levels", "0.05,0.1,0.2,0.35,0.5,0.75,1.0").split(",")]
     ppf_isi = [float(x) for x in argval("--ppf_isi", "10,20,50,100,200").split(",")]
+    plastic = "--plastic" in sys.argv                          # SC를 칼슘 가소성 시냅스(GBPlasticitySyn)로
+    io_test = float(argval("--io_test", "0.4"))                # 테스트(약)자극 세기 비율
+    # LTP 스케줄(ms): baseline 약자극 → TBS 강자극(4펄스@100Hz 버스트 × 5회 @5Hz) → 사후 약자극
+    tbs_n = int(argval("--tbs_bursts", "5"))
+    t_base = [200.0, 400.0, 600.0]
+    tbs0 = 800.0
+    t_tbs = [tbs0 + b * 200.0 + q * 10.0 for b in range(tbs_n) for q in range(4)]
+    t_post = [float(tbs0 + tbs_n * 200.0 + 200.0 + 200.0 * i) for i in range(4)]
     no_inh = "--no_inh" in sys.argv
 
     # ---- 세포 ----
@@ -238,11 +246,22 @@ def main():
     # 실제 생리: SR층 자극전극이 그 근처를 지나는 SC 축삭을 흥분시킴 → 그 위치의 PC 정단수상돌기에 시냅스.
     # (소마 위치 기준이 아니다 — PC 소마는 SP, SC 시냅스는 SR)
     fibers = []
-    for k in range(n_fiber):
-        ns = h.NetStim(); ns.number = 0; ns.start = stim_t; ns.noise = 0; ns.interval = 1e9
-        fibers.append(ns); keeph.append(ns)
+    n_test = max(1, int(round(io_test * n_fiber)))
+    if protocol == "ltp":
+        # LTP는 **한 번의 연속 구동**(칼슘·효능 이력 필요) → 섬유별 VecStim 스케줄.
+        #   약자극(테스트) 펄스는 앞 n_test개 섬유만 · TBS(강자극)는 전 섬유.
+        for k in range(n_fiber):
+            tk = sorted(([*t_base, *t_post] if k < n_test else []) + t_tbs)
+            tv = h.Vector(tk); vs = h.VecStim(); vs.play(tv)
+            fibers.append(vs); keeph += [vs, tv]
+        log(f"[LTP 스케줄] baseline {len(t_base)}회 → TBS {len(t_tbs)}펄스({tbs_n}버스트×4@100Hz, 5Hz) → 사후 {len(t_post)}회 · 약자극 섬유 {n_test}/{n_fiber}")
+    else:
+        for k in range(n_fiber):
+            ns = h.NetStim(); ns.number = 0; ns.start = stim_t; ns.noise = 0; ns.interval = 1e9
+            fibers.append(ns); keeph.append(ns)
     prm = P3.CLASSES[sc_class]; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
     sc_cells = []                                      # SC를 받은 세포(진단용)
+    rho_syns = []                                      # 가소성 시냅스(효능 ρ 추적용)
     for g in my:
         cg = cellgeom[g]; is_pc = gtype[g] == "PC"
         # SC 축삭은 밴드를 따라 길게 주행 → 자극전극은 '그 층대(SR 깊이)를 지나는 축삭'을 흥분시키고,
@@ -259,7 +278,19 @@ def main():
         sc_cells.append(g)
         for _ in range(k_syn):
             seg = cg["geom"]["segs"][cand[scrng.randint(len(cand))]]
-            syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1), deterministic=det)
+            if plastic:
+                # 칼슘 기반 장기가소성 시냅스(Graupner-Brunel, Wittenberg2006 파라미터=mod 기본값).
+                # ⚠️ 이 mod엔 단기가소성(Use/Dep/Fac)이 없다 → PPF는 안 나옴(모델 한계, 문서화).
+                syn = h.GBPlasticitySyn(seg)
+                syn.tau_r_AMPA = prm["tau_r_AMPA"]; syn.tau_d_AMPA = prm["tau_d_AMPA"]
+                syn.NMDA_ratio = prm["NMDA_ratio"]; syn.rho0 = float(argval("--rho0", "0.0"))
+                # 후시냅스 스파이크 → 칼슘 점프(weight<0 sentinel). 시냅스와 세포가 같은 rank라 로컬 NetCon.
+                s0 = cells[g].soma[0]
+                ncp = h.NetCon(s0(0.5)._ref_v, syn, sec=s0)
+                ncp.threshold = -20.0; ncp.weight[0] = -1.0; ncp.delay = 0.0
+                keeph.append(ncp); rho_syns.append(syn)
+            else:
+                syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1), deterministic=det)
             nc = h.NetCon(fibers[scrng.randint(n_fiber)], syn); nc.weight[0] = gnS; nc.delay = SYN_DELAY
             keeph += [syn, nc]; n_sc += 1
     n_sc_all = int(pc.allreduce(n_sc, 1)); n_sccell_all = int(pc.allreduce(len(sc_cells), 1)); pc.barrier()
@@ -418,6 +449,55 @@ def main():
                      n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
                      Hh=Hh, nhost=NHOST, det=det, io_test=na)
+            print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
+
+    elif protocol == "ltp":
+        # ── 실제 LTP 실험 모사: baseline(약자극) → TBS(강자극 유도) → 사후(약자극), **한 번의 연속 구동** ──
+        if not plastic:
+            log("[경고] --plastic 없이 ltp 실행 → 장기가소성 없음(대조군으로만 유효)")
+        rho0m = float(pc.allreduce(float(np.mean([s.rho for s in rho_syns])) if rho_syns else 0.0, 1)) / max(NHOST, 1)
+        h.finitialize(-70.0); spt.resize(0); spg.resize(0)
+        t_end = (t_post[-1] if t_post else 1000.0) + 60.0
+        log(f"[LTP 구동] tstop={t_end:.0f}ms 연속 · 가소성시냅스 rank0 {len(rho_syns)}개 · ρ0={rho0m:.3f}")
+        t0 = time.time(); pc.psolve(t_end)
+        log(f"[LTP 구동완료] {time.time()-t0:.0f}s")
+        I = np.array([np.asarray(v) for v in vecs]) if vecs else None
+        Ve_local = (M_rank @ I) * 1e3 if (I is not None and I.size) else np.zeros((NELEC, 1))
+        if NHOST > 1:
+            parts = [np.array(p) for p in pc.py_allgather(Ve_local.tolist())]
+            L0 = min(p.shape[1] for p in parts); Ve = np.sum([p[:, :L0] for p in parts], axis=0)
+        else:
+            Ve = Ve_local
+        tarr = np.arange(Ve.shape[1]) * rec_dt
+        nspk = int(pc.allreduce(len(spt), 1))
+        # 효능 ρ: 전 rank 평균·분포
+        rl = [float(s.rho) for s in rho_syns]
+        rsum = float(pc.allreduce(float(np.sum(rl)) if rl else 0.0, 1))
+        rcnt = int(pc.allreduce(len(rl), 1))
+        rup = int(pc.allreduce(int(np.sum(np.array(rl) > 0.5)) if rl else 0, 1))
+        rho_mean = rsum / max(rcnt, 1)
+        log(f"[효능] 가소성 시냅스 {rcnt:,}개 · ρ 평균 {rho_mean:.3f} · ρ>0.5(UP) {rup:,}개({100*rup/max(rcnt,1):.1f}%)")
+        if RANK == 0:
+            sb = [measure_fepsp(tarr, Ve[rec_j], tt, 30.0) for tt in t_base]
+            sp_ = [measure_fepsp(tarr, Ve[rec_j], tt, 30.0) for tt in t_post]
+            b_m = float(np.mean([abs(x["slope"]) for x in sb])) if sb else 0.0
+            p_m = float(np.mean([abs(x["slope"]) for x in sp_])) if sp_ else 0.0
+            ltp_pct = 100.0 * (p_m / b_m - 1.0) if b_m > 1e-12 else float("nan")
+            log(f"{'구간':>8} {'slope(µV/ms)':>13}")
+            for tt, x in zip(t_base, sb):
+                log(f"{'base '+str(int(tt)):>8} {x['slope']:>13.4f}")
+            for tt, x in zip(t_post, sp_):
+                log(f"{'post '+str(int(tt)):>8} {x['slope']:>13.4f}")
+            log(f"[LTP] baseline 평균 {b_m:.4f} → 사후 평균 {p_m:.4f} µV/ms · **변화 {ltp_pct:+.1f}%** · 유발 스파이크 {nspk:,}")
+            np.savez(out, kind="ltp", t=tarr, Ve=Ve.astype(np.float32),
+                     t_base=np.array(t_base), t_tbs=np.array(t_tbs), t_post=np.array(t_post),
+                     slope_base=np.array([x["slope"] for x in sb]),
+                     slope_post=np.array([x["slope"] for x in sp_]),
+                     ltp_pct=ltp_pct, rho_mean=rho_mean, rho_up=rup, rho_n=rcnt, nspk=nspk,
+                     plastic=plastic, stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over,
+                     r_stim=r_stim, N=N, el_layer=el_layer, s_el=s_el,
+                     n_sc=n_sc_all, n_syn=n_syn_all, n_sccell=n_sccell_all, sc_class=sc_class,
+                     stim_layer=str(el_layer[stim_elec]), Hh=Hh, nhost=NHOST, det=det, io_test=n_test)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     pc.barrier(); pc.done()
