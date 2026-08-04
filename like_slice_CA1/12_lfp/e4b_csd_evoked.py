@@ -30,6 +30,7 @@ D = np.load(os.path.join(FIG, "_e4b_stim10s.npz"), allow_pickle=True)
 t = D["t"]; Ve = D["Ve"]; E = D["E"]; stim = D["stim"]; labels = D["stim_labels"]
 j_max = int(D["j_max"]); rec_dt = float(D["rec_dt"])
 xg = np.unique(E[:, 0]); yg = np.unique(E[:, 1]); NROW, NCOL = len(yg), len(xg)
+assert len(xg) * len(yg) == E.shape[0], "전극 격자 축정렬 아님(회전≠0) → (NROW,NCOL) reshape 불가"
 order = np.lexsort((E[:, 0], E[:, 1]))
 xf = np.linspace(xg[0], xg[-1], 120); yf = np.linspace(yg[0], yg[-1], 44)
 iy0 = int(np.argmin(np.abs(yf - 0.0)))

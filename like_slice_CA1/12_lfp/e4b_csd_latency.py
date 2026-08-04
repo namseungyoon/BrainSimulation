@@ -28,6 +28,7 @@ D = np.load(os.path.join(FIG, "_e4b_band_3x8.npz"), allow_pickle=True)
 t = D["t"]; Ve = D["Ve"]; E = D["E"]
 xg = np.unique(E[:, 0]); yg = np.unique(E[:, 1])
 NROW, NCOL = len(yg), len(xg)
+assert len(xg) * len(yg) == E.shape[0], "전극 격자 축정렬 아님(회전≠0) → (NROW,NCOL) reshape 불가"
 order = np.lexsort((E[:, 0], E[:, 1]))
 Vg = Ve[order].reshape(NROW, NCOL, -1)
 xf = np.linspace(xg[0], xg[-1], 120)

@@ -126,8 +126,9 @@ def main():
     fig.savefig(out, dpi=140, bbox_inches="tight")
     print("saved:", out)
     for name, lo, hi, _ in LAYER_BANDS:
-        inb = (nd >= lo) & (nd < hi)
-        print(f"  {name}: {int(inb.sum())}세포 (nd {lo}-{hi})", flush=True)
+        n_true = int((ly == name).sum())                       # 실제 layer 필드(정확)
+        n_nd = int(((nd >= lo) & (nd < hi)).sum())             # nd밴드 근사(시각용)
+        print(f"  {name}: layer필드 {n_true}세포 · nd밴드[{lo}-{hi}] 근사 {n_nd}", flush=True)
 
 
 if __name__ == "__main__":

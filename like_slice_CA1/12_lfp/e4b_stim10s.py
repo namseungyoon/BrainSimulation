@@ -87,14 +87,15 @@ def main():
     for s in chosen:
         syn = build_synapse(s(0.5), p, seeds=(1, 1, 1), deterministic=True)
         syns.append(syn)
-    # 자극 프로토콜: 이벤트마다 NetStim -> 모든 시냅스 동시(동기 SC 볼리)
+    # 자극 프로토콜: 시냅스마다 단일 VecStim(모든 이벤트 재생) -> 단일 NetCon (동기 SC 볼리)
+    # ★단기가소성(STP: R/u/tsyn)은 NetCon weight-vector에 저장되므로 반드시 시냅스당 NetCon 1개로 유지.
+    #   (이벤트마다 새 NetStim/NetCon을 만들면 매 펄스가 '첫 방출'로 계산돼 억압/촉진 이력이 누적 안 됨)
     keep = []
-    for t_ev in STIM:
-        ns = h.NetStim(); ns.number = 1; ns.start = t_ev; ns.noise = 0
-        keep.append(ns)
-        for syn in syns:
-            nc = h.NetCon(ns, syn); nc.weight[0] = p["g_nS"]; nc.delay = 1.0
-            keep.append(nc)
+    for syn in syns:
+        tv = h.Vector(STIM)                                # 이벤트 시각(ms), 시냅스별 사본
+        vs = h.VecStim(); vs.play(tv)
+        nc = h.NetCon(vs, syn); nc.weight[0] = p["g_nS"]; nc.delay = 1.0
+        keep.extend([tv, vs, nc])
 
     # ---- 2) 막전류 기록(다운샘플 rec_dt) ----
     geom = L.collect_segments(list(cell.all))
@@ -122,7 +123,8 @@ def main():
     Npc = face.shape[0]
     gx = (np.arange(NCOL) - (NCOL - 1) / 2) * PITCH
     gy = (np.arange(NROW) - (NROW - 1) / 2) * PITCH
-    G0 = np.column_stack([np.meshgrid(gx, gy)[0].ravel(), np.meshgrid(gx, gy)[1].ravel()])
+    Gx, Gy = np.meshgrid(gx, gy)
+    G0 = np.column_stack([Gx.ravel(), Gy.ravel()])
     NELEC = G0.shape[0]
     fc = face.mean(axis=0)
     from scipy.spatial import cKDTree

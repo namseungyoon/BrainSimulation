@@ -143,6 +143,10 @@ def moi_point_matrix(geom, electrodes, sigma_T=0.3, sigma_S=1.5, sigma_G=0.0,
     mid = geom["mid"]
     rad = geom["radius"]
     E = np.atleast_2d(np.asarray(electrodes, float))
+    # 가정 명시(오용 시 조용히 틀리지 않고 실패): 전극은 유리면 z=0 · 유리 절연 sigma_G=0
+    if E.shape[1] > 2:
+        assert np.all(np.abs(E[:, 2]) < 1e-6), "moi_point_matrix: 전극은 유리면 z=0 가정(E[:,2]≈0)"
+    assert abs(sigma_G) < 1e-12, "moi_point_matrix: 유리 절연(sigma_G=0)만 구현 — sigma_G!=0 미지원"
     W = (sigma_T - sigma_S) / (sigma_T + sigma_S)
     dx = E[:, 0][:, None] - mid[:, 0][None, :]
     dy = E[:, 1][:, None] - mid[:, 1][None, :]

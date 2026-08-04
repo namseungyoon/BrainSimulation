@@ -34,6 +34,7 @@ D = np.load(os.path.join(FIG, "_e4b_band_3x8.npz"), allow_pickle=True)
 t = D["t"]; Ve = D["Ve"]; E = D["E"]
 xg = np.unique(E[:, 0]); yg = np.unique(E[:, 1])          # x(8), y(3) 오름차순
 NROW, NCOL = len(yg), len(xg)
+assert len(xg) * len(yg) == E.shape[0], "전극 격자 축정렬 아님(회전≠0) → (NROW,NCOL) reshape 불가"
 # 전극 k=row*8+col → (row=y, col=x) 재배열
 order = np.lexsort((E[:, 0], E[:, 1]))                    # y 우선, x 다음 → row-major
 Vg = Ve[order].reshape(NROW, NCOL, -1)                    # (3,8,Nt) µV
@@ -137,7 +138,6 @@ fig.savefig(out_png, dpi=140, bbox_inches="tight")
 print("saved:", out_png, flush=True)
 
 # GIF
-gif_frames = list(range(len(fr))) + [pk_local] * 0 + [len(fr) - 1] * 8
 ani = FuncAnimation(fig, update, frames=list(range(len(fr))) + [len(fr) - 1] * 8, interval=70, blit=False)
 out_gif = os.path.join(FIG, "E4b_csd_play.gif")
 ani.save(out_gif, writer=PillowWriter(fps=15))
