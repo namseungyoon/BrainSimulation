@@ -80,6 +80,7 @@ def main():
     n_fiber = int(argval("--n_fiber", "800"))
     sc_pc = int(argval("--sc_pc", "60")); sc_int = int(argval("--sc_int", "40"))
     sc_g_pc = float(argval("--sc_g_pc", "1.0")); sc_g_int = float(argval("--sc_g_int", "1.0"))
+    sc_class = argval("--sc_class", SC_CLASS)     # SC 시냅스 클래스(기본 E2 대용; 촉진형 "SC->PC (E1s)" 선택 가능)
     no_inh = "--no_inh" in sys.argv
     use_cn = "--coreneuron" in sys.argv          # WSL CoreNEURON(CPU/GPU) 가속 엔진
     vm_khz = float(argval("--vm_khz", "0")); vm_cells_n = int(argval("--vm_cells", "5"))
@@ -164,7 +165,7 @@ def main():
             ns = h.NetStim(); ns.interval = 1000.0 / sc_rate; ns.number = 1e9; ns.start = 0; ns.noise = 1.0
             r = h.Random(); r.Random123(RANK * 100000 + k, 7, 0); r.negexp(1); ns.noiseFromRandom(r)
             fibers.append(ns); keeph += [ns, r]
-    prm = P3.CLASSES[SC_CLASS]; scrng = np.random.RandomState(7000 + RANK); n_sc = 0
+    prm = P3.CLASSES[sc_class]; scrng = np.random.RandomState(7000 + RANK); n_sc = 0
     for g in my:
         is_pc = gtype[g] == "PC"; k_syn = sc_pc if is_pc else sc_int; gnS = sc_g_pc if is_pc else sc_g_int
         for _ in range(k_syn):

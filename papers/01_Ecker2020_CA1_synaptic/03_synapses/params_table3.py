@@ -71,6 +71,14 @@ CLASSES = {
                              **_inh(4.5, 2.67, 0.26, 930, 1.6, 6)),
     "CCK+->CCK+ (I1)":  dict(pre="CCK+", post="CCK+", ei="I", stp="I1",
                              **_inh(4.5, 4.5, 0.11, 115, 1542, 1)),
+    # === Schaffer collateral (CA3→CA1) — Ecker Table 3에 없음(Table 3은 CA1-내부만) ===
+    # 실제 SC→CA1 시냅스는 paired-pulse 촉진(PPR ~1.5-2.0, 50ms ISI). 기존 SC 대용이던
+    # "PC->PC (E2)"(억압)를 대체할 문헌기반 촉진 클래스. ⚠️튜닝값(측정 EMS 파라미터 아님):
+    # Use↓(낮은 방출확률)·Fac↑(강한 촉진)로 촉진 유도. 근거: Dobrunz&Stevens(1997) Neuron,
+    # Salin/Scanziani/Malenka/Nicoll(1996) PNAS. g_hat·NMDA비는 PC→PC 계열 유지(재보정 대상).
+    "SC->PC (E1s)":     dict(pre="SC",   post="PC",   ei="E", stp="E1",
+                             **_exc(0.6, 3.0, 0.15, 150, 250, 1, NMDA_RATIO_PC_PC,
+                                    tau_r=0.2)),
 }
 
 # === 클래스 구성 개별 경로 (Table 3 비대표 행) =================================
