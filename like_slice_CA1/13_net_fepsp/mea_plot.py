@@ -39,7 +39,7 @@ if "n_sc" in D.files:
 if "stim_layer" in D.files:
     _p.append(f"자극 {str(G('stim_layer'))}층")
 if "neff" in D.files and float(G("neff", 0)) > 0:
-    _p.append(f"전극당 유효세포 Neff≈{float(G('neff')):.0f}·신호90% {float(G('r90', 0)):.0f}µm")
+    _p.append(f"전극당 유효세포 Neff {float(G('neff')):.0f}·신호90% {float(G('r90', 0)):.0f}µm")
 cap = ("\n" + " · ".join(_p)) if _p else ""
 
 
