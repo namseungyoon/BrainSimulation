@@ -70,11 +70,14 @@ def quat_to_R(q):
         [s * (x * z - y * w), s * (y * z + x * w), 1 - s * (x * x + y * y)]])
 
 
-def measure_fepsp(t, v, t0, dur=30.0):
-    """자극 t0 후 dur창: 음성 fEPSP 진폭 + 초기 slope(mV/ms). 20~80% 하강 선형회귀.
-    (12_lfp/e4a_fepsp.py measure_fepsp 이식)."""
+def measure_fepsp(t, v, t0, dur=30.0, pre=5.0):
+    """자극 t0 후 dur창: 음성 fEPSP 진폭 + 초기 slope(µV/ms). 20~80% 하강 선형회귀.
+    기준선 = 자극 전 pre(ms) 구간 평균(단일 샘플보다 안정).
+    (12_lfp/e4a_fepsp.py measure_fepsp 이식·개선)."""
     m = (t >= t0) & (t < t0 + dur)
-    tt = t[m]; vv = v[m] - (v[m][0] if m.sum() else 0.0)
+    pm = (t >= t0 - pre) & (t < t0)
+    base = float(v[pm].mean()) if pm.sum() else (float(v[m][0]) if m.sum() else 0.0)
+    tt = t[m]; vv = v[m] - base
     if len(tt) < 5:
         return dict(amp=0.0, slope=0.0, tpk=t0)
     ipk = int(np.argmin(vv)); amp = vv[ipk]; tpk = tt[ipk]
@@ -133,12 +136,22 @@ def main():
     N = len(keep); orig2gid = {int(o): g for g, o in enumerate(keep)}
     gtype = [t4[o] for o in keep]
 
-    # ---- 기하 좌표계(PC PCA: 밴드면·깊이) + 전극 ----
-    Ppc = xyz[t4 == "PC"]; c0 = Ppc.mean(0); Vt = np.linalg.svd(Ppc - c0, full_matrices=False)[2]
-    face_ax = Vt[:2]; depth_ax = Vt[2]; nd = c["nd"].astype(float)
-    if np.corrcoef((xyz - c0) @ depth_ax, nd)[0, 1] < 0:
-        depth_ax = -depth_ax
-    facepc = (Ppc - c0) @ face_ax.T
+    # ---- 기하 좌표계 (★층 인식: 실제 MEA는 슬라이스가 평평히 놓임) ----
+    # CA1 층(SO→SP→SR→SLM)은 **슬라이스 면 안에 띠로 배열**되고, 두께 방향으로는 층이 안 변한다.
+    # → 전극면(유리) = 층이 배열된 면(2축) · z(유리면 거리) = 슬라이스 두께축.
+    #   두께축 = 3개 PCA축 중 **층 중심 간 퍼짐이 최소**인 축(층 무변화 방향).
+    layer = c["layer"].astype(str); nd = c["nd"].astype(float)
+    c0 = xyz.mean(0); Vall = np.linalg.svd(xyz - c0, full_matrices=False)[2]
+    spreads = []
+    for i in range(3):
+        pr = (xyz - c0) @ Vall[i]
+        cen = [pr[layer == Ln].mean() for Ln in ("SO", "SP", "SR", "SLM") if (layer == Ln).any()]
+        spreads.append(float(np.ptp(cen)))
+    i_thick = int(np.argmin(spreads))                       # 층 무변화 = 두께
+    i_face = [i for i in range(3) if i != i_thick]
+    face_ax = Vall[i_face]; thick_ax = Vall[i_thick]
+    log(f"[기하] 층중심 퍼짐 축별 {['%.0f' % s for s in spreads]}µm → 두께축=축{i_thick}(퍼짐 {spreads[i_thick]:.0f}µm) · 전극면=축{i_face}")
+    facepc = (xyz[t4 == "PC"] - c0) @ face_ax.T
     gx = (np.arange(NCOL) - (NCOL - 1) / 2) * PITCH; gy = (np.arange(NROW) - (NROW - 1) / 2) * PITCH
     Gx, Gy = np.meshgrid(gx, gy); G0 = np.column_stack([Gx.ravel(), Gy.ravel()]); NELEC = G0.shape[0]
     tree = cKDTree(facepc); fc = facepc.mean(0); best = (-1, None, 0.0)
@@ -149,12 +162,26 @@ def main():
                 E2 = Grot + fc + [dxx, dyy]; on = int((tree.query(E2)[0] < R_ON).sum())
                 if on > best[0]:
                     best = (on, E2.copy(), th)
-    n_on, E2d, th = best; over = tree.query(E2d)[0] < R_ON
-    # 자극전극: 조직 위 전극 중 밴드 중앙 근처 1개. 기록전극: 나머지 조직 위.
-    on_idx = np.where(over)[0]
-    stim_elec = int(argval("--stim_elec", str(on_idx[np.argmin(np.linalg.norm(E2d[on_idx] - fc, axis=1))])))
-    rec_idx = [j for j in on_idx if j != stim_elec]
-    log(f"[MEA] 3x8 회전{np.rad2deg(th):.0f}° 조직위 {n_on}/24 · 자극전극 #{stim_elec} · 기록전극 {len(rec_idx)}개 · 국소반경 {r_stim}µm")
+    n_on, E2d, th = best
+    # ---- 전극별 층 배정: 면내 층 방향 u_layer(SP→SLM)로 좌표화 ----
+    lay_cen = {}
+    for Ln in ("SO", "SP", "SR", "SLM"):
+        m = layer == Ln
+        if m.any():
+            lay_cen[Ln] = ((xyz[m] - c0) @ face_ax.T).mean(0)
+    u_layer = lay_cen["SLM"] - lay_cen["SP"]; u_layer = u_layer / (np.linalg.norm(u_layer) + 1e-12)
+    s_lay = {Ln: float((lay_cen[Ln] - lay_cen["SP"]) @ u_layer) for Ln in lay_cen}
+    s_el = (E2d - lay_cen["SP"]) @ u_layer                  # 전극의 층 좌표(SP=0, SR·SLM=+)
+    el_layer = np.array([min(s_lay, key=lambda k: abs(s_lay[k] - s)) for s in s_el])
+    over = tree.query(E2d)[0] < 450.0                       # 조직(밴드+수상돌기장) 위
+    log(f"[층] SP=0 · SR={s_lay['SR']:+.0f} · SLM={s_lay['SLM']:+.0f} · SO={s_lay['SO']:+.0f} µm(면내)")
+    log(f"[전극층] " + " ".join(f"#{j}:{el_layer[j]}({s_el[j]:+.0f})" for j in range(NELEC) if over[j]))
+    # 자극·기록 전극: 기본은 **SR 층 위**(실제 실험: SC 시냅스층에서 자극·기록)
+    sr_idx = [j for j in range(NELEC) if over[j] and el_layer[j] in ("SR", "SLM")]
+    pool = sr_idx if sr_idx else [j for j in range(NELEC) if over[j]]
+    stim_elec = int(argval("--stim_elec", str(pool[int(np.argmin(s_el[pool]))])))   # SR 중 가장 SP쪽
+    rec_idx = [j for j in pool if j != stim_elec] or [j for j in range(NELEC) if over[j] and j != stim_elec]
+    log(f"[MEA] 3x8 회전{np.rad2deg(th):.0f}° 조직위 {int(over.sum())}/24 · 자극전극 #{stim_elec}({el_layer[stim_elec]}) · 기록전극 {len(rec_idx)}개(SR우선) · 국소반경 {r_stim}µm")
 
     # ---- 네트워크 구축 ----
     type_dir = net.load_representatives(MODELS)
@@ -197,39 +224,69 @@ def main():
     n_syn_all = int(pc.allreduce(n_syn, 1)); pc.barrier()
     log(f"[2/4 내부연결] {n_syn_all:,} 시냅스" + (" (억제off)" if no_inh else ""))
 
-    # ---- 국소 SC: 자극전극 반경 R 내 세포에만 SC 시냅스 + 섬유(NetStim, 토글가능) ----
-    face_all = (xyz - c0) @ face_ax.T
+    # ---- 전세포 실제 기하(quaternion 배치) — SC 배선·전달행렬 공용 ----
+    t0 = time.time(); cellgeom = {}
+    for g in my:
+        geom = L.collect_segments(list(cells[g].all))
+        Rc = quat_to_R(quat[keep[g]])
+        real = geom["mid"] @ Rc.T + xyz[keep[g]]
+        cellgeom[g] = dict(geom=geom, uv=(real - c0) @ face_ax.T, thk=(real - c0) @ thick_ax,
+                           names=[s.sec.name() for s in geom["segs"]])
+    log(f"[기하] rank0 {len(cellgeom)}세포 세그먼트 실제 3D 배치 · {time.time()-t0:.0f}s")
+
+    # ---- 국소 SC: 자극전극 반경 R 내 **수상돌기(시냅스 위치)** 에만 SC 시냅스 ----
+    # 실제 생리: SR층 자극전극이 그 근처를 지나는 SC 축삭을 흥분시킴 → 그 위치의 PC 정단수상돌기에 시냅스.
+    # (소마 위치 기준이 아니다 — PC 소마는 SP, SC 시냅스는 SR)
     fibers = []
     for k in range(n_fiber):
         ns = h.NetStim(); ns.number = 0; ns.start = stim_t; ns.noise = 0; ns.interval = 1e9
         fibers.append(ns); keeph.append(ns)
     prm = P3.CLASSES[sc_class]; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
+    sc_cells = []                                      # SC를 받은 세포(진단용)
     for g in my:
-        d2 = np.sum((face_all[keep[g]] - E2d[stim_elec]) ** 2)
-        if d2 > r_stim * r_stim:                       # 자극전극 국소 반경 밖이면 SC 없음
+        cg = cellgeom[g]; is_pc = gtype[g] == "PC"
+        # SC 축삭은 밴드를 따라 길게 주행 → 자극전극은 '그 층대(SR 깊이)를 지나는 축삭'을 흥분시키고,
+        # 활성 축삭은 밴드 전체의 자기 시냅스에서 방출(실측 fEPSP가 먼 전극에서도 큰 이유).
+        # 따라서 게이트는 **층 방향(횡) 거리**만: 종방향(밴드 따라)은 제한하지 않는다.
+        s_seg = (cg["uv"] - lay_cen["SP"]) @ u_layer
+        cand = [i for i in range(len(s_seg)) if abs(s_seg[i] - s_el[stim_elec]) <= r_stim and
+                ((".apic" in cg["names"][i]) if is_pc
+                 else (".dend" in cg["names"][i] or ".apic" in cg["names"][i]))]
+        if not cand:
             continue
-        is_pc = gtype[g] == "PC"; k_syn = sc_pc if is_pc else sc_int; gnS = sc_g_pc if is_pc else sc_g_int
+        k_syn = min(sc_pc if is_pc else sc_int, len(cand) * 3)   # 후보 세그당 최대 3접촉
+        gnS = sc_g_pc if is_pc else sc_g_int
+        sc_cells.append(g)
         for _ in range(k_syn):
-            seg = sr_or_dend(cells[g], is_pc, scrng)
+            seg = cg["geom"]["segs"][cand[scrng.randint(len(cand))]]
             syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1), deterministic=det)
             nc = h.NetCon(fibers[scrng.randint(n_fiber)], syn); nc.weight[0] = gnS; nc.delay = SYN_DELAY
             keeph += [syn, nc]; n_sc += 1
-    n_sc_all = int(pc.allreduce(n_sc, 1)); pc.barrier()
-    log(f"[3/4 국소SC] {n_sc_all:,} SC시냅스(자극전극 {r_stim}µm 내)")
+    n_sc_all = int(pc.allreduce(n_sc, 1)); n_sccell_all = int(pc.allreduce(len(sc_cells), 1)); pc.barrier()
+    log(f"[3/4 국소SC] {n_sc_all:,} SC시냅스 · SC받은세포 {n_sccell_all}개 (자극전극#{stim_elec} 수상돌기 {r_stim}µm 내)")
+    # 진단: SC를 받은 PC 소마 Vm 기록(자극이 실제로 세포를 탈분극시키는가)
+    vm_diag = []
+    for g in [x for x in sc_cells if gtype[x] == "PC"][:3]:   # SC 받은 PC 확실히 선택
+        vv = h.Vector(); vv.record(cells[g].soma[0](0.5)._ref_v, rec_dt)
+        vm_diag.append(vv)                                    # ★Vector 객체를 보관(record 반환값 아님)
 
-    # ---- 전세포 기하 + 막전류 기록 + 전달행렬 ----
-    t0 = time.time(); mids = []; rads = []; vecs = []
+    # ---- 막전류 기록 + 전달행렬 (저장된 기하 재사용) ----
+    t0 = time.time(); uvs = []; thks = []; rads = []; vecs = []
     cv = h.CVode(); cv.use_fast_imem(1)
     for g in my:
-        geom = L.collect_segments(list(cells[g].all)); Rc = quat_to_R(quat[keep[g]])
-        mids.append(geom["mid"] @ Rc.T + xyz[keep[g]]); rads.append(geom["radius"])
-        for seg in geom["segs"]:
+        cg = cellgeom[g]
+        uvs.append(cg["uv"]); thks.append(cg["thk"]); rads.append(cg["geom"]["radius"])
+        for seg in cg["geom"]["segs"]:
             v = h.Vector(); v.record(seg._ref_i_membrane_, rec_dt); vecs.append(v)
-    mids = np.vstack(mids) if mids else np.zeros((0, 3)); rads = np.concatenate(rads) if rads else np.zeros(0)
-    uv = (mids - c0) @ face_ax.T; dep = (mids - c0) @ depth_ax
-    dmax = pc.allreduce(float(dep.max()) if len(dep) else -1e18, 2)
-    dmin = pc.allreduce(float(dep.min()) if len(dep) else 1e18, 3)
-    zloc = (dmax - dep) + Z_GLASS_MARGIN; Hh = (dmax - dmin) + 2 * Z_GLASS_MARGIN
+    uv = np.vstack(uvs) if uvs else np.zeros((0, 2))
+    thk = np.concatenate(thks) if thks else np.zeros(0)
+    rads = np.concatenate(rads) if rads else np.zeros(0)
+    # 슬라이스 두께 h = **소마 분포** 기준(해부학적). 세그먼트 최댓값을 쓰면 절단면 밖으로 뻗은
+    # 수상돌기까지 포함돼 비현실적으로 두꺼워짐(실제 슬라이스는 절단면에서 잘림).
+    thk_soma = (xyz[keep] - c0) @ thick_ax
+    tmin = float(thk_soma.min()); tmax = float(thk_soma.max())
+    zloc = (thk - tmin) + Z_GLASS_MARGIN                     # 슬라이스 아랫면이 유리(z=0)
+    Hh = (tmax - tmin) + 2 * Z_GLASS_MARGIN                  # moi가 z를 [0,h]로 클램프(절단 효과)
     geom_r = dict(mid=np.column_stack([uv[:, 0], uv[:, 1], zloc]), radius=rads)
     E3 = np.column_stack([E2d[:, 0], E2d[:, 1], np.zeros(NELEC)])
     M_rank = L.moi_point_matrix(geom_r, E3, SIG_T, SIG_S, SIG_G, Hh, N_IMG) if len(rads) else np.zeros((NELEC, 0))
@@ -257,7 +314,14 @@ def main():
         else:
             Ve = Ve_local
         nspk = int(pc.allreduce(len(spt), 1))
-        return Ve, nspk
+        # 진단: SC 표적 PC 소마 최대 탈분극(자극 전달 확인)
+        dep = 0.0
+        for vv in vm_diag:
+            a = np.asarray(vv)
+            if a.size:
+                dep = max(dep, float(a.max() - a[0]))
+        dep = float(pc.allreduce(dep, 2))
+        return Ve, nspk, dep
 
     tarr = np.arange(nt) * rec_dt
     out = os.path.join(FIG, f"_mea_{tag}.npz")
@@ -265,22 +329,23 @@ def main():
 
     if protocol == "io":
         rows = []; waves = []
-        log(f"{'세기(섬유)':>10} {'slope(µV/ms)':>13} {'amp(µV)':>9} {'창내최대|Ve|':>12} {'스파이크':>7}")
+        log(f"{'세기(섬유)':>10} {'slope(µV/ms)':>13} {'amp(µV)':>9} {'창내최대|Ve|':>12} {'스파이크':>7} {'소마탈분극mV':>12}")
         for lv in io_levels:
             na = max(1, int(round(lv * n_fiber)))
-            Ve, nspk = run_once(na, [stim_t])
+            Ve, nspk, dep = run_once(na, [stim_t])
             if RANK == 0:
                 fe = measure_fepsp(tarr, Ve[rec_j], stim_t, 30.0)
                 w = (tarr >= stim_t) & (tarr <= stim_t + 30.0)
                 pk_abs = float(Ve[rec_j][w][np.argmax(np.abs(Ve[rec_j][w]))]) if w.sum() else 0.0
                 rows.append((lv, na, fe["slope"], fe["amp"], nspk, pk_abs))
                 waves.append(Ve[:, w])                     # 진단: 전극별 창내 파형
-                log(f"{na:>10} {fe['slope']:>13.4f} {fe['amp']:>9.4f} {pk_abs:>12.4f} {nspk:>7}")
+                log(f"{na:>10} {fe['slope']:>13.4f} {fe['amp']:>9.4f} {pk_abs:>12.4f} {nspk:>7} {dep:>12.2f}")
         if RANK == 0:
             R = np.array([(r[0], r[1], r[2], r[3], r[4], r[5]) for r in rows], float)
             np.savez(out, kind="io", levels=R[:, 0], nact=R[:, 1], slope=R[:, 2], amp=R[:, 3],
                      nspk=R[:, 4], pk_abs=R[:, 5], waves=np.array(waves), twin=tarr[(tarr >= stim_t) & (tarr <= stim_t + 30.0)],
-                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N, n_fiber=n_fiber)
+                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N, n_fiber=n_fiber,
+                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx))
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
@@ -288,7 +353,7 @@ def main():
         na = max(1, int(round(float(argval('--io_test', '0.4')) * n_fiber)))   # 테스트 세기
         log(f"{'ISI(ms)':>8} {'slope1':>9} {'slope2':>9} {'PPR':>6}")
         for isi in ppf_isi:
-            Ve, nspk = run_once(na, [stim_t, stim_t + isi])
+            Ve, nspk, dep = run_once(na, [stim_t, stim_t + isi])
             if RANK == 0:
                 f1 = measure_fepsp(tarr, Ve[rec_j], stim_t, min(isi, 30.0))
                 f2 = measure_fepsp(tarr, Ve[rec_j], stim_t + isi, 30.0)
