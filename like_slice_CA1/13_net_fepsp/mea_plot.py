@@ -94,6 +94,50 @@ elif kind == "ppf":
     fig.suptitle(f"MEA PPF 실험 — 국소 SC 짝펄스 → 촉진(PPR>1) (실제 {N:,}세포){cap}", fontsize=12, y=1.02)
     print(f"[PPF] PPR {ppr.min():.2f}~{ppr.max():.2f} · slope1 {s1.min():.4f}~{s1.max():.4f} µV/ms", flush=True)
 
+elif kind == "ltp":
+    t = D["t"]; Ve = D["Ve"]; tb = D["t_base"]; tt_ = D["t_tbs"]; tp = D["t_post"]
+    sb = np.abs(D["slope_base"]); sp_ = np.abs(D["slope_post"])
+    pct = float(G("ltp_pct", np.nan)); rho_m = float(G("rho_mean", 0)); rup = int(G("rho_up", 0))
+    rn = int(G("rho_n", 0)); nspk = int(G("nspk", 0)); is_pl = bool(G("plastic", False))
+    fig = plt.figure(figsize=(15, 8.4))
+    gs = fig.add_gridspec(2, 3, height_ratios=[1.0, 1.0], hspace=0.36, wspace=0.28)
+    # (A) 전체 시간경과
+    axA = fig.add_subplot(gs[0, :])
+    axA.plot(t, Ve[rec_j], color="#1f6fb2", lw=0.7)
+    axA.axvspan(tb[0] - 60, tb[-1] + 60, color="#ecf0f1", alpha=0.8, zorder=0, label="baseline(약자극)")
+    axA.axvspan(tt_[0] - 30, tt_[-1] + 60, color="#fdebd0", alpha=0.9, zorder=0, label="TBS 유도(강자극)")
+    axA.axvspan(tp[0] - 60, tp[-1] + 60, color="#d5f5e3", alpha=0.8, zorder=0, label="사후(약자극)")
+    for x in list(tb) + list(tp):
+        axA.axvline(x, color="0.55", lw=0.6, ls=":")
+    axA.set_xlabel("시간 (ms)"); axA.set_ylabel("전극 fEPSP (µV)"); axA.legend(fontsize=8, ncol=3, loc="lower left")
+    axA.set_title(f"(A) LTP 프로토콜 전체 시간경과 — 기록전극#{rec_j}(SR) · "
+                  f"{'칼슘 가소성 시냅스' if is_pl else '대조군(가소성 없음)'}", fontsize=11)
+    # (B) 테스트펄스별 slope
+    axB = fig.add_subplot(gs[1, 0])
+    xb = np.arange(len(sb)); xp = np.arange(len(sp_)) + len(sb) + 0.6
+    axB.bar(xb, sb, color="#7f8c8d", edgecolor="0.3", label="baseline")
+    axB.bar(xp, sp_, color="#c0392b", edgecolor="0.3", label="사후(TBS 후)")
+    axB.axhline(sb.mean(), color="#7f8c8d", ls="--", lw=1)
+    axB.axhline(sp_.mean(), color="#c0392b", ls="--", lw=1)
+    axB.set_xticks(list(xb) + list(xp))
+    axB.set_xticklabels([f"B{i+1}" for i in range(len(sb))] + [f"P{i+1}" for i in range(len(sp_))], fontsize=8)
+    axB.set_ylabel("fEPSP |slope| (µV/ms)"); axB.legend(fontsize=8)
+    axB.set_title(f"(B) 테스트펄스별 slope\n{sb.mean():.3f} → {sp_.mean():.3f} = **{pct:+.1f}%**", fontsize=10.5)
+    axB.grid(axis="y", alpha=0.3)
+    # (C) 효능 ρ
+    axC = fig.add_subplot(gs[1, 1]); axC.axis("off")
+    axC.text(0, 1.0, "(C) 시냅스 효능 ρ (칼슘 가소성)", fontsize=11, fontweight="bold", va="top")
+    lines = [f"가소성 시냅스 : {rn:,} 개", f"ρ0 (유도 전)  : 0.000 (DOWN)",
+             f"ρ 평균(유도 후): {rho_m:.3f}", f"ρ>0.5 (UP)    : {rup:,} 개 ({100*rup/max(rn,1):.1f}%)",
+             f"전달강도 w    : 1 → {1 + rho_m * (5.28145 - 1):.2f} 배",
+             f"TBS 유발 스파이크: {nspk:,}", "",
+             f"fEPSP 변화     : {pct:+.1f}%"]
+    for i, s in enumerate(lines):
+        axC.text(0, 0.88 - i * 0.105, s, fontsize=9.5, va="top", family="Malgun Gothic")
+    elec_inset(fig.add_subplot(gs[1, 2]))
+    fig.suptitle(f"MEA LTP 실험 — baseline → TBS 유도 → 사후 (실제 {N:,}세포·연속 구동){cap}", fontsize=12, y=1.0)
+    print(f"[LTP] {sb.mean():.4f} → {sp_.mean():.4f} µV/ms = {pct:+.1f}% · ρ평균 {rho_m:.3f} · UP {rup}/{rn}", flush=True)
+
 fig.tight_layout(rect=[0, 0, 1, 0.93])
 out = os.path.join(FIG, f"MEA_{tag}.png")
 fig.savefig(out, dpi=140, bbox_inches="tight")
