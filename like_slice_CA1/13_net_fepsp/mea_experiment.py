@@ -119,6 +119,7 @@ def main():
     io_levels = [float(x) for x in argval("--io_levels", "0.05,0.1,0.2,0.35,0.5,0.75,1.0").split(",")]
     ppf_isi = [float(x) for x in argval("--ppf_isi", "10,20,50,100,200").split(",")]
     plastic = "--plastic" in sys.argv                          # SC를 칼슘 가소성 시냅스(GBPlasticitySyn)로
+    freeze_rho = "--freeze_rho" in sys.argv                    # 엄격 대조군: 동일 mod·가소성만 차단(γ_p=γ_d=0)
     io_test = float(argval("--io_test", "0.4"))                # 테스트(약)자극 세기 비율
     # LTP 스케줄(ms): baseline 약자극 → TBS 강자극(4펄스@100Hz 버스트 × 5회 @5Hz) → 사후 약자극
     tbs_n = int(argval("--tbs_bursts", "5"))
@@ -284,6 +285,8 @@ def main():
                 syn = h.GBPlasticitySyn(seg)
                 syn.tau_r_AMPA = prm["tau_r_AMPA"]; syn.tau_d_AMPA = prm["tau_d_AMPA"]
                 syn.NMDA_ratio = prm["NMDA_ratio"]; syn.rho0 = float(argval("--rho0", "0.0"))
+                if freeze_rho:                     # 엄격 대조군: 동일 mod·동일 동역학, 가소성만 차단
+                    syn.gamma_p = 0.0; syn.gamma_d = 0.0
                 # 후시냅스 스파이크 → 칼슘 점프(weight<0 sentinel). 시냅스와 세포가 같은 rank라 로컬 NetCon.
                 s0 = cells[g].soma[0]
                 ncp = h.NetCon(s0(0.5)._ref_v, syn, sec=s0)
