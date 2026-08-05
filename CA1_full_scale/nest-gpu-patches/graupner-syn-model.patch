@@ -1,0 +1,133 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 65bbcf7..bdfb3b3 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -93,6 +93,7 @@ spike_detector.h
+ spike_generator.h
+ remote_spike.h
+ mpi_comm.h
++graupner.h
+ stdp.h
+ syn_model.h
+ test_syn_model.h
+@@ -102,6 +103,21 @@ user_m1_rk5.h
+ user_m2.h
+ user_m2_kernel.h
+ user_m2_rk5.h
++user_m3.h
++user_m3_kernel.h
++user_m3_rk5.h
++user_m4.h
++user_m4_kernel.h
++user_m4_rk5.h
++user_m5.h
++user_m5_kernel.h
++user_m5_rk5.h
++user_m6.h
++user_m6_kernel.h
++user_m6_rk5.h
++user_m7.h
++user_m7_kernel.h
++user_m7_rk5.h
+ utilities.h
+ input_spike_buffer.cu
+ connect.cu
+@@ -153,11 +169,17 @@ spike_detector.cu
+ spike_generator.cu
+ remote_spike.cu
+ mpi_comm.cu
++graupner.cu
+ stdp.cu
+ syn_model.cu
+ test_syn_model.cu
+ user_m1.cu
+ user_m2.cu
++user_m3.cu
++user_m4.cu
++user_m5.cu
++user_m6.cu
++user_m7.cu
+ utilities.cu
+ nestgpu_C.cpp
+     )
+diff --git a/src/syn_model.cu b/src/syn_model.cu
+index 4fb44a4..8ee1384 100644
+--- a/src/syn_model.cu
++++ b/src/syn_model.cu
+@@ -21,6 +21,7 @@
+  */
+ 
+ #include "cuda_error.h"
++#include "graupner.h"
+ #include "nestgpu.h"
+ #include "ngpu_exception.h"
+ #include "stdp.h"
+@@ -136,6 +137,11 @@ NESTGPU::CreateSynGroup( std::string model_name )
+     STDP* stdp_group = new STDP;
+     syn_group_vect_.push_back( stdp_group );
+   }
++  else if ( model_name == syn_model_name[ i_graupner_model ] )
++  {
++    Graupner* graupner_group = new Graupner;
++    syn_group_vect_.push_back( graupner_group );
++  }
+   else
+   {
+     throw ngpu_exception( std::string( "Unknown synapse model name: " ) + model_name );
+diff --git a/src/syn_model.h b/src/syn_model.h
+index 267da13..be028dc 100644
+--- a/src/syn_model.h
++++ b/src/syn_model.h
+@@ -23,6 +23,7 @@
+ #ifndef SYNMODEL_H
+ #define SYNMODEL_H
+ 
++#include "graupner.h"
+ #include "stdp.h"
+ #include <string>
+ #include <vector>
+@@ -39,6 +40,7 @@ enum SynModels
+   i_null_syn_model = 0,
+   i_test_syn_model,
+   i_stdp_model,
++  i_graupner_model,
+   N_SYN_MODELS
+ };
+ 
+@@ -55,10 +57,13 @@ SynapseUpdate( int syn_group, float* w, float Dt )
+   case i_stdp_model:
+     stdp_ns::STDPUpdate( w, Dt, param );
+     break;
++  case i_graupner_model:
++    graupner_ns::GraupnerUpdate( w, Dt, param );
++    break;
+   }
+ }
+ 
+-const std::string syn_model_name[ N_SYN_MODELS ] = { "", "test_syn_model", "stdp" };
++const std::string syn_model_name[ N_SYN_MODELS ] = { "", "test_syn_model", "stdp", "graupner" };
+ 
+ class SynModel
+ {
+@@ -101,4 +106,21 @@ public:
+   }
+ };
+ 
++class Graupner : public SynModel
++{
++  int _Init();
++
++public:
++  Graupner()
++  {
++    _Init();
++  }
++
++  int
++  Init()
++  {
++    return _Init();
++  }
++};
++
+ #endif
