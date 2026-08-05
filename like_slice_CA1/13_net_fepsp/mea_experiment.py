@@ -106,8 +106,9 @@ def main():
     protocol = argval("--protocol", "io")
     tstop = float(argval("--tstop", "80"))
     dt = float(argval("--dt", "0.025")); rec_dt = float(argval("--rec_dt", "0.1"))
-    det = "--det" not in sys.argv and "--prob" in sys.argv    # 기본 결정론(룰베이스)
-    det = not ("--prob" in sys.argv)                          # 기본 det=True, --prob면 확률
+    # ★방출 모드: 기본 **결정론**(룰베이스·평균장). `--prob` 주면 확률 방출(BBP EMS Random123).
+    #   과거 이 줄이 중복돼 혼선이 있었음(2026-08-05 정정) → 단일 정의 + 아래에서 로그·npz에 명시 출력.
+    det = "--prob" not in sys.argv
     sc_class = argval("--sc_class", "SC->PC (E1s)")
     sc_pc = int(argval("--sc_pc", "40")); sc_int = int(argval("--sc_int", "20"))
     sc_g_pc = float(argval("--sc_g_pc", "1.5")); sc_g_int = float(argval("--sc_g_int", "1.0"))
@@ -128,6 +129,8 @@ def main():
     t_tbs = [tbs0 + b * 200.0 + q * 10.0 for b in range(tbs_n) for q in range(4)]
     t_post = [float(tbs0 + tbs_n * 200.0 + 200.0 + 200.0 * i) for i in range(4)]
     no_inh = "--no_inh" in sys.argv
+    no_conn = "--no_conn" in sys.argv          # 내부 커넥톰 전체 배선 생략(회로 개입 OFF 조건)
+    chunk_ms = float(argval("--chunk", "0"))   # >0이면 시간 청크 누적(막전류 전 시점 저장 회피)
 
     # ---- 세포 ----
     c = np.load(CELLS, allow_pickle=True)
@@ -144,6 +147,17 @@ def main():
         keep = np.array(sorted(ks))
     N = len(keep); orig2gid = {int(o): g for g, o in enumerate(keep)}
     gtype = [t4[o] for o in keep]
+    # ★실행 헤더: 규모·방출모드를 항상 명시(과거 보고 혼선 방지, 2026-08-05)
+    npc_sub = sum(1 for g in gtype if g == "PC")
+    log("=" * 78)
+    log(f"[구성] 프로토콜 {protocol} · 태그 {tag} · 랭크 {NHOST}")
+    log(f"[규모] 세포 {N:,} / 전체 {Ntot:,} ({100*N/Ntot:.1f}%)  ·  이 중 PC {npc_sub:,}")
+    log(f"[방출] {'결정론(det=True, 룰베이스)' if det else '확률(--prob, BBP EMS Random123)'}"
+        f"  ·  가소성 {'ON(GBPlasticitySyn)' if plastic else 'OFF'}"
+        f"{' · γ=0 고정(엄격대조)' if (plastic and freeze_rho) else ''}")
+    log(f"[회로] 내부 커넥톰 {'OFF' if no_conn else 'ON'} · 억제 {'OFF' if no_inh else 'ON'} · 배경 SC구동 없음(조용한 슬라이스)")
+    log(f"[수치] dt {dt}ms · 기록 {rec_dt}ms · tstop {tstop}ms" + (f" · 청크 {chunk_ms:.0f}ms" if chunk_ms > 0 else ""))
+    log("=" * 78)
 
     # ---- 기하 좌표계 (★층 인식: 실제 MEA는 슬라이스가 평평히 놓임) ----
     # CA1 층(SO→SP→SR→SLM)은 **슬라이스 면 안에 띠로 배열**되고, 두께 방향으로는 층이 안 변한다.
@@ -212,7 +226,7 @@ def main():
     pre = prc["pre"]; post = prc["post"]; cid = prc["cls"]; classes = list(prc["classes"].astype(str))
     inh_cls = set(i for i, cl in enumerate(classes) if not cl.startswith("PC->"))
     rng = np.random.RandomState(1000 + RANK + seed * 97); n_syn = 0
-    for i in range(len(pre)):
+    for i in (range(len(pre)) if not no_conn else range(0)):    # --no_conn: 내부 커넥톰 전체 생략
         a = int(pre[i]); b = int(post[i])
         if (a not in orig2gid) or (b not in orig2gid):
             continue
@@ -231,7 +245,8 @@ def main():
         except Exception:
             pass
     n_syn_all = int(pc.allreduce(n_syn, 1)); pc.barrier()
-    log(f"[2/4 내부연결] {n_syn_all:,} 시냅스" + (" (억제off)" if no_inh else ""))
+    log(f"[2/4 내부연결] {n_syn_all:,} 시냅스" + (" (억제off)" if no_inh else "")
+        + (" · ★커넥톰 OFF(--no_conn)" if no_conn else ""))
 
     # ---- 전세포 실제 기하(quaternion 배치) — SC 배선·전달행렬 공용 ----
     t0 = time.time(); cellgeom = {}
