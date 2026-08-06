@@ -66,16 +66,23 @@ TBS 뒤 기울기가 커지는 이유는 시냅스 강화 말고도 있다 — �
 
 새 가소성 모델은 **mod 파일 하나 + `mea_experiment.py:69` 표에 한 줄**만 추가하면 같은 실험이 그대로 돈다.
 
-| 이름 | mod 클래스 | 단기 | 장기 | 역할 |
-| --- | --- | --- | --- | --- |
-| `det` | `DetAMPANMDA` (BBP 표준 경로) | ✅ | ❌ | **기준선** — 가소성이 없으니 변화는 전부 회로 효과 |
-| `gb` | `GBPlasticitySyn` | ❌ | ✅ | **모델 A** — 현재. 기존 결과와 연결됨 |
-| `gbstp` | `GBPlasticityStpSyn` | ✅ | ✅ | **모델 B** — TBS 버스트 내 촉진 포함 |
+| 이름 | mod 클래스 | 단기 | 장기 | 확률방출 | 역할 |
+| --- | --- | --- | --- | --- | --- |
+| `det` | `DetAMPANMDA` (BBP 표준 경로) | ✅ | ❌ | `--prob`따름 | **기준선** — 가소성이 없으니 변화는 전부 회로 효과 |
+| `gb` | `GBPlasticitySyn` | ❌ | ✅ | ❌ | **모델 A** — 현재. 기존 결과와 연결됨 |
+| `gbstp` | `GBPlasticityStpSyn` | ✅ | ✅ | ❌ | **모델 B** — TBS 버스트 내 촉진 포함 |
+| `gbstpprob` | `GBPlasticityStpProbSyn` | ✅ | ✅ | ✅ | **모델 C** — 소포 단위 확률 방출(BBP MVR 이식) |
 
-등록표 한 줄: `cls`(mod 클래스) · `stp`/`ltp`(단기·장기 유무) · `rho`(가소성 상태변수 이름) ·
-`freeze`(얼릴 파라미터) · `init`(초기값 파라미터) · `desc`.
+등록표 한 줄: `cls`(mod 클래스) · `stp`/`ltp`(단기·장기 유무) · `prob`(확률방출·setRNG 필요) ·
+`rho`(가소성 상태변수 이름) · `freeze`(얼릴 파라미터) · `init`(초기값 파라미터) · `desc`.
 
-모델 B의 설계 근거·우리 선택·검증은 → `shared/mechanisms/GBPlasticityStpSyn.md`
+설계 근거·우리 선택·검증은 → 모델 B `shared/mechanisms/GBPlasticityStpSyn.md` ·
+모델 C `shared/mechanisms/GBPlasticityStpProbSyn.md`
+
+⚠️ **모델 C 두 가지 주의.** ① 확률이라 **시드마다 결과가 다르다** — 비교는 시드 고정, 흔들림은 시드 스윕.
+② `Nrrp=1`·`ca_stp=1`이면 방출 1회당 칼슘이 `1/Use = 6.67`로 강화 문턱(1.3)의 5.1배가 되어
+성공한 방출이 거의 전부 강화로 간다. 이건 **우리 정규화가 만든 인공물**이지 결과가 아니다.
+`--ca_stp 0`(칼슘을 Graupner 원본으로 고정)을 먼저 볼 것. 드라이버가 이 조합에 `[경고]`를 찍는다.
 
 ### 방출 모드는 항상 **두 줄**로 적는다
 
@@ -84,7 +91,7 @@ TBS 뒤 기울기가 커지는 이유는 시냅스 강화 말고도 있다 — �
 | 시냅스 | 개수(전규모) | 모델 | 방출 모드 |
 | --- | --- | --- | --- |
 | 내부 연결 | 6,438,379 | `DetAMPANMDA`/`DetGABAAB` | 결정론 (`--prob` 주면 확률) |
-| SC 자극 경로 | 160,172 | `--syn_model`이 정함 | **`gb`/`gbstp`는 선택지 없음 — 항상 결정론** |
+| SC 자극 경로 | 160,172 | `--syn_model`이 정함 | `gb`·`gbstp` = 항상 결정론 · **`gbstpprob` = 소포 단위 확률(Nrrp·Random123)** · `det` = `--prob` 따름 |
 
 **정정(2026-08-05)**: 이전에 Notion·커밋·보고에서 서브셋 실험들을 "확률 방출(Random123)"이라고 적었으나
 **사실은 결정론**이었다(코드 중복 줄로 기본값이 `det=True`). I-O 시드 비교의 변동 원인도 확률 방출이 아니라
@@ -100,8 +107,9 @@ TBS 뒤 기울기가 커지는 이유는 시냅스 강화 말고도 있다 — �
 | **0-2 원자료 저장** | 스파이크 시각·gid · **시냅스별 ρ 전부**(`rho_all`/`rho_gid`/`rho_k`) · ρ0 전부 · 막전위 진단 파형 · 설정값 전부 |
 | **0-3 분석 분리** | 신규 `mea_postproc.py`(NEURON 불필요) — 기울기·LTP지수 계산 + CSV 5종. `mea_plot.py`의 ρ0 하드코딩 제거. `measure_fepsp` 사본 제거해 단일 출처화 |
 | **0-4 프로토콜 손잡이** | `--n_base` `--n_post` `--tbs_bursts` `--isi_test` `--tbs_isi` `--tbs_pulses` `--tbs_dt` `--rho0` · **`--rho_init`**(시냅스별 ρ 주입 = 4단계 60분 재측정의 핵심) |
-| **0-5 모델 스위치** | `--syn_model {det,gb,gbstp}` + 등록표(§3) |
-| **0-6 병합 mod** | `shared/mechanisms/GBPlasticityStpSyn.mod` 신설 — 모델 B |
+| **0-5 모델 스위치** | `--syn_model {det,gb,gbstp,gbstpprob}` + 등록표(§3) |
+| **0-6 병합 mod** | `shared/mechanisms/GBPlasticityStpSyn.mod` 신설 — 모델 B (장기+단기, 결정론 방출) |
+| **0-7 확률방출 mod** | `shared/mechanisms/GBPlasticityStpProbSyn.mod` 신설 — 모델 C (모델 B + `ProbAMPANMDA_EMS`의 소포 단위 MVR 방출·Random123). 드라이버가 `setRNG`를 자동 호출하고 `--ca_stp` `--norm_pr`을 노출 |
 
 ### 통과 기준 4개 — 전부 통과
 
@@ -110,9 +118,11 @@ TBS 뒤 기울기가 커지는 이유는 시냅스 강화 말고도 있다 — �
 | ① | 옛 결과 파일 → 새 분석 코드 → **예전 숫자 그대로** | LTP% 저장값 **+70.3558183965** → 재계산 **+70.3558133975** · 기울기 7개 최대 상대차 **7.11e-08** < float32 eps 1.192e-07 → **"[재현 확인] 통과"** |
 | ② | 새 결과 파일에 스파이크 시각·시냅스별 ρ·설정값이 실제로 들어 있다 | `np.savez` 인자에 `spike_t`/`spike_gid`/`rho_all`/`rho_gid`/`rho_k`/`rho0_all` + `cfg` 전부 포함 (`mea_experiment.py:735`) |
 | ③ | CSV 5종이 엑셀에서 바로 열린다 | `mea_postproc.py` 출력 확인 |
-| ④ | `--syn_model gbstp`로 mod가 실제로 바뀌어 로드된다 | Windows `nrnmech.dll` 재빌드 + WSL `mods_ltp` 재빌드에서 `GBPlasticitySyn`·`GBPlasticityStpSyn` 둘 다 LOAD OK. 동작 검증 4/4는 아래 |
+| ④ | `--syn_model`로 mod가 실제로 바뀌어 로드된다 | Windows `nrnmech.dll` 재빌드 + WSL `mods_ltp` 재빌드(23 mod)에서 `GBPlasticitySyn`(A)·`GBPlasticityStpSyn`(B)·`GBPlasticityStpProbSyn`(C) **셋 다 LOAD OK**(C는 `setRNG(1,2,3)`까지). 동작 검증 **8/8**은 아래 |
 
 ### 모델 B 동작 검증 — `shared/mechanisms/check_gb_mods.py` (시냅스 1개 · 수 초)
+
+결정론이라 **한 시냅스**로 확인한다. 실행 로그 그대로 옮긴 값이다.
 
 | # | 확인 | 결과 |
 | --- | --- | --- |
@@ -120,6 +130,23 @@ TBS 뒤 기울기가 커지는 이유는 시냅스 강화 말고도 있다 — �
 | ② | 버스트 안 2·3·4번째가 1번째보다 큰가 | Pr_norm **1.000 / 1.562 / 1.613 / 1.350** · TM 독립 파이썬 계산과 절대차 **0** |
 | ③ | 겹친 지연 칼슘이 뒤섞이지 않는가 (D 18.8 ms > ISI 10 ms) | 점프량 최대 절대차 8.25e-04(dt 격자) · 순서 일치 |
 | ④ | `ca_stp=0`이 Graupner 원본으로 복귀하는가 | 칼슘 파형 전 시점 절대차 **0.000e+00** |
+
+### 모델 C 동작 검증 — 같은 스크립트 (시냅스 **20,000개 앙상블** · 구동 42.1 s)
+
+확률 방출이라 **한 시행의 결과는 원래 흔들리는 게 맞다.** 그래서 시냅스 20,000개에
+각각 다른 Random123 스트림을 심고 **평균**으로 판정한다. 통계 검사는 전부 **4σ** 기준이다.
+
+| # | 확인 | 결과 |
+| --- | --- | --- |
+| ⑤ | 시행평균 첫 펄스 conductance가 모델 A와 같은가 (`norm_Pr` 정규화) | A **1.472341e-03** µS vs C평균 **1.497371e-03** µS · 차 **+1.70%** (4σ 허용 ±6.78%) |
+| ⑥ | 펄스별 방출 비율이 **파이썬 독립 몬테카를로**(20만 시행)와 맞는가 | NEURON **0.1526 / 0.2364 / 0.2413 / 0.2017** vs 파이썬 **0.1484 / 0.2347 / 0.2430 / 0.2030** · 최대 차 **0.0042** < 허용 0.0107 |
+| 〃 | 첫 펄스 방출 비율이 `Use`인가 | **0.1526** vs Use 0.15 (4σ ±0.0101) → **펄스의 84.7%가 아무것도 방출하지 않는다** |
+| ⑦ | `setRNG`를 **안 부르면** 조용히 죽는가 (★함정) | 방출 소포 수 **[1, 0, 0, 0]** — `urand()`가 0.0 고정이라 방출(`0 < u`)은 항상 성공, 회복(`0 > Psurv`)은 항상 실패. `Nrrp=1`에선 **"항상 방출"이 아니라 첫 펄스 1회 뒤 영구 침묵**이다 |
+| ⑧ | `ca_stp=1`이 실제 방출을 따라가는가 | 칼슘 = `C_pre × prn` 최대 절대차 **0.00e+00** · 실패 시 **0** · 단일소포 성공 시 **6.67 = 강화 문턱 1.3의 5.1배** ⚠️인공물 |
+| 〃 | `ca_stp=0`이 Graupner 원본으로 복귀하는가 | 시냅스 500개 × 펄스 4회 **전부** `C_pre` 고정, 절대차 **0.00e+00**. 그 앙상블의 **79.0%가 방출 실패**였는데도 칼슘은 그대로 |
+
+⑦은 문서를 고치게 만든 검사다. mod 헤더와 `.md`에 "항상 방출로 퇴화"라고 적었었는데,
+실측해 보니 `Nrrp=1`에서는 **한 번 방출하고 영영 침묵하는 죽은 시냅스**였다. 둘 다 정정했다.
 
 ### 4단계 형태 예행 — `--rho_init` 주입이 실제로 먹는가 (32세포 · 3분)
 
@@ -235,7 +262,8 @@ TBS 구간에서는 **섬유 200/200이 전부 발화하므로 모든 SC 시냅�
 | `net_fepsp_plot.py` | 전체네트워크 fEPSP vs 순방향 상한값 |
 | `_chunk_verify.py` | 청크 누적이 통째 계산과 동일함을 검증(A/B/C/D 4판정) |
 | `shared/mechanisms/GBPlasticityStpSyn.mod` `.md` | 모델 B mod + 한글 설계 근거 |
-| `shared/mechanisms/check_gb_mods.py` | 모델 B 동작 검증 4종 |
+| `shared/mechanisms/GBPlasticityStpProbSyn.mod` `.md` | 모델 C mod(확률방출) + 한글 설계 근거 |
+| `shared/mechanisms/check_gb_mods.py` | 모델 B ①~④(시냅스 1개) · 모델 C ⑤~⑧(2만 앙상블) 동작 검증 |
 | `shared/mechanisms/predict_tbs_rho.py` | 시냅스 1개 TBS 버스트 수 예측기 |
 | `like_slice_CA1/_wsl_stage.sh` | **단계 런처**(gitignored) — `bash _wsl_stage.sh <1~4> [모델]` · 확정 프로토콜 고정 · 실패 3회 재시도 |
 

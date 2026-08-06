@@ -65,16 +65,21 @@ Z_GLASS_MARGIN = 20.0
 #   rho   : 가소성 상태변수 이름("" = 없음). 결과 저장·중간저장이 이 이름으로 값을 읽는다
 #   freeze: '얼리는 법' — 이 파라미터들을 0으로 두면 동역학은 같고 가소성만 멈춘다(엄격 대조군)
 #   init  : 초기 상태값을 넣는 파라미터 이름("" = 없음)
+#   prob  : 소포 단위 확률 방출 — True면 Nrrp를 넣고 setRNG(Random123)를 반드시 호출해야 한다
+#           (안 부르면 urand()가 0.0을 돌려줘 '항상 방출'로 조용히 퇴화한다. mod 헤더 RNG 절)
 # ══════════════════════════════════════════════════════════════════════════════
 SYN_MODELS = {
-    "det": dict(cls=None, stp=True, ltp=False, rho="", freeze=(), init="",
+    "det": dict(cls=None, stp=True, ltp=False, rho="", freeze=(), init="", prob=False,
                 desc="DetAMPANMDA/DetGABAAB — 단기가소성만 · 기준선(변화는 전부 회로 효과)"),
     "gb": dict(cls="GBPlasticitySyn", stp=False, ltp=True, rho="rho",
-               freeze=("gamma_p", "gamma_d"), init="rho0",
+               freeze=("gamma_p", "gamma_d"), init="rho0", prob=False,
                desc="Graupner-Brunel 칼슘 장기가소성만 · 모델 A(현재·기존 결과와 연결)"),
     "gbstp": dict(cls="GBPlasticityStpSyn", stp=True, ltp=True, rho="rho",
-                  freeze=("gamma_p", "gamma_d"), init="rho0",
+                  freeze=("gamma_p", "gamma_d"), init="rho0", prob=False,
                   desc="단기+장기 병합 · 모델 B(TBS 버스트 내 촉진 포함)"),
+    "gbstpprob": dict(cls="GBPlasticityStpProbSyn", stp=True, ltp=True, rho="rho",
+                      freeze=("gamma_p", "gamma_d"), init="rho0", prob=True,
+                      desc="확률방출+단기+장기 · 모델 C(BBP MVR 이식 · 시행마다 다름)"),
 }
 
 
@@ -115,6 +120,9 @@ def main():
     #   과거 이 줄이 중복돼 혼선이 있었음(2026-08-05 정정) → 단일 정의 + 아래에서 로그·npz에 명시 출력.
     det = "--prob" not in sys.argv
     sc_class = argval("--sc_class", "SC->PC (E1s)")
+    if sc_class not in P3.CLASSES:
+        raise SystemExit(f"--sc_class 은 {list(P3.CLASSES)} 중 하나여야 합니다 (받은 값: {sc_class})")
+    SC_PRM = P3.CLASSES[sc_class]      # 헤더 로그에서도 써야 하므로 여기서 한 번만 읽는다
     sc_pc = int(argval("--sc_pc", "40")); sc_int = int(argval("--sc_int", "20"))
     sc_g_pc = float(argval("--sc_g_pc", "1.5")); sc_g_int = float(argval("--sc_g_int", "1.0"))
     n_fiber = int(argval("--n_fiber", "200"))
@@ -135,6 +143,10 @@ def main():
     plastic = bool(SM["ltp"])                                  # 이후 코드는 이 하나만 본다
     rho0_scalar = float(argval("--rho0", "0.0"))               # 실험 시작 시점의 효능 ρ
     rho_init_f = argval("--rho_init", "")                      # 시냅스별 ρ 주입 파일(.npz) — 4단계 60분 재측정용
+    # ★모델 B·C의 '우리 선택' 두 개(논문 근거 없음 — mod 헤더 OUR CHOICE 1·2). 명령줄에서 끌 수 있어야
+    #   가정이 결과를 만든 것인지 직접 검증된다. ca_stp=0 이면 칼슘은 Graupner 원본과 동일해진다.
+    ca_stp = float(argval("--ca_stp", "1"))                    # 1=칼슘이 방출량을 따라감 · 0=Graupner 원본
+    norm_pr = float(argval("--norm_pr", "1"))                  # 1=첫 펄스(평균)를 모델 A와 같게 정규화
 
     # ── LTP 스케줄(ms) — 0-4: 전부 명령줄 손잡이. 기본값은 예전 하드코딩과 **완전히 동일** ──
     #   기저선(약자극) n_base회 → TBS(강자극) tbs_n버스트 → 사후(약자극) n_post회
@@ -196,10 +208,24 @@ def main():
     # ★방출 모드는 **두 줄**로 적는다 — 내부 커넥톰과 SC 자극 경로가 서로 다른 모델을 쓴다.
     _det_txt = "결정론(룰베이스)" if det else "확률(--prob, BBP EMS Random123)"
     log(f"[방출·내부연결] {_det_txt} · mod Det{'' if det else 'Prob'}AMPANMDA/GABAAB")
-    log(f"[방출·SC경로] {_det_txt if SM['cls'] is None else '결정론(선택지 없음)'}"
+    if SM["cls"] is None:
+        _sc_rel = _det_txt                                    # BBP 표준 경로 → --prob 를 따른다
+    elif SM["prob"]:
+        _sc_rel = f"확률·소포단위(Nrrp={SC_PRM['Nrrp']}, Random123 setRNG)"
+    else:
+        _sc_rel = "결정론(선택지 없음)"
+    log(f"[방출·SC경로] {_sc_rel}"
         f" · 모델 '{syn_model}' = {SM['desc']}"
         f" · 단기 {'O' if SM['stp'] else 'X'} / 장기 {'O' if SM['ltp'] else 'X'}"
         f"{' · γ_p=γ_d=0 고정(엄격 대조군)' if (plastic and freeze_rho) else ''}")
+    if SM["stp"] and SM["cls"] is not None:
+        # ★논문 근거 없는 '우리 선택' 두 개는 매 런 헤더에 찍는다(나중에 결과를 읽을 때 필수 정보).
+        log(f"[우리선택] ca_stp={ca_stp:g}(1=칼슘이 방출량을 따라감·0=Graupner 원본)"
+            f" · norm_Pr={norm_pr:g}(1=첫 펄스 평균을 모델 A와 일치)  ⚠️논문값 아님")
+        if SM["prob"] and ca_stp != 0 and float(SC_PRM["Nrrp"]) <= 1:
+            log(f"[경고] 모델 C · Nrrp=1 · ca_stp=1 → 방출 1회당 칼슘 {1.0/SC_PRM['Use']:.2f}"
+                f" (potentiation 문턱 {1.3}의 {1.0/SC_PRM['Use']/1.3:.1f}배). 성공한 방출은 거의 모두"
+                f" 강화로 간다 — 우리 정규화가 만든 인공물이다. --ca_stp 0 을 먼저 볼 것")
     log(f"[회로] 내부 커넥톰 {'OFF' if no_conn else 'ON'} · 억제 {'OFF' if no_inh else 'ON'} · 배경 SC구동 없음(조용한 슬라이스)")
     # ltp는 tstop이 아니라 스케줄에서 종료시각이 정해진다 → 헤더에 **실제 프로토콜 길이**를 적는다.
     t_show = t_sched_end if protocol == "ltp" else tstop
@@ -325,7 +351,7 @@ def main():
         for k in range(n_fiber):
             ns = h.NetStim(); ns.number = 0; ns.start = stim_t; ns.noise = 0; ns.interval = 1e9
             fibers.append(ns); keeph.append(ns)
-    prm = P3.CLASSES[sc_class]; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
+    prm = SC_PRM; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
     sc_cells = []                                      # SC를 받은 세포(진단용)
     rho_syns = []                                      # 가소성 시냅스(효능 ρ 추적용)
     rho_gid = []; rho_k = []                           # ★시냅스 신원 (세포 gid, 그 세포 안 몇 번째)
@@ -367,6 +393,12 @@ def main():
                 syn.NMDA_ratio = prm["NMDA_ratio"]
                 if SM["stp"]:                      # 병합 mod만: SC 단기가소성 파라미터(⚠️튜닝값)
                     syn.Use = prm["Use"]; syn.Dep = prm["Dep"]; syn.Fac = prm["Fac"]
+                    syn.ca_stp = ca_stp; syn.norm_Pr = norm_pr
+                if SM["prob"]:                     # 모델 C: 소포 단위 확률 방출
+                    # ★setRNG는 필수. 안 부르면 urand()가 0.0 → 항상 방출로 조용히 퇴화한다.
+                    #   시드는 결정론 경로(build_synapse)와 같은 식이라 재현성이 보장된다.
+                    syn.Nrrp = prm["Nrrp"]
+                    syn.setRNG(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1)
                 if SM["init"]:
                     setattr(syn, SM["init"], rho_map.get((g, kk), rho0_scalar))
                 if freeze_rho:                     # 엄격 대조군: 동일 mod·동일 동역학, 가소성만 차단
@@ -424,6 +456,7 @@ def main():
         protocol=protocol, tag=tag, counts=counts_s, N=N, n_pc=npc_sub, n_tot=Ntot,
         dt=dt, rec_dt=rec_dt, tstop=tstop, seed=seed, nhost=NHOST, chunk_ms=chunk_ms,
         syn_model=syn_model, syn_model_desc=SM["desc"], syn_stp=SM["stp"], syn_ltp=SM["ltp"],
+        syn_prob=SM["prob"], sc_Nrrp=SC_PRM["Nrrp"], ca_stp=ca_stp, norm_pr=norm_pr,
         plastic=plastic, freeze_rho=freeze_rho, rho0=rho0_scalar,
         rho_init=os.path.basename(rho_init_f), det=det, no_inh=no_inh, no_conn=no_conn,
         n_fiber=n_fiber, io_test=io_test, n_test=n_test, r_stim=r_stim, stim_t=stim_t,
