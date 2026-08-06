@@ -1041,6 +1041,12 @@ class NestGpuBackend(SimulatorBackend):
         self._mpi_size: int = 1
         self._host_group: int = 0
         self._max_rec_spikes: int = self.MAX_REC_SPIKES
+        # Graupner calcium plasticity on CA3->Pyramidal (AMPA_fast) -- opt-in via
+        # CA1_GRAUPNER_CA3PYR=1. syn_group int id (0 = static default); the SynGroup
+        # object is kept separately for Set/GetSynGroupParam (which require the object).
+        self._ca3_pyr_syn_group: int = 0
+        self._ca3_pyr_syn_obj: object = None
+        self._graupner_params_set: bool = False
 
     # ------------------------------------------------------------------
     # SimulatorBackend interface
@@ -1414,6 +1420,15 @@ class NestGpuBackend(SimulatorBackend):
         literal_source_pools: dict[str, NestGpuNodes] = {}
         literal_source_sizes: dict[str, int] = {}
         literal_source_rates: dict[str, float] = {}
+        # Opt-in: create a Graupner calcium-plasticity synapse group to attach to
+        # the CA3->Pyramidal (AMPA_fast) Schaffer synapse only. Everything else
+        # stays static (synapse_group 0). Requires the OUTPUT spike-buffer algo.
+        self._ca3_pyr_syn_group = 0
+        self._ca3_pyr_syn_obj = None
+        self._graupner_params_set = False
+        if os.environ.get("CA1_GRAUPNER_CA3PYR") == "1":
+            self._ca3_pyr_syn_obj = ngpu.CreateSynGroup("graupner")
+            self._ca3_pyr_syn_group = int(self._ca3_pyr_syn_obj.i_syn_group)
         for aff in spec.afferents:
             if aff.post not in self._nodes:
                 continue
@@ -1426,6 +1441,14 @@ class NestGpuBackend(SimulatorBackend):
                 post=aff.post,
                 receptor=aff.receptor,
             )
+            # Attach Graupner plasticity to CA3->Pyramidal AMPA_fast only.
+            is_ca3_pyr_ampa = (
+                self._ca3_pyr_syn_group != 0
+                and _afferent_source_name(aff.name) == "CA3"
+                and aff.post == "Pyramidal"
+                and aff.receptor == "AMPA_fast"
+            )
+            syn_group_id = self._ca3_pyr_syn_group if is_ca3_pyr_ampa else 0
             match topology:
                 case "compound":
                     pgen = ngpu.Create("poisson_generator", self._n_cells[aff.post])
@@ -1480,11 +1503,22 @@ class NestGpuBackend(SimulatorBackend):
                         self._poisson[f"literal_source:{source}"] = pgen
                     indegree = _literal_source_graph_indegree(aff)
                     weight_nS = _literal_source_graph_weight_nS(aff)
+                    if is_ca3_pyr_ampa and not self._graupner_params_set:
+                        # Map the base afferent weight to the Graupner DOWN/UP states so
+                        # the initial connection weight corresponds to rho0 = 0.5:
+                        # base = w0 + 0.5*(w1-w0), w1 = b*w0  =>  w0 = base/(0.5*(1+b)).
+                        base_w = weight_nS * _post_current_gain(spec, aff.post)
+                        b_ratio = 5.28145
+                        w0 = base_w / (0.5 * (1.0 + b_ratio))
+                        ngpu.SetSynGroupParam(self._ca3_pyr_syn_obj, "w0", float(w0))
+                        ngpu.SetSynGroupParam(self._ca3_pyr_syn_obj, "w1", float(b_ratio * w0))
+                        self._graupner_params_set = True
                     if topology_3d is not None:
                         syn_spec = {
                             "weight": weight_nS * _post_current_gain(spec, aff.post),
                             "delay": aff.delay_ms,
                             "receptor": port_idx,
+                            "synapse_group": syn_group_id,
                         }
                         _connect_afferent_3d_gaussian(
                             ngpu,
@@ -1861,6 +1895,42 @@ class NestGpuBackend(SimulatorBackend):
             spikes[ct_name] = cell_spikes
 
         return spikes
+
+    def collect_synaptic_weights(
+        self, n_sample_post: int = 128
+    ) -> Optional[dict[str, float]]:
+        """Aggregate CA3->Pyramidal (Graupner) plastic weights over a sample of
+        postsynaptic cells. Returns None if plasticity is not enabled. Sampling
+        keeps this tractable at full scale (~1.5 B such synapses)."""
+        if self._ngpu is None:
+            raise RuntimeError("Call setup() before collect_synaptic_weights().")
+        if self._ca3_pyr_syn_group == 0:
+            return None
+        ngpu = self._ngpu
+        pre = self._poisson.get("literal_source:CA3")
+        post = self._nodes.get("Pyramidal")
+        if pre is None or post is None:
+            return None
+        n_post = min(int(n_sample_post), int(self._n_cells.get("Pyramidal", 0)))
+        if n_post <= 0:
+            return None
+        conns = ngpu.GetConnections(pre, post[:n_post])
+        status = ngpu.GetConnectionStatus(conns)
+        weights = np.asarray([s["weight"] for s in status], dtype=float)
+        if weights.size == 0:
+            return None
+        w0 = float(ngpu.GetSynGroupParam(self._ca3_pyr_syn_obj, "w0"))
+        w1 = float(ngpu.GetSynGroupParam(self._ca3_pyr_syn_obj, "w1"))
+        rho = (weights - w0) / (w1 - w0) if w1 != w0 else np.zeros_like(weights)
+        return {
+            "n_sampled": int(weights.size),
+            "n_post_sampled": int(n_post),
+            "mean_weight_nS": float(weights.mean()),
+            "mean_rho": float(np.mean(rho)),
+            "frac_up": float(np.mean(rho > 0.5)),
+            "w0_nS": w0,
+            "w1_nS": w1,
+        }
 
     def collect_lfp(self) -> tuple[Optional[npt.NDArray[np.float64]], Optional[float]]:
         if self._ngpu is None:
