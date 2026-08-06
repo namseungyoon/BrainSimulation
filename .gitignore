@@ -35,6 +35,11 @@ x86_64/
 *.lib
 *.exp
 
+# NMODL 생성 C 소스 — shared/mechanisms 의 *.mod 를 nrnivmodl/mknrndll 로 빌드할 때
+# 자동 재생성된다(nocmodl 출력과 바이트 동일 검증). 원본 *.mod 만 추적한다.
+# mod_func.c 도 nrnivmodl 이 만드는 등록 파일이라 생성물에 포함.
+shared/mechanisms/*.c
+
 # 대용량/바이너리
 *.h5
 *.nrrd
