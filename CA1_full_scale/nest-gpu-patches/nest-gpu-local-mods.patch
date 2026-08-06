@@ -170,10 +170,18 @@ index b497612..fdf2650 100644
      return ret
 -
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 65bbcf7..a31a0ad 100644
+index 65bbcf7..bdfb3b3 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -102,6 +102,21 @@ user_m1_rk5.h
+@@ -93,6 +93,7 @@ spike_detector.h
+ spike_generator.h
+ remote_spike.h
+ mpi_comm.h
++graupner.h
+ stdp.h
+ syn_model.h
+ test_syn_model.h
+@@ -102,6 +103,21 @@ user_m1_rk5.h
  user_m2.h
  user_m2_kernel.h
  user_m2_rk5.h
@@ -195,7 +203,13 @@ index 65bbcf7..a31a0ad 100644
  utilities.h
  input_spike_buffer.cu
  connect.cu
-@@ -158,6 +173,11 @@ syn_model.cu
+@@ -153,11 +169,17 @@ spike_detector.cu
+ spike_generator.cu
+ remote_spike.cu
+ mpi_comm.cu
++graupner.cu
+ stdp.cu
+ syn_model.cu
  test_syn_model.cu
  user_m1.cu
  user_m2.cu
@@ -245,7 +259,7 @@ index 61f6eb6..55d4acf 100644
    int port_weight_arr_step_;
    int port_weight_port_step_;
 diff --git a/src/connect.h b/src/connect.h
-index 3ab1cde..2fc80df 100644
+index 3ab1cde..6acfe58 100644
 --- a/src/connect.h
 +++ b/src/connect.h
 @@ -230,6 +230,17 @@ public:
@@ -361,6 +375,17 @@ index 3ab1cde..2fc80df 100644
    //////////////////////////////////////////////////
    // Remote-connection-related member variables
    //////////////////////////////////////////////////
+@@ -2865,8 +2925,8 @@ ConnectionTemplate< ConnKeyT, ConnStructT >::init()
+   
+   initConnRandomGenerator();
+ 
+-  _setSpikeBufferAlgo( INPUT_SPIKE_BUFFER_ALGO );
+-  //_setSpikeBufferAlgo(OUTPUT_SPIKE_BUFFER_ALGO);
++  //_setSpikeBufferAlgo( INPUT_SPIKE_BUFFER_ALGO );
++  _setSpikeBufferAlgo(OUTPUT_SPIKE_BUFFER_ALGO); // GRAUPNER: OUTPUT algo runs the STDP reverse-spike path
+   setMinAllowedDelay(time_resolution_);
+ 
+   return 0;
 @@ -3492,6 +3552,107 @@ printConnectionsFull
  }
  
@@ -512,6 +537,189 @@ index 62f6acd..5248947 100644
    return ret;
  }
 -
+diff --git a/src/graupner.cu b/src/graupner.cu
+new file mode 100644
+index 0000000..257d83d
+--- /dev/null
++++ b/src/graupner.cu
+@@ -0,0 +1,42 @@
++/*
++ *  graupner.cu
++ *
++ *  Calcium-based plasticity synapse (Graupner & Brunel 2012) for NEST GPU.
++ *  Local addition (not upstream). Tracked via nest-gpu-patches.
++ *
++ *  Default parameters: hippocampal CA3->CA1 slice set fitted by Graupner & Brunel
++ *  to Wittenberg & Wang (2006), as in papers/02 plasticity_model.py.
++ */
++
++#include "cuda_error.h"
++#include "graupner.h"
++#include "ngpu_exception.h"
++#include "syn_model.h"
++#include <config.h>
++#include <iostream>
++#include <stdio.h>
++
++using namespace graupner_ns;
++
++int
++Graupner::_Init()
++{
++  type_ = i_graupner_model;
++  n_param_ = N_PARAM;
++  param_name_ = graupner_param_name;
++  CUDAMALLOCCTRL( "&d_param_arr_", &d_param_arr_, n_param_ * sizeof( float ) );
++  // Wittenberg & Wang (2006) CA3->CA1 hippocampal-slice fit (Graupner & Brunel 2012).
++  SetParam( "C_pre", 1.0 );
++  SetParam( "C_post", 0.275865 );
++  SetParam( "tau_Ca", 48.8373 );  // ms
++  SetParam( "D", 18.8008 );        // ms (pre calcium delay)
++  SetParam( "theta_d", 1.0 );
++  SetParam( "theta_p", 1.3 );
++  SetParam( "gamma_d", 313.0965 );
++  SetParam( "gamma_p", 1645.59 );
++  SetParam( "tau_rho", 688355.0 ); // ms (very slow efficacy time constant)
++  SetParam( "w0", 1.0 );           // DOWN-state weight (nS); set per-projection by the caller
++  SetParam( "w1", 5.28145 );       // UP-state weight = b * w0
++
++  return 0;
++}
+diff --git a/src/graupner.h b/src/graupner.h
+new file mode 100644
+index 0000000..7052f1d
+--- /dev/null
++++ b/src/graupner.h
+@@ -0,0 +1,129 @@
++/*
++ *  graupner.h
++ *
++ *  Calcium-based plasticity synapse (Graupner & Brunel 2012) for NEST GPU.
++ *  Local addition (not upstream). Tracked via nest-gpu-patches.
++ *
++ *  Implementation note (fidelity): the NEST-GPU synapse ABI exposes only a
++ *  single mutable per-synapse float (the weight) and fires SynapseUpdate on
++ *  spike PAIRS with a signed time lag Dt. We therefore implement the Graupner
++ *  model as an event-driven PAIRWISE (nearest-neighbour) calcium kernel:
++ *  the two calcium contributions (pre delayed by D, post) share the same decay
++ *  tau_Ca, so c(t) is piecewise a single decaying exponential and the time spent
++ *  above the depression / potentiation thresholds (alpha_d, alpha_p) is analytic.
++ *  The synaptic efficacy rho is carried IN the weight via the linear read-out
++ *  w = w0 + rho*(w1-w0) (bijective). The slow cubic double-well drift
++ *  (quiescent consolidation) is NOT integrated between events -- that would need
++ *  persistent per-synapse calcium state (a larger core change). This kernel is
++ *  faithful for spike-timing (STDP-curve) induction and approximate for dense
++ *  high-frequency bursts (calcium summation across >2 spikes is not accumulated).
++ */
++
++#ifndef GRAUPNER_H
++#define GRAUPNER_H
++#include <cmath>
++#include <string>
++
++namespace graupner_ns
++{
++enum ParamIndexes
++{
++  i_C_pre = 0,
++  i_C_post,
++  i_tau_Ca,
++  i_D,
++  i_theta_d,
++  i_theta_p,
++  i_gamma_d,
++  i_gamma_p,
++  i_tau_rho,
++  i_w0,
++  i_w1,
++  N_PARAM
++};
++
++const std::string graupner_param_name[ N_PARAM ] = { "C_pre",
++  "C_post",
++  "tau_Ca",
++  "D",
++  "theta_d",
++  "theta_p",
++  "gamma_d",
++  "gamma_p",
++  "tau_rho",
++  "w0",
++  "w1" };
++
++// Time a single decaying exponential c0*exp(-t/tau) spends above threshold th,
++// restricted to the window [0, span]. Monotone-decreasing -> closed form.
++__device__ __forceinline__ float
++graupner_time_above( float c0, float th, float tau, float span )
++{
++  if ( c0 <= th )
++  {
++    return 0.0f;
++  }
++  float t_cross = tau * logf( c0 / th );
++  return fminf( t_cross, span );
++}
++
++__device__ __forceinline__ void
++GraupnerUpdate( float* weight_pt, float Dt, float* param )
++{
++  float C_pre = param[ i_C_pre ];
++  float C_post = param[ i_C_post ];
++  float tauCa = param[ i_tau_Ca ];
++  float D = param[ i_D ];
++  float th_d = param[ i_theta_d ];
++  float th_p = param[ i_theta_p ];
++  float g_d = param[ i_gamma_d ];
++  float g_p = param[ i_gamma_p ];
++  float tau = param[ i_tau_rho ];
++  float w0 = param[ i_w0 ];
++  float w1 = param[ i_w1 ];
++
++  // Reference t_pre = 0: pre calcium jump lands at +D (amp C_pre); post jump at Dt (amp C_post).
++  float t_pre = D;
++  float t_post = Dt;
++  float t1, t2, a1, a2;
++  if ( t_pre <= t_post )
++  {
++    t1 = t_pre;
++    a1 = C_pre;
++    t2 = t_post;
++    a2 = C_post;
++  }
++  else
++  {
++    t1 = t_post;
++    a1 = C_post;
++    t2 = t_pre;
++    a2 = C_pre;
++  }
++  float span = t2 - t1; // >= 0
++
++  // Phase A: [t1, t2) only the first jump is present: c = a1*exp(-(t-t1)/tauCa)
++  float aA_p = graupner_time_above( a1, th_p, tauCa, span );
++  float aA_d = graupner_time_above( a1, th_d, tauCa, span );
++  float cA_end = a1 * expf( -span / tauCa );
++
++  // Phase B: [t2, inf) both jumps present, single exponential from (cA_end + a2)
++  float cB0 = cA_end + a2;
++  float aB_p = graupner_time_above( cB0, th_p, tauCa, 1.0e30f );
++  float aB_d = graupner_time_above( cB0, th_d, tauCa, 1.0e30f );
++
++  float alpha_p = aA_p + aB_p; // total time c > theta_p (potentiation active)
++  float alpha_d = aA_d + aB_d; // total time c > theta_d (depression active)
++
++  // Recover efficacy rho from the weight (linear read-out), update, write back.
++  float denom = w1 - w0;
++  float rho = ( denom != 0.0f ) ? ( ( *weight_pt ) - w0 ) / denom : 0.0f;
++  // Efficacy change over the (ms-scale) transient; slow cubic drift neglected (tau >> transient).
++  float drho = ( g_p * ( 1.0f - rho ) * alpha_p - g_d * rho * alpha_d ) / tau;
++  rho += drho;
++  rho = fminf( fmaxf( rho, 0.0f ), 1.0f );
++  *weight_pt = w0 + rho * denom;
++}
++}
++
++#endif
 diff --git a/src/input_spike_buffer.cu b/src/input_spike_buffer.cu
 index 15c0a7f..f223cf7 100644
 --- a/src/input_spike_buffer.cu
@@ -1190,6 +1398,87 @@ index 5dee5aa..0776768 100644
    int* spike_count_;
    float* rec_spike_times_;
    int* n_rec_spike_times_;
+diff --git a/src/syn_model.cu b/src/syn_model.cu
+index 4fb44a4..8ee1384 100644
+--- a/src/syn_model.cu
++++ b/src/syn_model.cu
+@@ -21,6 +21,7 @@
+  */
+ 
+ #include "cuda_error.h"
++#include "graupner.h"
+ #include "nestgpu.h"
+ #include "ngpu_exception.h"
+ #include "stdp.h"
+@@ -136,6 +137,11 @@ NESTGPU::CreateSynGroup( std::string model_name )
+     STDP* stdp_group = new STDP;
+     syn_group_vect_.push_back( stdp_group );
+   }
++  else if ( model_name == syn_model_name[ i_graupner_model ] )
++  {
++    Graupner* graupner_group = new Graupner;
++    syn_group_vect_.push_back( graupner_group );
++  }
+   else
+   {
+     throw ngpu_exception( std::string( "Unknown synapse model name: " ) + model_name );
+diff --git a/src/syn_model.h b/src/syn_model.h
+index 267da13..be028dc 100644
+--- a/src/syn_model.h
++++ b/src/syn_model.h
+@@ -23,6 +23,7 @@
+ #ifndef SYNMODEL_H
+ #define SYNMODEL_H
+ 
++#include "graupner.h"
+ #include "stdp.h"
+ #include <string>
+ #include <vector>
+@@ -39,6 +40,7 @@ enum SynModels
+   i_null_syn_model = 0,
+   i_test_syn_model,
+   i_stdp_model,
++  i_graupner_model,
+   N_SYN_MODELS
+ };
+ 
+@@ -55,10 +57,13 @@ SynapseUpdate( int syn_group, float* w, float Dt )
+   case i_stdp_model:
+     stdp_ns::STDPUpdate( w, Dt, param );
+     break;
++  case i_graupner_model:
++    graupner_ns::GraupnerUpdate( w, Dt, param );
++    break;
+   }
+ }
+ 
+-const std::string syn_model_name[ N_SYN_MODELS ] = { "", "test_syn_model", "stdp" };
++const std::string syn_model_name[ N_SYN_MODELS ] = { "", "test_syn_model", "stdp", "graupner" };
+ 
+ class SynModel
+ {
+@@ -101,4 +106,21 @@ public:
+   }
+ };
+ 
++class Graupner : public SynModel
++{
++  int _Init();
++
++public:
++  Graupner()
++  {
++    _Init();
++  }
++
++  int
++  Init()
++  {
++    return _Init();
++  }
++};
++
+ #endif
 diff --git a/src/user_m1.cu b/src/user_m1.cu
 index 6e0bee6..0ca5774 100644
 --- a/src/user_m1.cu
@@ -1709,1690 +1998,3 @@ index 2ca81ec..b386e8d 100644
        refractory_step = ( int ) round( t_ref / NESTGPUTimeResolution );
        if ( refractory_step < 0 )
        {
-diff --git a/src/user_m3.cu b/src/user_m3.cu
-new file mode 100644
-index 0000000..8acdf42
---- /dev/null
-+++ b/src/user_m3.cu
-@@ -0,0 +1,84 @@
-+#include "rk5.h"
-+#include "user_m3.h"
-+#include "user_m3_kernel.h"
-+#include <cmath>
-+
-+namespace user_m3_ns
-+{
-+__device__ void NodeInit( int n_var, int, double, float* y, float* param, user_m3_rk5 )
-+{
-+  int n_port = ( n_var - N_SCAL_VAR ) / N_PORT_VAR;
-+  V_th = -50.0f; E_L = -65.0f; C_m = 200.0f; tau_m = 20.0f;
-+  k_adap = 0.0f; k1 = 0.1f; k2 = 0.01f; A1 = 0.0f; A2 = 0.0f; I_e = 0.0f;
-+  V_peak = 0.0f; V_reset = -65.0f; t_ref = 2.0f;
-+  dend_C_frac = 0.4f; dend_leak_scale = 1.0f; g_c = 10.0f;
-+  dist_C_frac = 0.5f; dist_leak_scale = 1.0f; g_c_dist = 2.5f; den_delay = 0.0f;
-+  V_h_half = -42.0f; k_h = 7.0f; tau_h = 66.97f;
-+  delta_h = 0.225f; h_crit = 0.35f;
-+  V_m = E_L; V_d = E_L; V_dist = E_L; I_adap = 0.0f; I_dep = 0.0f;
-+  sodium_h = SodiumHInf( E_L, V_h_half, k_h ); refractory_step = 0.0f;
-+  for ( int i = 0; i < n_port; ++i )
-+  {
-+    g( i ) = 0.0f; g1( i ) = 0.0f; E_rev( i ) = 0.0f;
-+    tau_decay( i ) = 20.0f; tau_rise( i ) = 2.0f; compartment( i ) = 1.0f;
-+  }
-+}
-+
-+__device__ void NodeCalibrate( int n_var, int, double, float* y, float* param, user_m3_rk5 )
-+{
-+  int n_port = ( n_var - N_SCAL_VAR ) / N_PORT_VAR;
-+  refractory_step = 0.0f;
-+  sodium_h = fminf( 1.0f, fmaxf( 0.0f, sodium_h ) );
-+  for ( int i = 0; i < n_port; ++i )
-+  {
-+    float denom1 = tau_decay( i ) - tau_rise( i ), denom2 = 0.0f;
-+    if ( denom1 != 0.0f )
-+    {
-+      float tp = tau_decay( i ) * tau_rise( i ) * log( tau_decay( i ) / tau_rise( i ) ) / denom1;
-+      denom2 = exp( -tp / tau_decay( i ) ) - exp( -tp / tau_rise( i ) );
-+    }
-+    g0( i ) = denom2 == 0.0f ? M_E / tau_decay( i )
-+      : ( 1.0f / tau_rise( i ) - 1.0f / tau_decay( i ) ) / denom2;
-+  }
-+}
-+} // namespace user_m3_ns
-+
-+__device__ void NodeInit( int nv, int np, double x, float* y, float* p, user_m3_rk5 d )
-+{ user_m3_ns::NodeInit( nv, np, x, y, p, d ); }
-+__device__ void NodeCalibrate( int nv, int np, double x, float* y, float* p, user_m3_rk5 d )
-+{ user_m3_ns::NodeCalibrate( nv, np, x, y, p, d ); }
-+
-+using namespace user_m3_ns;
-+
-+int user_m3::Init( int i_node_0, int n_node, int n_port, int i_group )
-+{
-+  BaseNeuron::Init( i_node_0, n_node, n_port, i_group );
-+  node_type_ = i_user_m3_model;
-+  n_scal_var_ = N_SCAL_VAR; n_port_var_ = N_PORT_VAR;
-+  n_scal_param_ = N_SCAL_PARAM; n_port_param_ = N_PORT_PARAM; n_group_param_ = N_GROUP_PARAM;
-+  n_var_ = n_scal_var_ + n_port_var_ * n_port;
-+  n_param_ = n_scal_param_ + n_port_param_ * n_port;
-+  group_param_ = new float[ N_GROUP_PARAM ];
-+  scal_var_name_ = user_m3_scal_var_name; port_var_name_ = user_m3_port_var_name;
-+  scal_param_name_ = user_m3_scal_param_name; port_param_name_ = user_m3_port_param_name;
-+  group_param_name_ = user_m3_group_param_name;
-+  rk5_data_struct_.i_node_0_ = i_node_0_;
-+  SetGroupParam( "h_min_rel", 1.0e-3 ); SetGroupParam( "h0_rel", 1.0e-2 );
-+  h_ = h0_rel_ * 0.1f;
-+  rk5_.Init( n_node, n_var_, n_param_, 0.0, h_, rk5_data_struct_ );
-+  var_arr_ = rk5_.GetYArr(); param_arr_ = rk5_.GetParamArr();
-+  port_weight_arr_ = GetParamArr() + n_scal_param_ + GetPortParamIdx( "g0" );
-+  port_weight_arr_step_ = n_param_; port_weight_port_step_ = n_port_param_;
-+  port_input_arr_ = GetVarArr() + n_scal_var_ + GetPortVarIdx( "g1" );
-+  port_input_arr_step_ = n_var_; port_input_port_step_ = n_port_var_;
-+  den_delay_arr_ = GetParamArr() + GetScalParamIdx( "den_delay" );
-+  return 0;
-+}
-+int user_m3::Calibrate( double time_min, float dt )
-+{
-+  h_min_ = h_min_rel_ * dt; h_ = h0_rel_ * dt;
-+  rk5_.Calibrate( time_min, h_, rk5_data_struct_ ); return 0;
-+}
-+template <> int user_m3::UpdateNR< 0 >( long long, double ) { return 0; }
-+int user_m3::Update( long long it, double t1 )
-+{ UpdateNR< USER_M3_MAX_PORT_NUM >( it, t1 ); return 0; }
-diff --git a/src/user_m3.h b/src/user_m3.h
-new file mode 100644
-index 0000000..f25a0eb
---- /dev/null
-+++ b/src/user_m3.h
-@@ -0,0 +1,36 @@
-+#ifndef USERM3_H
-+#define USERM3_H
-+
-+#include "base_neuron.h"
-+#include "neuron_models.h"
-+#include "rk5.h"
-+
-+#define USER_M3_MAX_PORT_NUM 20
-+
-+struct user_m3_rk5
-+{
-+  int i_node_0_;
-+};
-+
-+class user_m3 : public BaseNeuron
-+{
-+public:
-+  RungeKutta5< user_m3_rk5 > rk5_;
-+  float h_min_;
-+  float h_;
-+  user_m3_rk5 rk5_data_struct_;
-+
-+  int Init( int, int, int, int );
-+  int Calibrate( double, float );
-+  int Update( long long, double );
-+
-+  int GetX( int i_neuron, int n_node, double* x ) { return rk5_.GetX( i_neuron, n_node, x ); }
-+  int GetY( int i_var, int i_neuron, int n_node, float* y )
-+  {
-+    return rk5_.GetY( i_var, i_neuron, n_node, y );
-+  }
-+
-+  template < int N_PORT > int UpdateNR( long long, double );
-+};
-+
-+#endif
-diff --git a/src/user_m3_kernel.h b/src/user_m3_kernel.h
-new file mode 100644
-index 0000000..6b1ce33
---- /dev/null
-+++ b/src/user_m3_kernel.h
-@@ -0,0 +1,208 @@
-+#ifndef USERM3KERNEL_H
-+#define USERM3KERNEL_H
-+
-+#include "node_group.h"
-+#include "spike_buffer.h"
-+#include "user_m3.h"
-+#include <cmath>
-+#include <string>
-+
-+extern __constant__ float NESTGPUTimeResolution;
-+
-+namespace user_m3_ns
-+{
-+enum ScalVarIndexes
-+{
-+  i_V_m = 0, i_V_d, i_V_dist, i_I_adap, i_I_dep, i_h, N_SCAL_VAR
-+};
-+enum PortVarIndexes { i_g = 0, i_g1, N_PORT_VAR };
-+enum ScalParamIndexes
-+{
-+  i_V_th = 0, i_E_L, i_C_m, i_tau_m, i_k_adap, i_k1, i_k2, i_A1, i_A2,
-+  i_I_e, i_V_peak, i_V_reset, i_t_ref, i_dend_C_frac, i_dend_leak_scale,
-+  i_g_c, i_dist_C_frac, i_dist_leak_scale, i_g_c_dist, i_refractory_step,
-+  i_den_delay, i_V_h_half, i_k_h, i_tau_h, i_delta_h, i_h_crit, N_SCAL_PARAM
-+};
-+enum PortParamIndexes { i_E_rev = 0, i_tau_rise, i_tau_decay, i_g0, i_compartment, N_PORT_PARAM };
-+enum GroupParamIndexes { i_h_min_rel = 0, i_h0_rel, N_GROUP_PARAM };
-+
-+const std::string user_m3_scal_var_name[ N_SCAL_VAR ] =
-+  { "V_m", "V_d", "V_dist", "I_adap", "I_dep", "h" };
-+const std::string user_m3_port_var_name[ N_PORT_VAR ] = { "g", "g1" };
-+const std::string user_m3_scal_param_name[ N_SCAL_PARAM ] = { "V_th", "E_L", "C_m", "tau_m",
-+  "k_adap", "k1", "k2", "A1", "A2", "I_e", "V_peak", "V_reset", "t_ref",
-+  "dend_C_frac", "dend_leak_scale", "g_c", "dist_C_frac", "dist_leak_scale",
-+  "g_c_dist", "refractory_step", "den_delay", "V_h_half", "k_h", "tau_h",
-+  "delta_h", "h_crit" };
-+const std::string user_m3_port_param_name[ N_PORT_PARAM ] =
-+  { "E_rev", "tau_rise", "tau_decay", "g0", "compartment" };
-+const std::string user_m3_group_param_name[ N_GROUP_PARAM ] = { "h_min_rel", "h0_rel" };
-+
-+#define V_m y[ i_V_m ]
-+#define V_d y[ i_V_d ]
-+#define V_dist y[ i_V_dist ]
-+#define I_adap y[ i_I_adap ]
-+#define I_dep y[ i_I_dep ]
-+#define sodium_h y[ i_h ]
-+#define g( i ) y[ N_SCAL_VAR + N_PORT_VAR * i + i_g ]
-+#define g1( i ) y[ N_SCAL_VAR + N_PORT_VAR * i + i_g1 ]
-+#define dVdt dydx[ i_V_m ]
-+#define dVddt dydx[ i_V_d ]
-+#define dVdistdt dydx[ i_V_dist ]
-+#define dI_adapdt dydx[ i_I_adap ]
-+#define dI_depdt dydx[ i_I_dep ]
-+#define dhdt dydx[ i_h ]
-+#define dgdt( i ) dydx[ N_SCAL_VAR + N_PORT_VAR * i + i_g ]
-+#define dg1dt( i ) dydx[ N_SCAL_VAR + N_PORT_VAR * i + i_g1 ]
-+
-+#define V_th param[ i_V_th ]
-+#define E_L param[ i_E_L ]
-+#define C_m param[ i_C_m ]
-+#define tau_m param[ i_tau_m ]
-+#define k_adap param[ i_k_adap ]
-+#define k1 param[ i_k1 ]
-+#define k2 param[ i_k2 ]
-+#define A1 param[ i_A1 ]
-+#define A2 param[ i_A2 ]
-+#define I_e param[ i_I_e ]
-+#define V_peak param[ i_V_peak ]
-+#define V_reset param[ i_V_reset ]
-+#define t_ref param[ i_t_ref ]
-+#define dend_C_frac param[ i_dend_C_frac ]
-+#define dend_leak_scale param[ i_dend_leak_scale ]
-+#define g_c param[ i_g_c ]
-+#define dist_C_frac param[ i_dist_C_frac ]
-+#define dist_leak_scale param[ i_dist_leak_scale ]
-+#define g_c_dist param[ i_g_c_dist ]
-+#define refractory_step param[ i_refractory_step ]
-+#define den_delay param[ i_den_delay ]
-+#define V_h_half param[ i_V_h_half ]
-+#define k_h param[ i_k_h ]
-+#define tau_h param[ i_tau_h ]
-+#define delta_h param[ i_delta_h ]
-+#define h_crit param[ i_h_crit ]
-+#define E_rev( i ) param[ N_SCAL_PARAM + N_PORT_PARAM * i + i_E_rev ]
-+#define tau_rise( i ) param[ N_SCAL_PARAM + N_PORT_PARAM * i + i_tau_rise ]
-+#define tau_decay( i ) param[ N_SCAL_PARAM + N_PORT_PARAM * i + i_tau_decay ]
-+#define g0( i ) param[ N_SCAL_PARAM + N_PORT_PARAM * i + i_g0 ]
-+#define compartment( i ) param[ N_SCAL_PARAM + N_PORT_PARAM * i + i_compartment ]
-+#define h_min_rel_ group_param_[ i_h_min_rel ]
-+#define h0_rel_ group_param_[ i_h0_rel ]
-+
-+__device__ inline float
-+SodiumHInf( float voltage, float half, float slope )
-+{
-+  float exponent = ( voltage - half ) / slope;
-+  exponent = fminf( 80.0f, fmaxf( -80.0f, exponent ) );
-+  return 1.0f / ( 1.0f + expf( exponent ) );
-+}
-+
-+template < int NVAR, int NPARAM >
-+__device__ void
-+Derivatives( double, float* y, float* dydx, float* param, user_m3_rk5 )
-+{
-+  enum { n_port = ( NVAR - N_SCAL_VAR ) / N_PORT_VAR };
-+  float I_soma = 0.0f, I_prox = 0.0f, I_dist = 0.0f;
-+  // The legacy peak cap is retained on the ordinary spiking branch. Once Na
-+  // availability suppresses a crossing, use the real unreset voltage so leak,
-+  // coupling and adaptation can establish a finite depolarized plateau.
-+  const float V = refractory_step > 0.0f ? V_reset
-+    : ( sodium_h <= h_crit ? V_m : fminf( V_m, V_peak ) );
-+  for ( int i = 0; i < n_port; ++i )
-+  {
-+    if ( compartment( i ) < 0.5f ) I_soma += g( i ) * ( E_rev( i ) - V );
-+    else if ( compartment( i ) < 1.5f ) I_prox += g( i ) * ( E_rev( i ) - V_d );
-+    else I_dist += g( i ) * ( E_rev( i ) - V_dist );
-+  }
-+  float dend_frac = fminf( 0.95f, fmaxf( 1.0e-6f, dend_C_frac ) );
-+  float dist_frac = fminf( 0.95f, fmaxf( 1.0e-6f, dist_C_frac ) );
-+  float C_dend_total = C_m * dend_frac;
-+  float C_dist = fmaxf( 1.0e-6f, C_dend_total * dist_frac );
-+  float C_prox = fmaxf( 1.0e-6f, C_dend_total - C_dist );
-+  float C_soma = fmaxf( 1.0e-6f, C_m - C_dend_total );
-+  float soma_leak = -( C_soma / tau_m ) * ( V - E_L );
-+  float prox_leak = -( C_prox / tau_m ) * dend_leak_scale * ( V_d - E_L );
-+  float dist_leak = -( C_dist / tau_m ) * dist_leak_scale * ( V_dist - E_L );
-+  float soma_coupling = g_c * ( V_d - V );
-+  float prox_soma_coupling = g_c * ( V - V_d );
-+  float prox_dist_coupling = g_c_dist * ( V_dist - V_d );
-+  float dist_coupling = g_c_dist * ( V_d - V_dist );
-+
-+  dVdt = refractory_step > 0.0f ? 0.0f
-+    : ( soma_leak + soma_coupling - I_adap + I_dep + I_soma + I_e ) / C_soma;
-+  dVddt = ( prox_leak + prox_soma_coupling + prox_dist_coupling + I_prox ) / C_prox;
-+  dVdistdt = ( dist_leak + dist_coupling + I_dist ) / C_dist;
-+  dI_adapdt = k_adap * ( V - E_L ) - k2 * I_adap;
-+  dI_depdt = -k1 * I_dep;
-+  dhdt = ( SodiumHInf( V, V_h_half, k_h ) - sodium_h ) / tau_h;
-+  for ( int i = 0; i < n_port; ++i )
-+  {
-+    dg1dt( i ) = -g1( i ) / tau_rise( i );
-+    dgdt( i ) = g1( i ) - g( i ) / tau_decay( i );
-+  }
-+}
-+
-+template < int NVAR, int NPARAM >
-+__device__ void
-+ExternalUpdate( double, float* y, float* param, bool end_time_step, user_m3_rk5 data_struct )
-+{
-+  sodium_h = fminf( 1.0f, fmaxf( 0.0f, sodium_h ) );
-+  if ( V_m < -1.0e3f || V_d < -1.0e3f || V_dist < -1.0e3f )
-+  {
-+    printf( "membrane voltage out of lower bound\n" );
-+    V_m = V_reset; V_d = E_L; V_dist = E_L; I_adap = 0.0f; I_dep = 0.0f;
-+    sodium_h = SodiumHInf( E_L, V_h_half, k_h );
-+    return;
-+  }
-+  if ( I_adap < -1.0e6f || I_adap > 1.0e6f || I_dep < -1.0e6f || I_dep > 1.0e6f )
-+  {
-+    printf( "adaptation current out of bound\n" );
-+    V_m = V_reset; I_adap = 0.0f; I_dep = 0.0f;
-+    return;
-+  }
-+  if ( refractory_step > 0.0f )
-+  {
-+    V_m = V_reset;
-+    if ( end_time_step ) refractory_step -= 1.0f;
-+    return;
-+  }
-+  if ( V_m >= V_th && sodium_h > h_crit )
-+  {
-+    int neuron_idx = threadIdx.x + blockIdx.x * blockDim.x;
-+    PushSpike( data_struct.i_node_0_ + neuron_idx, 1.0 );
-+    sodium_h = fmaxf( 0.0f, sodium_h - delta_h );
-+    V_m = V_reset;
-+    I_adap += A2;
-+    I_dep = A1;
-+    refractory_step = ( int ) round( t_ref / NESTGPUTimeResolution );
-+    if ( refractory_step < 0.0f ) refractory_step = 0.0f;
-+  }
-+  // A threshold crossing with h <= h_crit is deliberately left unreset.
-+}
-+} // namespace user_m3_ns
-+
-+template <> int user_m3::UpdateNR< 0 >( long long, double );
-+template < int N_PORT >
-+int user_m3::UpdateNR( long long it, double t1 )
-+{
-+  if ( N_PORT == n_port_ )
-+  {
-+    const int NVAR = user_m3_ns::N_SCAL_VAR + user_m3_ns::N_PORT_VAR * N_PORT;
-+    const int NPARAM = user_m3_ns::N_SCAL_PARAM + user_m3_ns::N_PORT_PARAM * N_PORT;
-+    rk5_.Update< NVAR, NPARAM >( t1, h_min_, rk5_data_struct_ );
-+  }
-+  else UpdateNR< N_PORT - 1 >( it, t1 );
-+  return 0;
-+}
-+template < int NVAR, int NPARAM >
-+__device__ void Derivatives( double x, float* y, float* dydx, float* param, user_m3_rk5 data_struct )
-+{
-+  user_m3_ns::Derivatives< NVAR, NPARAM >( x, y, dydx, param, data_struct );
-+}
-+template < int NVAR, int NPARAM >
-+__device__ void ExternalUpdate( double x, float* y, float* param, bool end, user_m3_rk5 data_struct )
-+{
-+  user_m3_ns::ExternalUpdate< NVAR, NPARAM >( x, y, param, end, data_struct );
-+}
-+
-+#endif
-diff --git a/src/user_m3_rk5.h b/src/user_m3_rk5.h
-new file mode 100644
-index 0000000..d4b6c9d
---- /dev/null
-+++ b/src/user_m3_rk5.h
-@@ -0,0 +1,13 @@
-+#ifndef USERM3RK5_H
-+#define USERM3RK5_H
-+
-+struct user_m3_rk5;
-+
-+template < int NVAR, int NPARAM >
-+__device__ void Derivatives( double, float*, float*, float*, user_m3_rk5 );
-+template < int NVAR, int NPARAM >
-+__device__ void ExternalUpdate( double, float*, float*, bool, user_m3_rk5 );
-+__device__ void NodeInit( int, int, double, float*, float*, user_m3_rk5 );
-+__device__ void NodeCalibrate( int, int, double, float*, float*, user_m3_rk5 );
-+
-+#endif
-diff --git a/src/user_m4.cu b/src/user_m4.cu
-new file mode 100644
-index 0000000..a259dad
---- /dev/null
-+++ b/src/user_m4.cu
-@@ -0,0 +1,66 @@
-+#include "rk5.h"
-+#include "user_m4.h"
-+#include "user_m4_kernel.h"
-+#include <cmath>
-+
-+namespace user_m4_ns
-+{
-+__device__ void NodeInit(int n_var,int,double,float*y,float*param,user_m4_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR;
-+  V_th=-50.f; E_L=-65.f; C_m=200.f; tau_m=20.f; k_adap=0.f; k1=.1f; k2=.01f;
-+  A1=0.f; A2=0.f; I_e=0.f; V_peak=0.f; V_reset=-65.f; t_ref=2.f;
-+  dend_C_frac=.4f; dend_leak_scale=1.f; g_c=10.f; dist_C_frac=.5f;
-+  dist_leak_scale=1.f; g_c_dist=2.5f; den_delay=0.f;
-+  gbar_Na_prox=0.f; gbar_Na_dist=0.f; E_Na=55.f; Vm_half=-35.f; km=7.f;
-+  Vh_half=-50.f; kh=6.f; tau_h=2.f; gbar_Kd_prox=0.f; gbar_Kd_dist=0.f;
-+  E_K=-90.f; Vn_half=-25.f; kn=10.f; tau_n=2.f;
-+  V_m=E_L; V_d=E_L; V_dist=E_L; I_adap=0.f; I_dep=0.f;
-+  h_prox=LogisticDown(E_L,Vh_half,kh); h_dist=h_prox;
-+  n_prox=LogisticUp(E_L,Vn_half,kn); n_dist=n_prox; refractory_step=0.f;
-+  for(int i=0;i<n_port;++i) { g(i)=0.f; g1(i)=0.f; E_rev(i)=0.f;
-+    tau_decay(i)=20.f; tau_rise(i)=2.f; compartment(i)=1.f; }
-+}
-+
-+__device__ void NodeCalibrate(int n_var,int,double,float*y,float*param,user_m4_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR; refractory_step=0.f;
-+  h_prox=fminf(1.f,fmaxf(0.f,h_prox)); h_dist=fminf(1.f,fmaxf(0.f,h_dist));
-+  n_prox=fminf(1.f,fmaxf(0.f,n_prox)); n_dist=fminf(1.f,fmaxf(0.f,n_dist));
-+  for(int i=0;i<n_port;++i) {
-+    const float d1=tau_decay(i)-tau_rise(i); float d2=0.f;
-+    if(d1!=0.f) { const float tp=tau_decay(i)*tau_rise(i)*log(tau_decay(i)/tau_rise(i))/d1;
-+      d2=exp(-tp/tau_decay(i))-exp(-tp/tau_rise(i)); }
-+    g0(i)=d2==0.f?M_E/tau_decay(i):(1.f/tau_rise(i)-1.f/tau_decay(i))/d2;
-+  }
-+}
-+}
-+__device__ void NodeInit(int nv,int np,double x,float*y,float*p,user_m4_rk5 d)
-+{ user_m4_ns::NodeInit(nv,np,x,y,p,d); }
-+__device__ void NodeCalibrate(int nv,int np,double x,float*y,float*p,user_m4_rk5 d)
-+{ user_m4_ns::NodeCalibrate(nv,np,x,y,p,d); }
-+
-+using namespace user_m4_ns;
-+int user_m4::Init(int i0,int nn,int np,int ig)
-+{
-+  BaseNeuron::Init(i0,nn,np,ig); node_type_=i_user_m4_model;
-+  n_scal_var_=N_SCAL_VAR; n_port_var_=N_PORT_VAR; n_scal_param_=N_SCAL_PARAM;
-+  n_port_param_=N_PORT_PARAM; n_group_param_=N_GROUP_PARAM;
-+  n_var_=n_scal_var_+n_port_var_*np; n_param_=n_scal_param_+n_port_param_*np;
-+  group_param_=new float[N_GROUP_PARAM]; scal_var_name_=user_m4_scal_var_name;
-+  port_var_name_=user_m4_port_var_name; scal_param_name_=user_m4_scal_param_name;
-+  port_param_name_=user_m4_port_param_name; group_param_name_=user_m4_group_param_name;
-+  rk5_data_struct_.i_node_0_=i_node_0_; SetGroupParam("h_min_rel",1.e-3);
-+  SetGroupParam("h0_rel",1.e-2); h_=h0_rel_*.1f;
-+  rk5_.Init(nn,n_var_,n_param_,0.,h_,rk5_data_struct_);
-+  var_arr_=rk5_.GetYArr(); param_arr_=rk5_.GetParamArr();
-+  port_weight_arr_=GetParamArr()+n_scal_param_+GetPortParamIdx("g0");
-+  port_weight_arr_step_=n_param_; port_weight_port_step_=n_port_param_;
-+  port_input_arr_=GetVarArr()+n_scal_var_+GetPortVarIdx("g1");
-+  port_input_arr_step_=n_var_; port_input_port_step_=n_port_var_;
-+  den_delay_arr_=GetParamArr()+GetScalParamIdx("den_delay"); return 0;
-+}
-+int user_m4::Calibrate(double t,float dt)
-+{ h_min_=h_min_rel_*dt; h_=h0_rel_*dt; rk5_.Calibrate(t,h_,rk5_data_struct_); return 0; }
-+template<> int user_m4::UpdateNR<0>(long long,double){return 0;}
-+int user_m4::Update(long long it,double t){UpdateNR<USER_M4_MAX_PORT_NUM>(it,t);return 0;}
-diff --git a/src/user_m4.h b/src/user_m4.h
-new file mode 100644
-index 0000000..b0a0ecb
---- /dev/null
-+++ b/src/user_m4.h
-@@ -0,0 +1,26 @@
-+#ifndef USERM4_H
-+#define USERM4_H
-+
-+#include "base_neuron.h"
-+#include "neuron_models.h"
-+#include "rk5.h"
-+
-+#define USER_M4_MAX_PORT_NUM 20
-+
-+struct user_m4_rk5 { int i_node_0_; };
-+
-+class user_m4 : public BaseNeuron
-+{
-+public:
-+  RungeKutta5< user_m4_rk5 > rk5_;
-+  float h_min_;
-+  float h_;
-+  user_m4_rk5 rk5_data_struct_;
-+  int Init( int, int, int, int );
-+  int Calibrate( double, float );
-+  int Update( long long, double );
-+  int GetX( int i, int n, double* x ) { return rk5_.GetX( i, n, x ); }
-+  int GetY( int v, int i, int n, float* y ) { return rk5_.GetY( v, i, n, y ); }
-+  template < int N_PORT > int UpdateNR( long long, double );
-+};
-+#endif
-diff --git a/src/user_m4_kernel.h b/src/user_m4_kernel.h
-new file mode 100644
-index 0000000..f7ee78b
---- /dev/null
-+++ b/src/user_m4_kernel.h
-@@ -0,0 +1,176 @@
-+#ifndef USERM4KERNEL_H
-+#define USERM4KERNEL_H
-+
-+#include "node_group.h"
-+#include "spike_buffer.h"
-+#include "user_m4.h"
-+#include <cmath>
-+#include <string>
-+
-+extern __constant__ float NESTGPUTimeResolution;
-+
-+namespace user_m4_ns
-+{
-+enum ScalVarIndexes { i_V_m=0, i_V_d, i_V_dist, i_I_adap, i_I_dep,
-+  i_h_prox, i_h_dist, i_n_prox, i_n_dist, N_SCAL_VAR };
-+enum PortVarIndexes { i_g=0, i_g1, N_PORT_VAR };
-+enum ScalParamIndexes { i_V_th=0, i_E_L, i_C_m, i_tau_m, i_k_adap, i_k1,
-+  i_k2, i_A1, i_A2, i_I_e, i_V_peak, i_V_reset, i_t_ref, i_dend_C_frac,
-+  i_dend_leak_scale, i_g_c, i_dist_C_frac, i_dist_leak_scale, i_g_c_dist,
-+  i_refractory_step, i_den_delay, i_gbar_Na_prox, i_gbar_Na_dist, i_E_Na,
-+  i_Vm_half, i_km, i_Vh_half, i_kh, i_tau_h, i_gbar_Kd_prox,
-+  i_gbar_Kd_dist, i_E_K, i_Vn_half, i_kn, i_tau_n, N_SCAL_PARAM };
-+enum PortParamIndexes { i_E_rev=0, i_tau_rise, i_tau_decay, i_g0, i_compartment, N_PORT_PARAM };
-+enum GroupParamIndexes { i_h_min_rel=0, i_h0_rel, N_GROUP_PARAM };
-+
-+const std::string user_m4_scal_var_name[N_SCAL_VAR] = { "V_m", "V_d", "V_dist",
-+  "I_adap", "I_dep", "h_Na_prox", "h_Na_dist", "n_Kd_prox", "n_Kd_dist" };
-+const std::string user_m4_port_var_name[N_PORT_VAR] = { "g", "g1" };
-+const std::string user_m4_scal_param_name[N_SCAL_PARAM] = { "V_th", "E_L", "C_m",
-+  "tau_m", "k_adap", "k1", "k2", "A1", "A2", "I_e", "V_peak", "V_reset",
-+  "t_ref", "dend_C_frac", "dend_leak_scale", "g_c", "dist_C_frac",
-+  "dist_leak_scale", "g_c_dist", "refractory_step", "den_delay", "gbar_Na_prox",
-+  "gbar_Na_dist", "E_Na", "Vm_half", "km", "Vh_half", "kh", "tau_h",
-+  "gbar_Kd_prox", "gbar_Kd_dist", "E_K", "Vn_half", "kn", "tau_n" };
-+const std::string user_m4_port_param_name[N_PORT_PARAM] =
-+  { "E_rev", "tau_rise", "tau_decay", "g0", "compartment" };
-+const std::string user_m4_group_param_name[N_GROUP_PARAM] = { "h_min_rel", "h0_rel" };
-+
-+#define V_m y[i_V_m]
-+#define V_d y[i_V_d]
-+#define V_dist y[i_V_dist]
-+#define I_adap y[i_I_adap]
-+#define I_dep y[i_I_dep]
-+#define h_prox y[i_h_prox]
-+#define h_dist y[i_h_dist]
-+#define n_prox y[i_n_prox]
-+#define n_dist y[i_n_dist]
-+#define g(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define g1(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define dVdt dydx[i_V_m]
-+#define dVddt dydx[i_V_d]
-+#define dVdistdt dydx[i_V_dist]
-+#define dI_adapdt dydx[i_I_adap]
-+#define dI_depdt dydx[i_I_dep]
-+#define dh_proxdt dydx[i_h_prox]
-+#define dh_distdt dydx[i_h_dist]
-+#define dn_proxdt dydx[i_n_prox]
-+#define dn_distdt dydx[i_n_dist]
-+#define dgdt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define dg1dt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define P(name) param[i_##name]
-+#define V_th P(V_th)
-+#define E_L P(E_L)
-+#define C_m P(C_m)
-+#define tau_m P(tau_m)
-+#define k_adap P(k_adap)
-+#define k1 P(k1)
-+#define k2 P(k2)
-+#define A1 P(A1)
-+#define A2 P(A2)
-+#define I_e P(I_e)
-+#define V_peak P(V_peak)
-+#define V_reset P(V_reset)
-+#define t_ref P(t_ref)
-+#define dend_C_frac P(dend_C_frac)
-+#define dend_leak_scale P(dend_leak_scale)
-+#define g_c P(g_c)
-+#define dist_C_frac P(dist_C_frac)
-+#define dist_leak_scale P(dist_leak_scale)
-+#define g_c_dist P(g_c_dist)
-+#define refractory_step P(refractory_step)
-+#define den_delay P(den_delay)
-+#define gbar_Na_prox P(gbar_Na_prox)
-+#define gbar_Na_dist P(gbar_Na_dist)
-+#define E_Na P(E_Na)
-+#define Vm_half P(Vm_half)
-+#define km P(km)
-+#define Vh_half P(Vh_half)
-+#define kh P(kh)
-+#define tau_h P(tau_h)
-+#define gbar_Kd_prox P(gbar_Kd_prox)
-+#define gbar_Kd_dist P(gbar_Kd_dist)
-+#define E_K P(E_K)
-+#define Vn_half P(Vn_half)
-+#define kn P(kn)
-+#define tau_n P(tau_n)
-+#define E_rev(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_E_rev]
-+#define tau_rise(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_rise]
-+#define tau_decay(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_decay]
-+#define g0(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_g0]
-+#define compartment(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_compartment]
-+#define h_min_rel_ group_param_[i_h_min_rel]
-+#define h0_rel_ group_param_[i_h0_rel]
-+
-+__device__ inline float LogisticUp(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,-(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+__device__ inline float LogisticDown(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+
-+template<int NVAR,int NPARAM>
-+__device__ void Derivatives(double,float* y,float* dydx,float* param,user_m4_rk5)
-+{
-+  enum { n_port=(NVAR-N_SCAL_VAR)/N_PORT_VAR };
-+  const float V=refractory_step>0.0f?V_reset:fminf(V_m,V_peak);
-+  float Is=0.0f,Ip=0.0f,Id=0.0f;
-+  for(int i=0;i<n_port;++i) {
-+    if(compartment(i)<0.5f) Is+=g(i)*(E_rev(i)-V);
-+    else if(compartment(i)<1.5f) Ip+=g(i)*(E_rev(i)-V_d);
-+    else Id+=g(i)*(E_rev(i)-V_dist);
-+  }
-+  const float df=fminf(.95f,fmaxf(1.e-6f,dend_C_frac));
-+  const float xf=fminf(.95f,fmaxf(1.e-6f,dist_C_frac));
-+  const float cd=C_m*df, cdist=fmaxf(1.e-6f,cd*xf);
-+  const float cprox=fmaxf(1.e-6f,cd-cdist), cs=fmaxf(1.e-6f,C_m-cd);
-+  const float mp=LogisticUp(V_d,Vm_half,km), md=LogisticUp(V_dist,Vm_half,km);
-+  const float INap=gbar_Na_prox*mp*mp*mp*h_prox*(E_Na-V_d);
-+  const float INad=gbar_Na_dist*md*md*md*h_dist*(E_Na-V_dist);
-+  const float IKp=gbar_Kd_prox*n_prox*n_prox*n_prox*n_prox*(E_K-V_d);
-+  const float IKd=gbar_Kd_dist*n_dist*n_dist*n_dist*n_dist*(E_K-V_dist);
-+  dVdt=refractory_step>0.0f?0.0f:(-(cs/tau_m)*(V-E_L)+g_c*(V_d-V)-I_adap+I_dep+Is+I_e)/cs;
-+  dVddt=(-(cprox/tau_m)*dend_leak_scale*(V_d-E_L)+g_c*(V-V_d)+g_c_dist*(V_dist-V_d)+Ip+INap+IKp)/cprox;
-+  dVdistdt=(-(cdist/tau_m)*dist_leak_scale*(V_dist-E_L)+g_c_dist*(V_d-V_dist)+Id+INad+IKd)/cdist;
-+  dI_adapdt=k_adap*(V-E_L)-k2*I_adap; dI_depdt=-k1*I_dep;
-+  dh_proxdt=(LogisticDown(V_d,Vh_half,kh)-h_prox)/tau_h;
-+  dh_distdt=(LogisticDown(V_dist,Vh_half,kh)-h_dist)/tau_h;
-+  dn_proxdt=(LogisticUp(V_d,Vn_half,kn)-n_prox)/tau_n;
-+  dn_distdt=(LogisticUp(V_dist,Vn_half,kn)-n_dist)/tau_n;
-+  for(int i=0;i<n_port;++i) { dg1dt(i)=-g1(i)/tau_rise(i); dgdt(i)=g1(i)-g(i)/tau_decay(i); }
-+}
-+
-+template<int NVAR,int NPARAM>
-+__device__ void ExternalUpdate(double,float* y,float* param,bool end,user_m4_rk5 data)
-+{
-+  h_prox=fminf(1.f,fmaxf(0.f,h_prox)); h_dist=fminf(1.f,fmaxf(0.f,h_dist));
-+  n_prox=fminf(1.f,fmaxf(0.f,n_prox)); n_dist=fminf(1.f,fmaxf(0.f,n_dist));
-+  if(V_m < -1.e3f || V_d < -1.e3f || V_dist < -1.e3f) {
-+    V_m=V_reset; V_d=E_L; V_dist=E_L; I_adap=0; I_dep=0; return;
-+  }
-+  if(I_adap < -1.e6f || I_adap > 1.e6f || I_dep < -1.e6f || I_dep > 1.e6f) {
-+    V_m=V_reset; I_adap=0; I_dep=0; return;
-+  }
-+  if(refractory_step>0.0f) { V_m=V_reset; if(end) refractory_step-=1.0f; }
-+  else if(V_m>=V_th) {
-+    const int idx=threadIdx.x+blockIdx.x*blockDim.x;
-+    PushSpike(data.i_node_0_+idx,1.0); V_m=V_reset; I_adap+=A2; I_dep=A1;
-+    refractory_step=(int)round(t_ref/NESTGPUTimeResolution);
-+    if(refractory_step<0.0f) refractory_step=0.0f;
-+  }
-+}
-+}
-+
-+template<> int user_m4::UpdateNR<0>(long long,double);
-+template<int N_PORT> int user_m4::UpdateNR(long long it,double t1)
-+{
-+  if(N_PORT==n_port_) {
-+    const int NV=user_m4_ns::N_SCAL_VAR+user_m4_ns::N_PORT_VAR*N_PORT;
-+    const int NP=user_m4_ns::N_SCAL_PARAM+user_m4_ns::N_PORT_PARAM*N_PORT;
-+    rk5_.Update<NV,NP>(t1,h_min_,rk5_data_struct_);
-+  } else UpdateNR<N_PORT-1>(it,t1);
-+  return 0;
-+}
-+template<int NV,int NP> __device__ void Derivatives(double x,float*y,float*d,float*p,user_m4_rk5 s)
-+{ user_m4_ns::Derivatives<NV,NP>(x,y,d,p,s); }
-+template<int NV,int NP> __device__ void ExternalUpdate(double x,float*y,float*p,bool e,user_m4_rk5 s)
-+{ user_m4_ns::ExternalUpdate<NV,NP>(x,y,p,e,s); }
-+#endif
-diff --git a/src/user_m4_rk5.h b/src/user_m4_rk5.h
-new file mode 100644
-index 0000000..30ab08f
---- /dev/null
-+++ b/src/user_m4_rk5.h
-@@ -0,0 +1,10 @@
-+#ifndef USERM4RK5_H
-+#define USERM4RK5_H
-+struct user_m4_rk5;
-+template < int NVAR, int NPARAM >
-+__device__ void Derivatives( double, float*, float*, float*, user_m4_rk5 );
-+template < int NVAR, int NPARAM >
-+__device__ void ExternalUpdate( double, float*, float*, bool, user_m4_rk5 );
-+__device__ void NodeInit( int, int, double, float*, float*, user_m4_rk5 );
-+__device__ void NodeCalibrate( int, int, double, float*, float*, user_m4_rk5 );
-+#endif
-diff --git a/src/user_m5.cu b/src/user_m5.cu
-new file mode 100644
-index 0000000..88b599e
---- /dev/null
-+++ b/src/user_m5.cu
-@@ -0,0 +1,69 @@
-+#include "rk5.h"
-+#include "user_m5.h"
-+#include "user_m5_kernel.h"
-+#include <cmath>
-+
-+namespace user_m5_ns
-+{
-+__device__ void NodeInit(int n_var,int,double,float*y,float*param,user_m5_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR;
-+  V_th=-50.f; E_L=-65.f; C_m=200.f; tau_m=20.f; k_adap=0.f; k1=.1f; k2=.01f;
-+  A1=0.f; A2=0.f; I_e=0.f; V_peak=0.f; V_reset=-65.f; t_ref=2.f;
-+  dend_C_frac=.4f; dend_leak_scale=1.f; g_c=10.f; dist_C_frac=.5f;
-+  dist_leak_scale=1.f; g_c_dist=2.5f; den_delay=0.f;
-+  C_b_prox=5.f; C_b_dist=5.f; g_leak_b_prox=5.f; g_leak_b_dist=5.f;
-+  g_b_prox=10.f; g_b_dist=10.f;
-+  gbar_Na_prox=0.f; gbar_Na_dist=0.f; E_Na=55.f; Vm_half=-35.f; km=7.f;
-+  Vh_half=-50.f; kh=6.f; tau_h=2.f; gbar_Kd_prox=0.f; gbar_Kd_dist=0.f;
-+  E_K=-90.f; Vn_half=-25.f; kn=10.f; tau_n=2.f;
-+  V_m=E_L; V_d=E_L; V_dist=E_L; V_b_prox=E_L; V_b_dist=E_L;
-+  I_adap=0.f; I_dep=0.f;
-+  h_prox=LogisticDown(E_L,Vh_half,kh); h_dist=h_prox;
-+  n_prox=LogisticUp(E_L,Vn_half,kn); n_dist=n_prox; refractory_step=0.f;
-+  for(int i=0;i<n_port;++i) { g(i)=0.f; g1(i)=0.f; E_rev(i)=0.f;
-+    tau_decay(i)=20.f; tau_rise(i)=2.f; compartment(i)=1.f; }
-+}
-+
-+__device__ void NodeCalibrate(int n_var,int,double,float*y,float*param,user_m5_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR; refractory_step=0.f;
-+  h_prox=fminf(1.f,fmaxf(0.f,h_prox)); h_dist=fminf(1.f,fmaxf(0.f,h_dist));
-+  n_prox=fminf(1.f,fmaxf(0.f,n_prox)); n_dist=fminf(1.f,fmaxf(0.f,n_dist));
-+  for(int i=0;i<n_port;++i) {
-+    const float d1=tau_decay(i)-tau_rise(i); float d2=0.f;
-+    if(d1!=0.f) { const float tp=tau_decay(i)*tau_rise(i)*log(tau_decay(i)/tau_rise(i))/d1;
-+      d2=exp(-tp/tau_decay(i))-exp(-tp/tau_rise(i)); }
-+    g0(i)=d2==0.f?M_E/tau_decay(i):(1.f/tau_rise(i)-1.f/tau_decay(i))/d2;
-+  }
-+}
-+}
-+__device__ void NodeInit(int nv,int np,double x,float*y,float*p,user_m5_rk5 d)
-+{ user_m5_ns::NodeInit(nv,np,x,y,p,d); }
-+__device__ void NodeCalibrate(int nv,int np,double x,float*y,float*p,user_m5_rk5 d)
-+{ user_m5_ns::NodeCalibrate(nv,np,x,y,p,d); }
-+
-+using namespace user_m5_ns;
-+int user_m5::Init(int i0,int nn,int np,int ig)
-+{
-+  BaseNeuron::Init(i0,nn,np,ig); node_type_=i_user_m5_model;
-+  n_scal_var_=N_SCAL_VAR; n_port_var_=N_PORT_VAR; n_scal_param_=N_SCAL_PARAM;
-+  n_port_param_=N_PORT_PARAM; n_group_param_=N_GROUP_PARAM;
-+  n_var_=n_scal_var_+n_port_var_*np; n_param_=n_scal_param_+n_port_param_*np;
-+  group_param_=new float[N_GROUP_PARAM]; scal_var_name_=user_m5_scal_var_name;
-+  port_var_name_=user_m5_port_var_name; scal_param_name_=user_m5_scal_param_name;
-+  port_param_name_=user_m5_port_param_name; group_param_name_=user_m5_group_param_name;
-+  rk5_data_struct_.i_node_0_=i_node_0_; SetGroupParam("h_min_rel",1.e-3);
-+  SetGroupParam("h0_rel",1.e-2); h_=h0_rel_*.1f;
-+  rk5_.Init(nn,n_var_,n_param_,0.,h_,rk5_data_struct_);
-+  var_arr_=rk5_.GetYArr(); param_arr_=rk5_.GetParamArr();
-+  port_weight_arr_=GetParamArr()+n_scal_param_+GetPortParamIdx("g0");
-+  port_weight_arr_step_=n_param_; port_weight_port_step_=n_port_param_;
-+  port_input_arr_=GetVarArr()+n_scal_var_+GetPortVarIdx("g1");
-+  port_input_arr_step_=n_var_; port_input_port_step_=n_port_var_;
-+  den_delay_arr_=GetParamArr()+GetScalParamIdx("den_delay"); return 0;
-+}
-+int user_m5::Calibrate(double t,float dt)
-+{ h_min_=h_min_rel_*dt; h_=h0_rel_*dt; rk5_.Calibrate(t,h_,rk5_data_struct_); return 0; }
-+template<> int user_m5::UpdateNR<0>(long long,double){return 0;}
-+int user_m5::Update(long long it,double t){UpdateNR<USER_M5_MAX_PORT_NUM>(it,t);return 0;}
-diff --git a/src/user_m5.h b/src/user_m5.h
-new file mode 100644
-index 0000000..5c32d0d
---- /dev/null
-+++ b/src/user_m5.h
-@@ -0,0 +1,26 @@
-+#ifndef USERM5_H
-+#define USERM5_H
-+
-+#include "base_neuron.h"
-+#include "neuron_models.h"
-+#include "rk5.h"
-+
-+#define USER_M5_MAX_PORT_NUM 20
-+
-+struct user_m5_rk5 { int i_node_0_; };
-+
-+class user_m5 : public BaseNeuron
-+{
-+public:
-+  RungeKutta5< user_m5_rk5 > rk5_;
-+  float h_min_;
-+  float h_;
-+  user_m5_rk5 rk5_data_struct_;
-+  int Init( int, int, int, int );
-+  int Calibrate( double, float );
-+  int Update( long long, double );
-+  int GetX( int i, int n, double* x ) { return rk5_.GetX( i, n, x ); }
-+  int GetY( int v, int i, int n, float* y ) { return rk5_.GetY( v, i, n, y ); }
-+  template < int N_PORT > int UpdateNR( long long, double );
-+};
-+#endif
-diff --git a/src/user_m5_kernel.h b/src/user_m5_kernel.h
-new file mode 100644
-index 0000000..bacdfd5
---- /dev/null
-+++ b/src/user_m5_kernel.h
-@@ -0,0 +1,203 @@
-+#ifndef USERM5KERNEL_H
-+#define USERM5KERNEL_H
-+
-+#include "node_group.h"
-+#include "spike_buffer.h"
-+#include "user_m5.h"
-+#include <cmath>
-+#include <string>
-+
-+extern __constant__ float NESTGPUTimeResolution;
-+
-+namespace user_m5_ns
-+{
-+// The first five scalar states, both per-port states, and all legacy scalar and
-+// port parameters deliberately retain the user_m2 order.  Everything appended
-+// here is private state and cannot alter connection marshalling.
-+enum ScalVarIndexes { i_V_m=0, i_V_d, i_V_dist, i_I_adap, i_I_dep,
-+  i_V_b_prox, i_V_b_dist, i_h_prox, i_h_dist, i_n_prox, i_n_dist, N_SCAL_VAR };
-+enum PortVarIndexes { i_g=0, i_g1, N_PORT_VAR };
-+enum ScalParamIndexes { i_V_th=0, i_E_L, i_C_m, i_tau_m, i_k_adap, i_k1,
-+  i_k2, i_A1, i_A2, i_I_e, i_V_peak, i_V_reset, i_t_ref, i_dend_C_frac,
-+  i_dend_leak_scale, i_g_c, i_dist_C_frac, i_dist_leak_scale, i_g_c_dist,
-+  i_refractory_step, i_den_delay, i_C_b_prox, i_C_b_dist,
-+  i_g_leak_b_prox, i_g_leak_b_dist, i_g_b_prox, i_g_b_dist,
-+  i_gbar_Na_prox, i_gbar_Na_dist, i_E_Na, i_Vm_half, i_km, i_Vh_half,
-+  i_kh, i_tau_h, i_gbar_Kd_prox, i_gbar_Kd_dist, i_E_K, i_Vn_half,
-+  i_kn, i_tau_n, N_SCAL_PARAM };
-+enum PortParamIndexes { i_E_rev=0, i_tau_rise, i_tau_decay, i_g0, i_compartment, N_PORT_PARAM };
-+enum GroupParamIndexes { i_h_min_rel=0, i_h0_rel, N_GROUP_PARAM };
-+
-+const std::string user_m5_scal_var_name[N_SCAL_VAR] = { "V_m", "V_d", "V_dist",
-+  "I_adap", "I_dep", "V_b_prox", "V_b_dist", "h_Na_prox", "h_Na_dist",
-+  "n_Kd_prox", "n_Kd_dist" };
-+const std::string user_m5_port_var_name[N_PORT_VAR] = { "g", "g1" };
-+const std::string user_m5_scal_param_name[N_SCAL_PARAM] = { "V_th", "E_L", "C_m",
-+  "tau_m", "k_adap", "k1", "k2", "A1", "A2", "I_e", "V_peak", "V_reset",
-+  "t_ref", "dend_C_frac", "dend_leak_scale", "g_c", "dist_C_frac",
-+  "dist_leak_scale", "g_c_dist", "refractory_step", "den_delay", "C_b_prox",
-+  "C_b_dist", "g_leak_b_prox", "g_leak_b_dist", "g_b_prox", "g_b_dist",
-+  "gbar_Na_prox", "gbar_Na_dist", "E_Na", "Vm_half", "km", "Vh_half", "kh",
-+  "tau_h", "gbar_Kd_prox", "gbar_Kd_dist", "E_K", "Vn_half", "kn", "tau_n" };
-+const std::string user_m5_port_param_name[N_PORT_PARAM] =
-+  { "E_rev", "tau_rise", "tau_decay", "g0", "compartment" };
-+const std::string user_m5_group_param_name[N_GROUP_PARAM] = { "h_min_rel", "h0_rel" };
-+
-+#define V_m y[i_V_m]
-+#define V_d y[i_V_d]
-+#define V_dist y[i_V_dist]
-+#define I_adap y[i_I_adap]
-+#define I_dep y[i_I_dep]
-+#define V_b_prox y[i_V_b_prox]
-+#define V_b_dist y[i_V_b_dist]
-+#define h_prox y[i_h_prox]
-+#define h_dist y[i_h_dist]
-+#define n_prox y[i_n_prox]
-+#define n_dist y[i_n_dist]
-+#define g(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define g1(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define dVdt dydx[i_V_m]
-+#define dVddt dydx[i_V_d]
-+#define dVdistdt dydx[i_V_dist]
-+#define dI_adapdt dydx[i_I_adap]
-+#define dI_depdt dydx[i_I_dep]
-+#define dV_b_proxdt dydx[i_V_b_prox]
-+#define dV_b_distdt dydx[i_V_b_dist]
-+#define dh_proxdt dydx[i_h_prox]
-+#define dh_distdt dydx[i_h_dist]
-+#define dn_proxdt dydx[i_n_prox]
-+#define dn_distdt dydx[i_n_dist]
-+#define dgdt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define dg1dt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define P(name) param[i_##name]
-+#define V_th P(V_th)
-+#define E_L P(E_L)
-+#define C_m P(C_m)
-+#define tau_m P(tau_m)
-+#define k_adap P(k_adap)
-+#define k1 P(k1)
-+#define k2 P(k2)
-+#define A1 P(A1)
-+#define A2 P(A2)
-+#define I_e P(I_e)
-+#define V_peak P(V_peak)
-+#define V_reset P(V_reset)
-+#define t_ref P(t_ref)
-+#define dend_C_frac P(dend_C_frac)
-+#define dend_leak_scale P(dend_leak_scale)
-+#define g_c P(g_c)
-+#define dist_C_frac P(dist_C_frac)
-+#define dist_leak_scale P(dist_leak_scale)
-+#define g_c_dist P(g_c_dist)
-+#define refractory_step P(refractory_step)
-+#define den_delay P(den_delay)
-+#define C_b_prox P(C_b_prox)
-+#define C_b_dist P(C_b_dist)
-+#define g_leak_b_prox P(g_leak_b_prox)
-+#define g_leak_b_dist P(g_leak_b_dist)
-+#define g_b_prox P(g_b_prox)
-+#define g_b_dist P(g_b_dist)
-+#define gbar_Na_prox P(gbar_Na_prox)
-+#define gbar_Na_dist P(gbar_Na_dist)
-+#define E_Na P(E_Na)
-+#define Vm_half P(Vm_half)
-+#define km P(km)
-+#define Vh_half P(Vh_half)
-+#define kh P(kh)
-+#define tau_h P(tau_h)
-+#define gbar_Kd_prox P(gbar_Kd_prox)
-+#define gbar_Kd_dist P(gbar_Kd_dist)
-+#define E_K P(E_K)
-+#define Vn_half P(Vn_half)
-+#define kn P(kn)
-+#define tau_n P(tau_n)
-+#define E_rev(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_E_rev]
-+#define tau_rise(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_rise]
-+#define tau_decay(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_decay]
-+#define g0(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_g0]
-+#define compartment(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_compartment]
-+#define h_min_rel_ group_param_[i_h_min_rel]
-+#define h0_rel_ group_param_[i_h0_rel]
-+
-+__device__ inline float LogisticUp(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,-(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+__device__ inline float LogisticDown(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+
-+template<int NVAR,int NPARAM>
-+__device__ void Derivatives(double,float* y,float* dydx,float* param,user_m5_rk5)
-+{
-+  enum { n_port=(NVAR-N_SCAL_VAR)/N_PORT_VAR };
-+  const float V=refractory_step>0.0f?V_reset:fminf(V_m,V_peak);
-+  float Is=0.0f,I_syn_bp=0.0f,I_syn_bd=0.0f;
-+  for(int i=0;i<n_port;++i) {
-+    if(compartment(i)<0.5f) Is+=g(i)*(E_rev(i)-V);
-+    else if(compartment(i)<1.5f) I_syn_bp+=g(i)*(E_rev(i)-V_b_prox);
-+    else I_syn_bd+=g(i)*(E_rev(i)-V_b_dist);
-+  }
-+  const float df=fminf(.95f,fmaxf(1.e-6f,dend_C_frac));
-+  const float xf=fminf(.95f,fmaxf(1.e-6f,dist_C_frac));
-+  const float cd=C_m*df, cdist=fmaxf(1.e-6f,cd*xf);
-+  const float cprox=fmaxf(1.e-6f,cd-cdist), cs=fmaxf(1.e-6f,C_m-cd);
-+  const float mp=LogisticUp(V_b_prox,Vm_half,km), md=LogisticUp(V_b_dist,Vm_half,km);
-+  const float INap=gbar_Na_prox*mp*mp*mp*h_prox*(E_Na-V_b_prox);
-+  const float INad=gbar_Na_dist*md*md*md*h_dist*(E_Na-V_b_dist);
-+  const float IKp=gbar_Kd_prox*n_prox*n_prox*n_prox*n_prox*(E_K-V_b_prox);
-+  const float IKd=gbar_Kd_dist*n_dist*n_dist*n_dist*n_dist*(E_K-V_b_dist);
-+  // Rectification is intentional: this is a branch->domain transfer, not a
-+  // fourth/fifth passive morphology compartment.  Somatic I_e therefore cannot
-+  // back-drive or load a private branch, whereas a locally depolarized branch
-+  // transfers its regenerative current into the historical domain voltage.
-+  const float Ibp=g_b_prox*fmaxf(0.0f,V_b_prox-V_d);
-+  const float Ibd=g_b_dist*fmaxf(0.0f,V_b_dist-V_dist);
-+  dVdt=refractory_step>0.0f?0.0f:(-(cs/tau_m)*(V-E_L)+g_c*(V_d-V)-I_adap+I_dep+Is+I_e)/cs;
-+  dVddt=(-(cprox/tau_m)*dend_leak_scale*(V_d-E_L)+g_c*(V-V_d)+g_c_dist*(V_dist-V_d)+Ibp)/cprox;
-+  dVdistdt=(-(cdist/tau_m)*dist_leak_scale*(V_dist-E_L)+g_c_dist*(V_d-V_dist)+Ibd)/cdist;
-+  dV_b_proxdt=(-g_leak_b_prox*(V_b_prox-E_L)-Ibp+I_syn_bp+INap+IKp)/fmaxf(1.e-6f,C_b_prox);
-+  dV_b_distdt=(-g_leak_b_dist*(V_b_dist-E_L)-Ibd+I_syn_bd+INad+IKd)/fmaxf(1.e-6f,C_b_dist);
-+  dI_adapdt=k_adap*(V-E_L)-k2*I_adap; dI_depdt=-k1*I_dep;
-+  dh_proxdt=(LogisticDown(V_b_prox,Vh_half,kh)-h_prox)/tau_h;
-+  dh_distdt=(LogisticDown(V_b_dist,Vh_half,kh)-h_dist)/tau_h;
-+  dn_proxdt=(LogisticUp(V_b_prox,Vn_half,kn)-n_prox)/tau_n;
-+  dn_distdt=(LogisticUp(V_b_dist,Vn_half,kn)-n_dist)/tau_n;
-+  for(int i=0;i<n_port;++i) { dg1dt(i)=-g1(i)/tau_rise(i); dgdt(i)=g1(i)-g(i)/tau_decay(i); }
-+}
-+
-+template<int NVAR,int NPARAM>
-+__device__ void ExternalUpdate(double,float* y,float* param,bool end,user_m5_rk5 data)
-+{
-+  h_prox=fminf(1.f,fmaxf(0.f,h_prox)); h_dist=fminf(1.f,fmaxf(0.f,h_dist));
-+  n_prox=fminf(1.f,fmaxf(0.f,n_prox)); n_dist=fminf(1.f,fmaxf(0.f,n_dist));
-+  if(V_m < -1.e3f || V_d < -1.e3f || V_dist < -1.e3f ||
-+     V_b_prox < -1.e3f || V_b_dist < -1.e3f) {
-+    V_m=V_reset; V_d=E_L; V_dist=E_L; V_b_prox=E_L; V_b_dist=E_L;
-+    I_adap=0; I_dep=0; return;
-+  }
-+  if(I_adap < -1.e6f || I_adap > 1.e6f || I_dep < -1.e6f || I_dep > 1.e6f) {
-+    V_m=V_reset; I_adap=0; I_dep=0; return;
-+  }
-+  if(refractory_step>0.0f) { V_m=V_reset; if(end) refractory_step-=1.0f; }
-+  else if(V_m>=V_th) {
-+    const int idx=threadIdx.x+blockIdx.x*blockDim.x;
-+    PushSpike(data.i_node_0_+idx,1.0); V_m=V_reset; I_adap+=A2; I_dep=A1;
-+    refractory_step=(int)round(t_ref/NESTGPUTimeResolution);
-+    if(refractory_step<0.0f) refractory_step=0.0f;
-+  }
-+}
-+}
-+
-+template<> int user_m5::UpdateNR<0>(long long,double);
-+template<int N_PORT> int user_m5::UpdateNR(long long it,double t1)
-+{
-+  if(N_PORT==n_port_) {
-+    const int NV=user_m5_ns::N_SCAL_VAR+user_m5_ns::N_PORT_VAR*N_PORT;
-+    const int NP=user_m5_ns::N_SCAL_PARAM+user_m5_ns::N_PORT_PARAM*N_PORT;
-+    rk5_.Update<NV,NP>(t1,h_min_,rk5_data_struct_);
-+  } else UpdateNR<N_PORT-1>(it,t1);
-+  return 0;
-+}
-+template<int NV,int NP> __device__ void Derivatives(double x,float*y,float*d,float*p,user_m5_rk5 s)
-+{ user_m5_ns::Derivatives<NV,NP>(x,y,d,p,s); }
-+template<int NV,int NP> __device__ void ExternalUpdate(double x,float*y,float*p,bool e,user_m5_rk5 s)
-+{ user_m5_ns::ExternalUpdate<NV,NP>(x,y,p,e,s); }
-+#endif
-diff --git a/src/user_m5_rk5.h b/src/user_m5_rk5.h
-new file mode 100644
-index 0000000..3e2a27d
---- /dev/null
-+++ b/src/user_m5_rk5.h
-@@ -0,0 +1,10 @@
-+#ifndef USERM5RK5_H
-+#define USERM5RK5_H
-+struct user_m5_rk5;
-+template < int NVAR, int NPARAM >
-+__device__ void Derivatives( double, float*, float*, float*, user_m5_rk5 );
-+template < int NVAR, int NPARAM >
-+__device__ void ExternalUpdate( double, float*, float*, bool, user_m5_rk5 );
-+__device__ void NodeInit( int, int, double, float*, float*, user_m5_rk5 );
-+__device__ void NodeCalibrate( int, int, double, float*, float*, user_m5_rk5 );
-+#endif
-diff --git a/src/user_m6.cu b/src/user_m6.cu
-new file mode 100644
-index 0000000..093dd43
---- /dev/null
-+++ b/src/user_m6.cu
-@@ -0,0 +1,96 @@
-+#include "rk5.h"
-+#include "user_m6.h"
-+#include "user_m6_kernel.h"
-+#include <cmath>
-+
-+namespace user_m6_ns
-+{
-+__device__ void NodeInit(int n_var,int,double,float*y,float*param,user_m6_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR;
-+  V_th=-50.f; E_L=-65.f; C_m=200.f; tau_m=20.f; k_adap=0.f; k1=.1f; k2=.01f;
-+  A1=0.f; A2=0.f; I_e=0.f; V_peak=0.f; V_reset=-65.f; t_ref=2.f;
-+  dend_C_frac=.4f; dend_leak_scale=1.f; g_c=10.f; dist_C_frac=.5f;
-+  dist_leak_scale=1.f; g_c_dist=2.5f; den_delay=0.f;
-+  P(C_b_prox)=5.f; P(C_b_dist)=5.f; P(g_leak_b_prox)=5.f; P(g_leak_b_dist)=5.f;
-+  P(g_b_prox)=10.f; P(g_b_dist)=10.f; P(gbar_Na_prox)=0.f; P(gbar_Na_dist)=0.f;
-+  E_Na=55.f; Vm_half=-35.f; km=7.f; Vh_half=-50.f; kh=6.f; tau_h=2.f;
-+  P(gbar_Kd_prox)=0.f; P(gbar_Kd_dist)=0.f; E_K=-90.f; Vn_half=-25.f;
-+  kn=10.f; tau_n=2.f; N_b=2.f;
-+  V_m=E_L; V_d=E_L; V_dist=E_L; I_adap=0.f; I_dep=0.f; refractory_step=0.f;
-+  const float h=LogisticDown(E_L,Vh_half,kh), n=LogisticUp(E_L,Vn_half,kn);
-+  for(int domain=0;domain<2;++domain) for(int b=0;b<MAX_BRANCH;++b) {
-+    y[BState(domain,b)]=E_L; y[BState(domain,b,1)]=h; y[BState(domain,b,2)]=n;
-+  }
-+  for(int i=0;i<MAX_PORT;++i) for(int b=0;b<MAX_BRANCH;++b) {
-+    y[BSyn(i,b)]=0.f; y[BSyn(i,b,1)]=0.f;
-+  }
-+  for(int i=0;i<n_port;++i) { g(i)=0.f; g1(i)=0.f; E_rev(i)=0.f;
-+    tau_decay(i)=20.f; tau_rise(i)=2.f; compartment(i)=1.f; }
-+}
-+
-+__device__ void NodeCalibrate(int n_var,int,double,float*y,float*param,user_m6_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR; refractory_step=0.f;
-+  N_b=fminf(4.f,fmaxf(1.f,roundf(N_b)));
-+  for(int domain=0;domain<2;++domain) for(int b=0;b<MAX_BRANCH;++b) {
-+    y[BState(domain,b,1)]=fminf(1.f,fmaxf(0.f,y[BState(domain,b,1)]));
-+    y[BState(domain,b,2)]=fminf(1.f,fmaxf(0.f,y[BState(domain,b,2)]));
-+  }
-+  for(int i=0;i<n_port;++i) {
-+    const float d1=tau_decay(i)-tau_rise(i); float d2=0.f;
-+    if(d1!=0.f) { const float tp=tau_decay(i)*tau_rise(i)*log(tau_decay(i)/tau_rise(i))/d1;
-+      d2=exp(-tp/tau_decay(i))-exp(-tp/tau_rise(i)); }
-+    g0(i)=d2==0.f?M_E/tau_decay(i):(1.f/tau_rise(i)-1.f/tau_decay(i))/d2;
-+  }
-+}
-+}
-+__device__ void NodeInit(int nv,int np,double x,float*y,float*p,user_m6_rk5 d)
-+{ user_m6_ns::NodeInit(nv,np,x,y,p,d); }
-+__device__ void NodeCalibrate(int nv,int np,double x,float*y,float*p,user_m6_rk5 d)
-+{ user_m6_ns::NodeCalibrate(nv,np,x,y,p,d); }
-+
-+using namespace user_m6_ns;
-+int user_m6::Init(int i0,int nn,int np,int ig)
-+{
-+  BaseNeuron::Init(i0,nn,np,ig); node_type_=i_user_m6_model;
-+  n_scal_var_=N_SCAL_VAR; n_port_var_=N_PORT_VAR; n_scal_param_=N_SCAL_PARAM;
-+  n_port_param_=N_PORT_PARAM; n_group_param_=N_GROUP_PARAM;
-+  n_var_=n_scal_var_+n_port_var_*np; n_param_=n_scal_param_+n_port_param_*np;
-+  group_param_=new float[N_GROUP_PARAM];
-+  scal_var_name_storage_=new std::string[N_SCAL_VAR];
-+  scal_var_name_storage_[i_V_m]="V_m"; scal_var_name_storage_[i_V_d]="V_d";
-+  scal_var_name_storage_[i_V_dist]="V_dist"; scal_var_name_storage_[i_I_adap]="I_adap";
-+  scal_var_name_storage_[i_I_dep]="I_dep";
-+  for(int domain=0;domain<2;++domain) for(int b=0;b<MAX_BRANCH;++b) {
-+    const std::string suffix=(domain==0?"prox_":"dist_")+std::to_string(b);
-+    scal_var_name_storage_[BState(domain,b)]="V_b_"+suffix;
-+    scal_var_name_storage_[BState(domain,b,1)]="h_Na_"+suffix;
-+    scal_var_name_storage_[BState(domain,b,2)]="n_Kd_"+suffix;
-+  }
-+  for(int p=0;p<MAX_PORT;++p) for(int b=0;b<MAX_BRANCH;++b) {
-+    const std::string suffix=std::to_string(p)+"_"+std::to_string(b);
-+    scal_var_name_storage_[BSyn(p,b)]="branch_g_"+suffix;
-+    scal_var_name_storage_[BSyn(p,b,1)]="branch_g1_"+suffix;
-+  }
-+  scal_var_name_=scal_var_name_storage_; port_var_name_=user_m6_port_var_name;
-+  scal_param_name_=user_m6_scal_param_name; port_param_name_=user_m6_port_param_name;
-+  group_param_name_=user_m6_group_param_name; rk5_data_struct_.i_node_0_=i_node_0_;
-+  SetGroupParam("h_min_rel",1.e-3); SetGroupParam("h0_rel",1.e-2); h_=h0_rel_*.1f;
-+  rk5_.Init(nn,n_var_,n_param_,0.,h_,rk5_data_struct_);
-+  var_arr_=rk5_.GetYArr(); param_arr_=rk5_.GetParamArr();
-+  port_weight_arr_=GetParamArr()+n_scal_param_+GetPortParamIdx("g0");
-+  port_weight_arr_step_=n_param_; port_weight_port_step_=n_port_param_;
-+  port_input_arr_=GetVarArr()+n_scal_var_+GetPortVarIdx("g1");
-+  port_input_arr_step_=n_var_; port_input_port_step_=n_port_var_;
-+  branch_port_input_arr_=GetVarArr()+BSyn(0,0,1);
-+  branch_port_input_arr_step_=n_var_; branch_port_input_port_step_=MAX_BRANCH*2;
-+  branch_port_input_branch_step_=2;
-+  branch_count_arr_=GetParamArr()+i_N_b;
-+  branch_count_arr_step_=n_param_;
-+  den_delay_arr_=GetParamArr()+GetScalParamIdx("den_delay"); return 0;
-+}
-+int user_m6::Calibrate(double t,float dt)
-+{ h_min_=h_min_rel_*dt; h_=h0_rel_*dt; rk5_.Calibrate(t,h_,rk5_data_struct_); return 0; }
-+template<> int user_m6::UpdateNR<0>(long long,double){return 0;}
-+int user_m6::Update(long long it,double t){UpdateNR<USER_M6_MAX_PORT_NUM>(it,t);return 0;}
-diff --git a/src/user_m6.h b/src/user_m6.h
-new file mode 100644
-index 0000000..a80f3b6
---- /dev/null
-+++ b/src/user_m6.h
-@@ -0,0 +1,27 @@
-+#ifndef USERM6_H
-+#define USERM6_H
-+
-+#include "base_neuron.h"
-+#include "neuron_models.h"
-+#include "rk5.h"
-+
-+#define USER_M6_MAX_PORT_NUM 20
-+
-+struct user_m6_rk5 { int i_node_0_; };
-+
-+class user_m6 : public BaseNeuron
-+{
-+public:
-+  RungeKutta5< user_m6_rk5 > rk5_;
-+  std::string* scal_var_name_storage_;
-+  float h_min_;
-+  float h_;
-+  user_m6_rk5 rk5_data_struct_;
-+  int Init( int, int, int, int );
-+  int Calibrate( double, float );
-+  int Update( long long, double );
-+  int GetX( int i, int n, double* x ) { return rk5_.GetX( i, n, x ); }
-+  int GetY( int v, int i, int n, float* y ) { return rk5_.GetY( v, i, n, y ); }
-+  template < int N_PORT > int UpdateNR( long long, double );
-+};
-+#endif
-diff --git a/src/user_m6_kernel.h b/src/user_m6_kernel.h
-new file mode 100644
-index 0000000..59d908e
---- /dev/null
-+++ b/src/user_m6_kernel.h
-@@ -0,0 +1,202 @@
-+#ifndef USERM6KERNEL_H
-+#define USERM6KERNEL_H
-+
-+#include "node_group.h"
-+#include "spike_buffer.h"
-+#include "user_m6.h"
-+#include <cmath>
-+#include <string>
-+
-+extern __constant__ float NESTGPUTimeResolution;
-+
-+namespace user_m6_ns
-+{
-+enum { MAX_BRANCH=4, MAX_PORT=20, LEGACY_SCAL_VAR=5,
-+  BRANCH_STATE0=LEGACY_SCAL_VAR,
-+  BRANCH_SYN0=BRANCH_STATE0+2*MAX_BRANCH*3,
-+  N_SCAL_VAR=BRANCH_SYN0+MAX_PORT*MAX_BRANCH*2 };
-+enum ScalVarIndexes { i_V_m=0, i_V_d, i_V_dist, i_I_adap, i_I_dep };
-+enum PortVarIndexes { i_g=0, i_g1, N_PORT_VAR };
-+enum ScalParamIndexes { i_V_th=0, i_E_L, i_C_m, i_tau_m, i_k_adap, i_k1,
-+  i_k2, i_A1, i_A2, i_I_e, i_V_peak, i_V_reset, i_t_ref, i_dend_C_frac,
-+  i_dend_leak_scale, i_g_c, i_dist_C_frac, i_dist_leak_scale, i_g_c_dist,
-+  i_refractory_step, i_den_delay, i_C_b_prox, i_C_b_dist,
-+  i_g_leak_b_prox, i_g_leak_b_dist, i_g_b_prox, i_g_b_dist,
-+  i_gbar_Na_prox, i_gbar_Na_dist, i_E_Na, i_Vm_half, i_km, i_Vh_half,
-+  i_kh, i_tau_h, i_gbar_Kd_prox, i_gbar_Kd_dist, i_E_K, i_Vn_half,
-+  i_kn, i_tau_n, i_N_b, N_SCAL_PARAM };
-+enum PortParamIndexes { i_E_rev=0, i_tau_rise, i_tau_decay, i_g0, i_compartment, N_PORT_PARAM };
-+enum GroupParamIndexes { i_h_min_rel=0, i_h0_rel, N_GROUP_PARAM };
-+
-+const std::string user_m6_port_var_name[N_PORT_VAR] = { "g", "g1" };
-+const std::string user_m6_scal_param_name[N_SCAL_PARAM] = { "V_th", "E_L", "C_m",
-+  "tau_m", "k_adap", "k1", "k2", "A1", "A2", "I_e", "V_peak", "V_reset",
-+  "t_ref", "dend_C_frac", "dend_leak_scale", "g_c", "dist_C_frac",
-+  "dist_leak_scale", "g_c_dist", "refractory_step", "den_delay", "C_b_prox",
-+  "C_b_dist", "g_leak_b_prox", "g_leak_b_dist", "g_b_prox", "g_b_dist",
-+  "gbar_Na_prox", "gbar_Na_dist", "E_Na", "Vm_half", "km", "Vh_half", "kh",
-+  "tau_h", "gbar_Kd_prox", "gbar_Kd_dist", "E_K", "Vn_half", "kn", "tau_n", "N_b" };
-+const std::string user_m6_port_param_name[N_PORT_PARAM] =
-+  { "E_rev", "tau_rise", "tau_decay", "g0", "compartment" };
-+const std::string user_m6_group_param_name[N_GROUP_PARAM] = { "h_min_rel", "h0_rel" };
-+
-+__host__ __device__ inline int BState(int domain,int branch,int gate=0)
-+{ return BRANCH_STATE0+(domain*MAX_BRANCH+branch)*3+gate; }
-+__host__ __device__ inline int BSyn(int port,int branch,int phase=0)
-+{ return BRANCH_SYN0+(port*MAX_BRANCH+branch)*2+phase; }
-+
-+#define V_m y[i_V_m]
-+#define V_d y[i_V_d]
-+#define V_dist y[i_V_dist]
-+#define I_adap y[i_I_adap]
-+#define I_dep y[i_I_dep]
-+#define g(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define g1(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define dVdt dydx[i_V_m]
-+#define dVddt dydx[i_V_d]
-+#define dVdistdt dydx[i_V_dist]
-+#define dI_adapdt dydx[i_I_adap]
-+#define dI_depdt dydx[i_I_dep]
-+#define dgdt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define dg1dt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define P(name) param[i_##name]
-+#define V_th P(V_th)
-+#define E_L P(E_L)
-+#define C_m P(C_m)
-+#define tau_m P(tau_m)
-+#define k_adap P(k_adap)
-+#define k1 P(k1)
-+#define k2 P(k2)
-+#define A1 P(A1)
-+#define A2 P(A2)
-+#define I_e P(I_e)
-+#define V_peak P(V_peak)
-+#define V_reset P(V_reset)
-+#define t_ref P(t_ref)
-+#define dend_C_frac P(dend_C_frac)
-+#define dend_leak_scale P(dend_leak_scale)
-+#define g_c P(g_c)
-+#define dist_C_frac P(dist_C_frac)
-+#define dist_leak_scale P(dist_leak_scale)
-+#define g_c_dist P(g_c_dist)
-+#define refractory_step P(refractory_step)
-+#define den_delay P(den_delay)
-+#define E_Na P(E_Na)
-+#define Vm_half P(Vm_half)
-+#define km P(km)
-+#define Vh_half P(Vh_half)
-+#define kh P(kh)
-+#define tau_h P(tau_h)
-+#define E_K P(E_K)
-+#define Vn_half P(Vn_half)
-+#define kn P(kn)
-+#define tau_n P(tau_n)
-+#define N_b P(N_b)
-+#define E_rev(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_E_rev]
-+#define tau_rise(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_rise]
-+#define tau_decay(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_decay]
-+#define g0(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_g0]
-+#define compartment(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_compartment]
-+#define h_min_rel_ group_param_[i_h_min_rel]
-+#define h0_rel_ group_param_[i_h0_rel]
-+
-+__device__ inline float LogisticUp(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,-(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+__device__ inline float LogisticDown(float v,float half,float slope)
-+{ float z=fminf(80.0f,fmaxf(-80.0f,(v-half)/slope)); return 1.0f/(1.0f+expf(z)); }
-+
-+template<int NVAR,int NPARAM>
-+__device__ void Derivatives(double,float* y,float* dydx,float* param,user_m6_rk5)
-+{
-+  enum { n_port=(NVAR-N_SCAL_VAR)/N_PORT_VAR };
-+  const int nb=max(1,min(MAX_BRANCH,(int)roundf(N_b)));
-+  const float V=refractory_step>0.0f?V_reset:fminf(V_m,V_peak);
-+  float Is=0.0f, domain_current[2]={0.0f,0.0f};
-+  float syn[2][MAX_BRANCH]={{0.0f}};
-+  float branch_drive[2][MAX_BRANCH]={{0.0f}};
-+  for(int i=0;i<MAX_PORT;++i) for(int b=0;b<MAX_BRANCH;++b) {
-+    dydx[BSyn(i,b)]=0.0f; dydx[BSyn(i,b,1)]=0.0f;
-+  }
-+  for(int i=0;i<n_port;++i) {
-+    if(compartment(i)<0.5f) Is+=g(i)*(E_rev(i)-V);
-+    for(int b=0;b<MAX_BRANCH;++b) {
-+      const float bg=y[BSyn(i,b)], bg1=y[BSyn(i,b,1)];
-+      dydx[BSyn(i,b,1)]=-bg1/tau_rise(i);
-+      dydx[BSyn(i,b)]=bg1-bg/tau_decay(i);
-+      if(b<nb && compartment(i)>=0.5f) {
-+        const int domain=compartment(i)<1.5f?0:1;
-+        syn[domain][b]+=bg*(E_rev(i)-y[BState(domain,b)]);
-+        branch_drive[domain][b]+=fabsf(bg);
-+      }
-+    }
-+  }
-+  const float df=fminf(.95f,fmaxf(1.e-6f,dend_C_frac));
-+  const float xf=fminf(.95f,fmaxf(1.e-6f,dist_C_frac));
-+  const float cd=C_m*df, cdist=fmaxf(1.e-6f,cd*xf);
-+  const float cprox=fmaxf(1.e-6f,cd-cdist), cs=fmaxf(1.e-6f,C_m-cd);
-+  for(int domain=0;domain<2;++domain) for(int b=0;b<MAX_BRANCH;++b) {
-+    if(b>=nb) { dydx[BState(domain,b)]=0; dydx[BState(domain,b,1)]=0;
-+      dydx[BState(domain,b,2)]=0; continue; }
-+    if(branch_drive[domain][b]<=0.0f) {
-+      dydx[BState(domain,b)]=0; dydx[BState(domain,b,1)]=0;
-+      dydx[BState(domain,b,2)]=0; continue;
-+    }
-+    const float vb=y[BState(domain,b)], h=y[BState(domain,b,1)], n=y[BState(domain,b,2)];
-+    const float vd=domain==0?V_d:V_dist;
-+    const float cb=domain==0?P(C_b_prox):P(C_b_dist);
-+    const float gl=domain==0?P(g_leak_b_prox):P(g_leak_b_dist);
-+    const float gb=domain==0?P(g_b_prox):P(g_b_dist);
-+    const float gna=domain==0?P(gbar_Na_prox):P(gbar_Na_dist);
-+    const float gkd=domain==0?P(gbar_Kd_prox):P(gbar_Kd_dist);
-+    const float m=LogisticUp(vb,Vm_half,km);
-+    const float ina=gna*m*m*m*h*(E_Na-vb);
-+    const float ik=gkd*n*n*n*n*(E_K-vb);
-+    const float coupling=gb*fmaxf(0.0f,vb-vd);
-+    domain_current[domain]+=coupling;
-+    dydx[BState(domain,b)]=(-gl*(vb-E_L)-coupling+syn[domain][b]+ina+ik)/fmaxf(1.e-6f,cb);
-+    dydx[BState(domain,b,1)]=(LogisticDown(vb,Vh_half,kh)-h)/tau_h;
-+    dydx[BState(domain,b,2)]=(LogisticUp(vb,Vn_half,kn)-n)/tau_n;
-+  }
-+  dVdt=refractory_step>0.0f?0.0f:(-(cs/tau_m)*(V-E_L)+g_c*(V_d-V)-I_adap+I_dep+Is+I_e)/cs;
-+  dVddt=(-(cprox/tau_m)*dend_leak_scale*(V_d-E_L)+g_c*(V-V_d)+g_c_dist*(V_dist-V_d)+domain_current[0])/cprox;
-+  dVdistdt=(-(cdist/tau_m)*dist_leak_scale*(V_dist-E_L)+g_c_dist*(V_d-V_dist)+domain_current[1])/cdist;
-+  dI_adapdt=k_adap*(V-E_L)-k2*I_adap; dI_depdt=-k1*I_dep;
-+  for(int i=0;i<n_port;++i) { dg1dt(i)=-g1(i)/tau_rise(i); dgdt(i)=g1(i)-g(i)/tau_decay(i); }
-+}
-+
-+template<int NVAR,int NPARAM>
-+__device__ void ExternalUpdate(double,float* y,float* param,bool end,user_m6_rk5 data)
-+{
-+  const int nb=max(1,min(MAX_BRANCH,(int)roundf(N_b)));
-+  for(int domain=0;domain<2;++domain) for(int b=0;b<nb;++b) {
-+    y[BState(domain,b,1)]=fminf(1.f,fmaxf(0.f,y[BState(domain,b,1)]));
-+    y[BState(domain,b,2)]=fminf(1.f,fmaxf(0.f,y[BState(domain,b,2)]));
-+  }
-+  if(V_m < -1.e3f || V_d < -1.e3f || V_dist < -1.e3f) {
-+    V_m=V_reset; V_d=E_L; V_dist=E_L; I_adap=0; I_dep=0; return;
-+  }
-+  if(refractory_step>0.0f) { V_m=V_reset; if(end) refractory_step-=1.0f; }
-+  else if(V_m>=V_th) {
-+    const int idx=threadIdx.x+blockIdx.x*blockDim.x;
-+    PushSpike(data.i_node_0_+idx,1.0); V_m=V_reset; I_adap+=A2; I_dep=A1;
-+    refractory_step=(int)round(t_ref/NESTGPUTimeResolution);
-+    if(refractory_step<0.0f) refractory_step=0.0f;
-+  }
-+}
-+}
-+
-+template<> int user_m6::UpdateNR<0>(long long,double);
-+template<int N_PORT> int user_m6::UpdateNR(long long it,double t1)
-+{
-+  if(N_PORT==n_port_) {
-+    const int NV=user_m6_ns::N_SCAL_VAR+user_m6_ns::N_PORT_VAR*N_PORT;
-+    const int NP=user_m6_ns::N_SCAL_PARAM+user_m6_ns::N_PORT_PARAM*N_PORT;
-+    rk5_.Update<NV,NP>(t1,h_min_,rk5_data_struct_);
-+  } else UpdateNR<N_PORT-1>(it,t1);
-+  return 0;
-+}
-+template<int NV,int NP> __device__ void Derivatives(double x,float*y,float*d,float*p,user_m6_rk5 s)
-+{ user_m6_ns::Derivatives<NV,NP>(x,y,d,p,s); }
-+template<int NV,int NP> __device__ void ExternalUpdate(double x,float*y,float*p,bool e,user_m6_rk5 s)
-+{ user_m6_ns::ExternalUpdate<NV,NP>(x,y,p,e,s); }
-+#endif
-diff --git a/src/user_m6_rk5.h b/src/user_m6_rk5.h
-new file mode 100644
-index 0000000..c0f1fa8
---- /dev/null
-+++ b/src/user_m6_rk5.h
-@@ -0,0 +1,10 @@
-+#ifndef USERM6RK5_H
-+#define USERM6RK5_H
-+struct user_m6_rk5;
-+template < int NVAR, int NPARAM >
-+__device__ void Derivatives( double, float*, float*, float*, user_m6_rk5 );
-+template < int NVAR, int NPARAM >
-+__device__ void ExternalUpdate( double, float*, float*, bool, user_m6_rk5 );
-+__device__ void NodeInit( int, int, double, float*, float*, user_m6_rk5 );
-+__device__ void NodeCalibrate( int, int, double, float*, float*, user_m6_rk5 );
-+#endif
-diff --git a/src/user_m7.cu b/src/user_m7.cu
-new file mode 100644
-index 0000000..596bb9b
---- /dev/null
-+++ b/src/user_m7.cu
-@@ -0,0 +1,96 @@
-+#include "rk5.h"
-+#include "user_m7.h"
-+#include "user_m7_kernel.h"
-+#include <cmath>
-+namespace user_m7_ns
-+{
-+__device__ void NodeInit(int n_var,int,double,float*y,float*param,user_m7_rk5)
-+{
-+  const int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR;
-+  V_th=-50.f; E_L=-65.f; C_m=200.f; tau_m=20.f; k_adap=0.f; k1=.1f; k2=.01f;
-+  A1=0.f; A2=0.f; I_e=0.f; V_peak=0.f; V_reset=-65.f; t_ref=2.f;
-+  dend_C_frac=.4f; dend_leak_scale=1.f; g_c=10.f; dist_C_frac=.5f;
-+  dist_leak_scale=1.f; g_c_dist=2.5f; den_delay=0.f;
-+  const float cp[4]={30.788f,30.788f,15.394f,15.394f};
-+  const float cd[4]={28.589f,28.589f,4.398f,4.398f};
-+  const float glp[4]={3.959f,3.959f,1.979f,1.979f};
-+  const float gld[4]={3.676f,3.676f,.566f,.566f};
-+  const float gap[4]={100.f,100.f,30.f,30.f};
-+  const float gad[4]={20.f,20.f,8.f,8.f};
-+  const float nap[4]={3298.670f,3298.670f,1649.335f,1649.335f};
-+  const float nad[4]={3063.056f,3063.056f,471.239f,471.239f};
-+  const float kdp[4]={285.885f,285.885f,142.942f,142.942f};
-+  const float kdd[4]={265.465f,265.465f,40.841f,40.841f};
-+  for(int b=0;b<4;++b) { param[i_C_b_prox_0+b]=cp[b]; param[i_C_b_dist_0+b]=cd[b];
-+    param[i_g_leak_b_prox_0+b]=glp[b]; param[i_g_leak_b_dist_0+b]=gld[b];
-+    param[i_g_ax_b_prox_0+b]=gap[b]; param[i_g_ax_b_dist_0+b]=gad[b];
-+    param[i_gbar_Na_prox_0+b]=nap[b]; param[i_gbar_Na_dist_0+b]=nad[b];
-+    param[i_gbar_Kd_prox_0+b]=kdp[b]; param[i_gbar_Kd_dist_0+b]=kdd[b]; }
-+  E_Na=55.f; Vm_half=-30.f; km=2.5f; Vh_half=-35.f; kh=4.f; tau_h=8.711f;
-+  E_K=-90.f; Vn_half=-26.5556f; kn=7.9568f; tau_n=2.744f;
-+  V_m=E_L; V_d=E_L; V_dist=E_L; I_adap=0.f; I_dep=0.f; refractory_step=0.f;
-+  float h=LogisticDown(E_L,Vh_half,kh), n=LogisticUp(E_L,Vn_half,kn);
-+  for(int d=0;d<2;++d) for(int b=0;b<4;++b) { y[BState(d,b)]=E_L;
-+    y[BState(d,b,1)]=h; y[BState(d,b,2)]=n; }
-+  for(int i=0;i<MAX_PORT;++i) for(int b=0;b<4;++b) { y[BSyn(i,b)]=0.f; y[BSyn(i,b,1)]=0.f; }
-+  for(int i=0;i<n_port;++i) { g(i)=0.f; g1(i)=0.f; E_rev(i)=0.f;
-+    tau_decay(i)=20.f; tau_rise(i)=2.f; compartment(i)=1.f; }
-+}
-+__device__ void NodeCalibrate(int n_var,int,double,float*y,float*param,user_m7_rk5)
-+{
-+  int n_port=(n_var-N_SCAL_VAR)/N_PORT_VAR; refractory_step=0.f;
-+  for(int d=0;d<2;++d) for(int b=0;b<4;++b) {
-+    y[BState(d,b,1)]=fminf(1.f,fmaxf(0.f,y[BState(d,b,1)]));
-+    y[BState(d,b,2)]=fminf(1.f,fmaxf(0.f,y[BState(d,b,2)])); }
-+  for(int i=0;i<n_port;++i) { float d1=tau_decay(i)-tau_rise(i), d2=0.f;
-+    if(d1!=0.f) { float tp=tau_decay(i)*tau_rise(i)*log(tau_decay(i)/tau_rise(i))/d1;
-+      d2=exp(-tp/tau_decay(i))-exp(-tp/tau_rise(i)); }
-+    g0(i)=d2==0.f?M_E/tau_decay(i):(1.f/tau_rise(i)-1.f/tau_decay(i))/d2; }
-+}
-+}
-+__device__ void NodeInit(int nv,int np,double x,float*y,float*p,user_m7_rk5 d)
-+{ user_m7_ns::NodeInit(nv,np,x,y,p,d); }
-+__device__ void NodeCalibrate(int nv,int np,double x,float*y,float*p,user_m7_rk5 d)
-+{ user_m7_ns::NodeCalibrate(nv,np,x,y,p,d); }
-+using namespace user_m7_ns;
-+int user_m7::Init(int i0,int nn,int np,int ig)
-+{
-+  BaseNeuron::Init(i0,nn,np,ig); node_type_=i_user_m7_model;
-+  n_scal_var_=N_SCAL_VAR; n_port_var_=N_PORT_VAR; n_scal_param_=N_SCAL_PARAM;
-+  n_port_param_=N_PORT_PARAM; n_group_param_=N_GROUP_PARAM;
-+  n_var_=n_scal_var_+n_port_var_*np; n_param_=n_scal_param_+n_port_param_*np;
-+  group_param_=new float[N_GROUP_PARAM]; scal_var_name_storage_=new std::string[N_SCAL_VAR];
-+  scal_param_name_storage_=new std::string[N_SCAL_PARAM];
-+  const char* legacy_v[5]={"V_m","V_d","V_dist","I_adap","I_dep"};
-+  for(int i=0;i<5;++i) scal_var_name_storage_[i]=legacy_v[i];
-+  for(int d=0;d<2;++d) for(int b=0;b<4;++b) { std::string s=(d==0?"prox_":"dist_")+std::to_string(b);
-+    scal_var_name_storage_[BState(d,b)]="V_b_"+s; scal_var_name_storage_[BState(d,b,1)]="h_Na_"+s;
-+    scal_var_name_storage_[BState(d,b,2)]="n_Kd_"+s; }
-+  for(int p=0;p<20;++p) for(int b=0;b<4;++b) { std::string s=std::to_string(p)+"_"+std::to_string(b);
-+    scal_var_name_storage_[BSyn(p,b)]="branch_g_"+s; scal_var_name_storage_[BSyn(p,b,1)]="branch_g1_"+s; }
-+  const char* legacy_p[21]={"V_th","E_L","C_m","tau_m","k_adap","k1","k2","A1","A2","I_e",
-+    "V_peak","V_reset","t_ref","dend_C_frac","dend_leak_scale","g_c","dist_C_frac",
-+    "dist_leak_scale","g_c_dist","refractory_step","den_delay"};
-+  for(int i=0;i<21;++i) scal_param_name_storage_[i]=legacy_p[i];
-+  const char* stems[10]={"C_b_prox","C_b_dist","g_leak_b_prox","g_leak_b_dist","g_ax_b_prox",
-+    "g_ax_b_dist","gbar_Na_prox","gbar_Na_dist","gbar_Kd_prox","gbar_Kd_dist"};
-+  for(int s=0;s<10;++s) for(int b=0;b<4;++b) scal_param_name_storage_[21+s*4+b]=
-+    std::string(stems[s])+"_"+std::to_string(b);
-+  const char* channel[10]={"E_Na","Vm_half","km","Vh_half","kh","tau_h","E_K","Vn_half","kn","tau_n"};
-+  for(int i=0;i<10;++i) scal_param_name_storage_[61+i]=channel[i];
-+  scal_var_name_=scal_var_name_storage_; port_var_name_=user_m7_port_var_name;
-+  scal_param_name_=scal_param_name_storage_; port_param_name_=user_m7_port_param_name;
-+  group_param_name_=user_m7_group_param_name; rk5_data_struct_.i_node_0_=i_node_0_;
-+  SetGroupParam("h_min_rel",1.e-3); SetGroupParam("h0_rel",1.e-2); h_=h0_rel_*.1f;
-+  rk5_.Init(nn,n_var_,n_param_,0.,h_,rk5_data_struct_); var_arr_=rk5_.GetYArr(); param_arr_=rk5_.GetParamArr();
-+  port_weight_arr_=GetParamArr()+n_scal_param_+GetPortParamIdx("g0"); port_weight_arr_step_=n_param_;
-+  port_weight_port_step_=n_port_param_; port_input_arr_=GetVarArr()+n_scal_var_+GetPortVarIdx("g1");
-+  port_input_arr_step_=n_var_; port_input_port_step_=n_port_var_;
-+  branch_port_input_arr_=GetVarArr()+BSyn(0,0,1); branch_port_input_arr_step_=n_var_;
-+  branch_port_input_port_step_=MAX_BRANCH*2; branch_port_input_branch_step_=2;
-+  den_delay_arr_=GetParamArr()+GetScalParamIdx("den_delay"); return 0;
-+}
-+int user_m7::Calibrate(double t,float dt)
-+{ h_min_=h_min_rel_*dt; h_=h0_rel_*dt; rk5_.Calibrate(t,h_,rk5_data_struct_); return 0; }
-+template<> int user_m7::UpdateNR<0>(long long,double){return 0;}
-+int user_m7::Update(long long it,double t){UpdateNR<USER_M7_MAX_PORT_NUM>(it,t);return 0;}
-diff --git a/src/user_m7.h b/src/user_m7.h
-new file mode 100644
-index 0000000..3e0eb09
---- /dev/null
-+++ b/src/user_m7.h
-@@ -0,0 +1,23 @@
-+#ifndef USERM7_H
-+#define USERM7_H
-+#include "base_neuron.h"
-+#include "neuron_models.h"
-+#include "rk5.h"
-+#define USER_M7_MAX_PORT_NUM 20
-+struct user_m7_rk5 { int i_node_0_; };
-+class user_m7 : public BaseNeuron
-+{
-+public:
-+  RungeKutta5< user_m7_rk5 > rk5_;
-+  std::string* scal_var_name_storage_;
-+  std::string* scal_param_name_storage_;
-+  float h_min_, h_;
-+  user_m7_rk5 rk5_data_struct_;
-+  int Init( int, int, int, int );
-+  int Calibrate( double, float );
-+  int Update( long long, double );
-+  int GetX( int i, int n, double* x ) { return rk5_.GetX( i, n, x ); }
-+  int GetY( int v, int i, int n, float* y ) { return rk5_.GetY( v, i, n, y ); }
-+  template < int N_PORT > int UpdateNR( long long, double );
-+};
-+#endif
-diff --git a/src/user_m7_kernel.h b/src/user_m7_kernel.h
-new file mode 100644
-index 0000000..43883c5
---- /dev/null
-+++ b/src/user_m7_kernel.h
-@@ -0,0 +1,178 @@
-+#ifndef USERM7KERNEL_H
-+#define USERM7KERNEL_H
-+#include "node_group.h"
-+#include "spike_buffer.h"
-+#include "user_m7.h"
-+#include <cmath>
-+#include <string>
-+extern __constant__ float NESTGPUTimeResolution;
-+namespace user_m7_ns
-+{
-+enum { MAX_BRANCH=4, MAX_PORT=20, LEGACY_SCAL_VAR=5, BRANCH_STATE0=5,
-+  BRANCH_SYN0=BRANCH_STATE0+2*MAX_BRANCH*3,
-+  N_SCAL_VAR=BRANCH_SYN0+MAX_PORT*MAX_BRANCH*2 };
-+enum ScalVarIndexes { i_V_m=0, i_V_d, i_V_dist, i_I_adap, i_I_dep };
-+enum PortVarIndexes { i_g=0, i_g1, N_PORT_VAR };
-+enum ScalParamIndexes { i_V_th=0, i_E_L, i_C_m, i_tau_m, i_k_adap, i_k1,
-+  i_k2, i_A1, i_A2, i_I_e, i_V_peak, i_V_reset, i_t_ref, i_dend_C_frac,
-+  i_dend_leak_scale, i_g_c, i_dist_C_frac, i_dist_leak_scale, i_g_c_dist,
-+  i_refractory_step, i_den_delay, i_C_b_prox_0, i_C_b_dist_0=25,
-+  i_g_leak_b_prox_0=29, i_g_leak_b_dist_0=33, i_g_ax_b_prox_0=37,
-+  i_g_ax_b_dist_0=41, i_gbar_Na_prox_0=45, i_gbar_Na_dist_0=49,
-+  i_gbar_Kd_prox_0=53, i_gbar_Kd_dist_0=57, i_E_Na=61, i_Vm_half,
-+  i_km, i_Vh_half, i_kh, i_tau_h, i_E_K, i_Vn_half, i_kn, i_tau_n,
-+  N_SCAL_PARAM };
-+enum PortParamIndexes { i_E_rev=0, i_tau_rise, i_tau_decay, i_g0, i_compartment, N_PORT_PARAM };
-+enum GroupParamIndexes { i_h_min_rel=0, i_h0_rel, N_GROUP_PARAM };
-+const std::string user_m7_port_var_name[N_PORT_VAR] = { "g", "g1" };
-+const std::string user_m7_port_param_name[N_PORT_PARAM] =
-+  { "E_rev", "tau_rise", "tau_decay", "g0", "compartment" };
-+const std::string user_m7_group_param_name[N_GROUP_PARAM] = { "h_min_rel", "h0_rel" };
-+__host__ __device__ inline int BState(int domain,int branch,int gate=0)
-+{ return BRANCH_STATE0+(domain*MAX_BRANCH+branch)*3+gate; }
-+__host__ __device__ inline int BSyn(int port,int branch,int phase=0)
-+{ return BRANCH_SYN0+(port*MAX_BRANCH+branch)*2+phase; }
-+#define V_m y[i_V_m]
-+#define V_d y[i_V_d]
-+#define V_dist y[i_V_dist]
-+#define I_adap y[i_I_adap]
-+#define I_dep y[i_I_dep]
-+#define g(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define g1(i) y[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define dVdt dydx[i_V_m]
-+#define dVddt dydx[i_V_d]
-+#define dVdistdt dydx[i_V_dist]
-+#define dI_adapdt dydx[i_I_adap]
-+#define dI_depdt dydx[i_I_dep]
-+#define dgdt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g]
-+#define dg1dt(i) dydx[N_SCAL_VAR+N_PORT_VAR*(i)+i_g1]
-+#define P(name) param[i_##name]
-+#define V_th P(V_th)
-+#define E_L P(E_L)
-+#define C_m P(C_m)
-+#define tau_m P(tau_m)
-+#define k_adap P(k_adap)
-+#define k1 P(k1)
-+#define k2 P(k2)
-+#define A1 P(A1)
-+#define A2 P(A2)
-+#define I_e P(I_e)
-+#define V_peak P(V_peak)
-+#define V_reset P(V_reset)
-+#define t_ref P(t_ref)
-+#define dend_C_frac P(dend_C_frac)
-+#define dend_leak_scale P(dend_leak_scale)
-+#define g_c P(g_c)
-+#define dist_C_frac P(dist_C_frac)
-+#define dist_leak_scale P(dist_leak_scale)
-+#define g_c_dist P(g_c_dist)
-+#define refractory_step P(refractory_step)
-+#define den_delay P(den_delay)
-+#define E_Na P(E_Na)
-+#define Vm_half P(Vm_half)
-+#define km P(km)
-+#define Vh_half P(Vh_half)
-+#define kh P(kh)
-+#define tau_h P(tau_h)
-+#define E_K P(E_K)
-+#define Vn_half P(Vn_half)
-+#define kn P(kn)
-+#define tau_n P(tau_n)
-+#define E_rev(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_E_rev]
-+#define tau_rise(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_rise]
-+#define tau_decay(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_tau_decay]
-+#define g0(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_g0]
-+#define compartment(i) param[N_SCAL_PARAM+N_PORT_PARAM*(i)+i_compartment]
-+#define h_min_rel_ group_param_[i_h_min_rel]
-+#define h0_rel_ group_param_[i_h0_rel]
-+__device__ inline float LogisticUp(float v,float half,float slope)
-+{ float z=fminf(80.f,fmaxf(-80.f,-(v-half)/slope)); return 1.f/(1.f+expf(z)); }
-+__device__ inline float LogisticDown(float v,float half,float slope)
-+{ float z=fminf(80.f,fmaxf(-80.f,(v-half)/slope)); return 1.f/(1.f+expf(z)); }
-+
-+template<int NVAR,int NPARAM>
-+__device__ void Derivatives(double,float* y,float* dydx,float* param,user_m7_rk5)
-+{
-+  enum { n_port=(NVAR-N_SCAL_VAR)/N_PORT_VAR };
-+  const float V=refractory_step>0.f?V_reset:fminf(V_m,V_peak);
-+  float soma_syn=0.f, domain_reaction[2]={0.f,0.f}, syn[2][MAX_BRANCH]={{0.f}};
-+  for(int i=0;i<MAX_PORT;++i) for(int b=0;b<MAX_BRANCH;++b) {
-+    dydx[BSyn(i,b)]=0.f; dydx[BSyn(i,b,1)]=0.f;
-+  }
-+  for(int i=0;i<n_port;++i) {
-+    if(compartment(i)<.5f) soma_syn+=g(i)*(E_rev(i)-V);
-+    for(int b=0;b<MAX_BRANCH;++b) {
-+      float bg=y[BSyn(i,b)], bg1=y[BSyn(i,b,1)];
-+      dydx[BSyn(i,b,1)]=-bg1/tau_rise(i);
-+      dydx[BSyn(i,b)]=bg1-bg/tau_decay(i);
-+      if(compartment(i)>=.5f) {
-+        int d=compartment(i)<1.5f?0:1;
-+        syn[d][b]+=bg*(E_rev(i)-y[BState(d,b)]);
-+      }
-+    }
-+  }
-+  const float df=fminf(.95f,fmaxf(1.e-6f,dend_C_frac));
-+  const float xf=fminf(.95f,fmaxf(1.e-6f,dist_C_frac));
-+  const float cd=C_m*df, cdist=fmaxf(1.e-6f,cd*xf);
-+  const float cprox=fmaxf(1.e-6f,cd-cdist), cs=fmaxf(1.e-6f,C_m-cd);
-+  for(int d=0;d<2;++d) for(int b=0;b<MAX_BRANCH;++b) {
-+    float vb=y[BState(d,b)], h=y[BState(d,b,1)], n=y[BState(d,b,2)];
-+    float vd=d==0?V_d:V_dist;
-+    int cb0=d==0?i_C_b_prox_0:i_C_b_dist_0;
-+    int gl0=d==0?i_g_leak_b_prox_0:i_g_leak_b_dist_0;
-+    int ga0=d==0?i_g_ax_b_prox_0:i_g_ax_b_dist_0;
-+    int na0=d==0?i_gbar_Na_prox_0:i_gbar_Na_dist_0;
-+    int kd0=d==0?i_gbar_Kd_prox_0:i_gbar_Kd_dist_0;
-+    float m=LogisticUp(vb,Vm_half,km);
-+    float ina=param[na0+b]*m*m*m*h*(E_Na-vb);
-+    float ik=param[kd0+b]*n*n*n*n*(E_K-vb);
-+    float axial=param[ga0+b]*(vd-vb);
-+    domain_reaction[d]-=axial;
-+    dydx[BState(d,b)]=(-param[gl0+b]*(vb-E_L)+axial+syn[d][b]+ina+ik)
-+      /fmaxf(1.e-6f,param[cb0+b]);
-+    dydx[BState(d,b,1)]=(LogisticDown(vb,Vh_half,kh)-h)/tau_h;
-+    dydx[BState(d,b,2)]=(LogisticUp(vb,Vn_half,kn)-n)/tau_n;
-+  }
-+  dVdt=refractory_step>0.f?0.f:(-(cs/tau_m)*(V-E_L)+g_c*(V_d-V)-I_adap+I_dep+soma_syn+I_e)/cs;
-+  dVddt=(-(cprox/tau_m)*dend_leak_scale*(V_d-E_L)+g_c*(V-V_d)
-+    +g_c_dist*(V_dist-V_d)+domain_reaction[0])/cprox;
-+  dVdistdt=(-(cdist/tau_m)*dist_leak_scale*(V_dist-E_L)+g_c_dist*(V_d-V_dist)
-+    +domain_reaction[1])/cdist;
-+  dI_adapdt=k_adap*(V-E_L)-k2*I_adap; dI_depdt=-k1*I_dep;
-+  for(int i=0;i<n_port;++i) { dg1dt(i)=-g1(i)/tau_rise(i); dgdt(i)=g1(i)-g(i)/tau_decay(i); }
-+}
-+
-+template<int NVAR,int NPARAM>
-+__device__ void ExternalUpdate(double,float* y,float* param,bool end,user_m7_rk5 data)
-+{
-+  for(int d=0;d<2;++d) for(int b=0;b<MAX_BRANCH;++b) {
-+    y[BState(d,b,1)]=fminf(1.f,fmaxf(0.f,y[BState(d,b,1)]));
-+    y[BState(d,b,2)]=fminf(1.f,fmaxf(0.f,y[BState(d,b,2)]));
-+  }
-+  if(V_m < -1.e3f || V_d < -1.e3f || V_dist < -1.e3f) {
-+    V_m=V_reset; V_d=E_L; V_dist=E_L; I_adap=0; I_dep=0; return;
-+  }
-+  if(refractory_step>0.f) { V_m=V_reset; if(end) refractory_step-=1.f; }
-+  else if(V_m>=V_th) {
-+    int idx=threadIdx.x+blockIdx.x*blockDim.x;
-+    PushSpike(data.i_node_0_+idx,1.0); V_m=V_reset; I_adap+=A2; I_dep=A1;
-+    refractory_step=(int)round(t_ref/NESTGPUTimeResolution);
-+    if(refractory_step<0.f) refractory_step=0.f;
-+  }
-+}
-+}
-+template<> int user_m7::UpdateNR<0>(long long,double);
-+template<int N_PORT> int user_m7::UpdateNR(long long it,double t1)
-+{
-+  if(N_PORT==n_port_) {
-+    const int NV=user_m7_ns::N_SCAL_VAR+user_m7_ns::N_PORT_VAR*N_PORT;
-+    const int NP=user_m7_ns::N_SCAL_PARAM+user_m7_ns::N_PORT_PARAM*N_PORT;
-+    rk5_.Update<NV,NP>(t1,h_min_,rk5_data_struct_);
-+  } else UpdateNR<N_PORT-1>(it,t1);
-+  return 0;
-+}
-+template<int NV,int NP> __device__ void Derivatives(double x,float*y,float*d,float*p,user_m7_rk5 s)
-+{ user_m7_ns::Derivatives<NV,NP>(x,y,d,p,s); }
-+template<int NV,int NP> __device__ void ExternalUpdate(double x,float*y,float*p,bool e,user_m7_rk5 s)
-+{ user_m7_ns::ExternalUpdate<NV,NP>(x,y,p,e,s); }
-+#endif
-diff --git a/src/user_m7_rk5.h b/src/user_m7_rk5.h
-new file mode 100644
-index 0000000..b033a1b
---- /dev/null
-+++ b/src/user_m7_rk5.h
-@@ -0,0 +1,8 @@
-+#ifndef USERM7RK5_H
-+#define USERM7RK5_H
-+struct user_m7_rk5;
-+template < int NVAR, int NPARAM > __device__ void Derivatives( double, float*, float*, float*, user_m7_rk5 );
-+template < int NVAR, int NPARAM > __device__ void ExternalUpdate( double, float*, float*, bool, user_m7_rk5 );
-+__device__ void NodeInit( int, int, double, float*, float*, user_m7_rk5 );
-+__device__ void NodeCalibrate( int, int, double, float*, float*, user_m7_rk5 );
-+#endif

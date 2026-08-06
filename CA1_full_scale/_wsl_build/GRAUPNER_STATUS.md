@@ -14,32 +14,49 @@
   burst calcium summation approximate). Slow cubic drift not integrated (no persistent per-synapse
   calcium state — the ABI carries only one float).
 
-## BLOCKER ❌ (engine-level, NOT the graupner code)
-On-device plastic weight updates do **not** reflect in this build. Verified decisively with the
-vendor's OWN official example (`nest-gpu/python/examples/stdp.py`, headless): **0/50 weights
-changed** after a Δt sweep. So this affects the built-in `stdp` model equally — it is a
-NEST-GPU build/plumbing issue in the reverse-spike / weight-update / readback path, not the
-Graupner model.
+## BLOCKER — RESOLVED ✅ (was engine-level, NOT the graupner code)
+On-device plastic weight updates initially did **not** reflect (built-in `stdp` also 0/50).
+Root-caused by sequential source instrumentation and **fixed**.
 
-### Findings (source-traced)
-- The plastic connection IS created correctly: `GetConnectionStatus` shows `syn_group=1`.
-- Neurons spike (n0/n1 ~21 spikes; post driver works).
-- Reverse connections (needed for the post-side plasticity update) are built only if
-  `conn_->getRevConnFlag()` is true (`nestgpu.cu:589` → `revSpikeInit`).
-- `rev_conn_flag_` is set when `(syn_group & syn_mask_) >= 1` (`connect.h:3440, 3598`);
-  `syn_mask_` defaults to 6 bits (mask 63, conn12b) so the condition *should* hold for syn_group=1.
-- Despite that, weights don't change → the failure is deeper: either reverse connections are not
-  actually built/populated for the vanilla `Connect` path in this build, or the plasticity update
-  writes a device array that `GetConnectionStatus`/`GetConnections+GetStatus` does not read back.
-- IMPORTANT gotcha (resolved): `GetConnections` must be called AFTER the first `Simulate`
-  (calibration); calling it before crashes with an illegal-memory-access and poisons the context.
+### Root cause
+This fork defaults the spike-buffer algorithm to **`INPUT_SPIKE_BUFFER_ALGO`**
+(`connect.h:2928`). The STDP reverse-spike machinery is **bypassed** under that algo:
+- reverse-spike processing is gated by `if (getSpikeBufferAlgo() != INPUT_SPIKE_BUFFER_ALGO)`
+  (`nestgpu.cu:935`);
+- `LastRevSpikeTimeIdx` (last post-spike time, needed by BOTH the forward LTD path
+  `get_spike.h:86-95` and the reverse LTP path `rev_spike.h`) is only recorded inside
+  `if (algo != INPUT_SPIKE_BUFFER_ALGO)` (`spike_buffer.cu:127`).
+So `SynapseUpdate` was never called — for any plastic model.
 
-## Next steps to unblock (engine work)
-1. Confirm whether `revSpikeInit` builds >0 reverse connections for a vanilla plastic Connect
-   (instrument `n_rev_conn_`), and whether `revSpikeBufferUpdate`/`SynapseUpdate` actually fire.
-2. Determine where the live plastic weight lives on device and whether the readback path reads it.
-3. Only after built-in `stdp` demonstrably changes weight in this build does a graupner LTP
-   run (single-synapse oracle → full-scale CA3→PC) become measurable.
+### Fix
+`connect.h:2928` → `_setSpikeBufferAlgo(OUTPUT_SPIKE_BUFFER_ALGO)`. Rebuilt.
+
+### Verification (OUTPUT algo)
+- Official `stdp.py` headless: **50/50 weights changed** along the Δt curve. STDP works.
+- graupner single-synapse (neuron→neuron, 60 pairings, single post/pairing): **RESPONDS**,
+  ρ 0.50→0.455 (**LTD** ~-6%) for causal AND anti-causal — this is the DOCUMENTED
+  Wittenberg2006 "LTD-only for single postsynaptic spikes" behaviour (C_post 0.276 < θ_d 1.0);
+  LTP requires doublets/TBS (design Gate 2). Correct model behaviour, not a bug.
+- ca1 GPU pipeline (smoke_180) still runs with OUTPUT algo: 578 spikes (identical to INPUT).
+
+### Diagnostic trail (source-traced, all confirmed)
+- Plastic connection created correctly (`GetConnectionStatus` syn_group=1); neurons spike.
+- Reverse connections ARE built (`revSpikeInit`: n_rev_conn_=50) — not the issue.
+- `SynapseUpdate` was never called (device printf silent) — because of the INPUT algo gate above.
+- gotcha: `GetConnections` must be called AFTER the first `Simulate` (calibration); before it
+  crashes with illegal-memory-access and poisons the CUDA context.
+
+## Open item: OUTPUT algo vs full-scale performance
+OUTPUT algo is now global (`connect.h:2928`). Verified: does NOT break the ca1 pipeline (smoke_180
+identical). STILL TO VERIFY: the full-scale 3-D-Gaussian / zero-copy explicit connect at scale=1.0
+under OUTPUT algo (path/perf). If OUTPUT is slower or incompatible at full scale, expose a runtime
+`SetSpikeBufferAlgo` so plastic runs use OUTPUT and non-plastic runs keep INPUT.
+
+## Next steps
+1. Verify full-scale connect works under OUTPUT algo (short full-scale build/connect test).
+2. Wire graupner into ca1 CA3→Pyramidal only + persist a weight snapshot (design §4).
+3. Validate: single-synapse doublet → LTP crossover (Gate 2) + Python oracle (Gate 1);
+   then full-scale TBS LTP (Gate 3).
 
 ## Test harness (this dir)
 - `step5a_rebuild_graupner.sh` — rebuild + verify CreateSynGroup("graupner").
