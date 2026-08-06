@@ -156,7 +156,10 @@ def main():
         f"  ·  가소성 {'ON(GBPlasticitySyn)' if plastic else 'OFF'}"
         f"{' · γ=0 고정(엄격대조)' if (plastic and freeze_rho) else ''}")
     log(f"[회로] 내부 커넥톰 {'OFF' if no_conn else 'ON'} · 억제 {'OFF' if no_inh else 'ON'} · 배경 SC구동 없음(조용한 슬라이스)")
-    log(f"[수치] dt {dt}ms · 기록 {rec_dt}ms · tstop {tstop}ms" + (f" · 청크 {chunk_ms:.0f}ms" if chunk_ms > 0 else ""))
+    # ltp는 tstop이 아니라 스케줄에서 종료시각이 정해진다 → 헤더에 **실제 프로토콜 길이**를 적는다.
+    t_show = (t_post[-1] + 60.0) if (protocol == "ltp" and t_post) else tstop
+    log(f"[수치] dt {dt}ms · 기록 {rec_dt}ms · 프로토콜 길이 {t_show:.0f}ms"
+        + (f" · 청크 {chunk_ms:.0f}ms → {int(np.ceil(t_show/chunk_ms))}조각" if chunk_ms > 0 else " · 전 시점 저장"))
     log("=" * 78)
 
     # ---- 기하 좌표계 (★층 인식: 실제 MEA는 슬라이스가 평평히 놓임) ----
@@ -347,6 +350,39 @@ def main():
 
     h.celsius = 34.0; h.cvode_active(0); h.dt = dt; pc.set_maxstep(10)
 
+    def solve_fepsp(t_end, nt_fallback=None):
+        """psolve 후 이 rank의 fEPSP(NELEC, nt_actual)를 µV로 반환.
+
+        `--chunk C`(ms)를 주면 t_end까지 C 단위로 끊어 **청크마다 M@I를 계산해 이어붙이고
+        기록 Vector를 비운다** → 막전류 보관 메모리가 청크 크기로 상수 유지된다.
+        전규모(300만 세그)에서 6.6초를 통째로 저장하면 396GB지만 청크 250ms면 15GB.
+        행렬곱을 시간축으로 분할해 이어붙이는 것은 통째 계산과 **수치적으로 동일**하며,
+        `_chunk_verify.py`로 A(시간축)·B(막전류)·C(전극전위) 3항목 동일성을 검증한다.
+        ⚠ 호출 전에 h.finitialize()가 되어 있어야 한다(이 함수는 psolve만 반복 호출).
+        """
+        nt_fb = nt_fallback if nt_fallback else max(int(round(t_end / rec_dt)) + 1, 1)
+
+        def grab():
+            I = np.array([np.asarray(v) for v in vecs]) if vecs else None
+            return (M_rank @ I) * 1e3 if (I is not None and I.size) else None
+
+        if chunk_ms <= 0:
+            pc.psolve(t_end)
+            V = grab()
+            return V if V is not None else np.zeros((NELEC, nt_fb))
+        parts = []; t_next = 0.0; k = 0
+        while t_next < t_end - 1e-9:
+            t_next = min(t_next + chunk_ms, t_end); k += 1
+            pc.psolve(t_next)
+            V = grab()
+            if V is not None:
+                parts.append(V)
+            for v in vecs:                            # ★버퍼 비우고 재사용 = 메모리 상수화
+                v.resize(0)
+            if RANK == 0 and (k % 4 == 0 or t_next >= t_end):
+                log(f"  [청크 {k}] t={t_next:.0f}/{t_end:.0f}ms · 누적 {sum(p.shape[1] for p in parts):,}점")
+        return np.concatenate(parts, axis=1) if parts else np.zeros((NELEC, nt_fb))
+
     def run_once(n_active, times):
         """활성 섬유 n_active개를 times(ms)에 발화 → rank fEPSP(NELEC,nt) 합."""
         for k, ns in enumerate(fibers):
@@ -356,11 +392,10 @@ def main():
             else:
                 ns.number = 0
         spt.resize(0); spg.resize(0)
-        h.finitialize(-70.0); pc.psolve(tstop)
-        I = np.array([np.asarray(v) for v in vecs]) if vecs else None
+        h.finitialize(-70.0)
         # ★기록 길이는 부동소수 반올림으로 nt와 1 어긋날 수 있다 → 0으로 덮지 말고 실제 길이를 쓴다.
         #   (예전 코드는 불일치 시 전체를 0으로 만들어 PPF에서 fEPSP가 사라짐)
-        Ve_local = (M_rank @ I) * 1e3 if (I is not None and I.size) else np.zeros((NELEC, nt))
+        Ve_local = solve_fepsp(tstop, nt)
         if NHOST > 1:
             parts = [np.array(p) for p in pc.py_allgather(Ve_local.tolist())]
             L0 = min(p.shape[1] for p in parts)                # rank 간 길이 통일(최솟값)
@@ -380,6 +415,11 @@ def main():
     def contrib_stats(j, ip):
         """전극 j·시각 ip에서 **세포별 기여**로 유효 세포 수 Neff와 유효반경(90%) 산출.
         Neff=(Σ|c|)²/Σ|c|² (participation ratio) · 전 rank 합산."""
+        if chunk_ms > 0:
+            # ★청크 모드에서는 막전류 버퍼를 비우므로 사후 세포별 기여를 계산할 수 없다.
+            #   0을 실제 측정값으로 오해하지 않도록 명시 경고. (io는 140ms라 청크 불필요)
+            log("[경고] --chunk 모드에서는 전극당 기여(Neff/r90) 계산 불가 → 0으로 저장됨")
+            return 0.0, 0.0, 0
         I = np.array([np.asarray(v) for v in vecs]) if vecs else None
         if I is None or not I.size or ip >= I.shape[1]:
             return 0.0, 0.0, 0
@@ -435,7 +475,7 @@ def main():
                      neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
                      n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
-                     Hh=Hh, nhost=NHOST, det=det)
+                     Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
@@ -466,7 +506,7 @@ def main():
                      neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
                      n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
-                     Hh=Hh, nhost=NHOST, det=det, io_test=na)
+                     Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn, io_test=na)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ltp":
@@ -476,11 +516,11 @@ def main():
         rho0m = float(pc.allreduce(float(np.mean([s.rho for s in rho_syns])) if rho_syns else 0.0, 1)) / max(NHOST, 1)
         h.finitialize(-70.0); spt.resize(0); spg.resize(0)
         t_end = (t_post[-1] if t_post else 1000.0) + 60.0
-        log(f"[LTP 구동] tstop={t_end:.0f}ms 연속 · 가소성시냅스 rank0 {len(rho_syns)}개 · ρ0={rho0m:.3f}")
-        t0 = time.time(); pc.psolve(t_end)
+        log(f"[LTP 구동] tstop={t_end:.0f}ms 연속 · 가소성시냅스 rank0 {len(rho_syns)}개 · ρ0={rho0m:.3f}"
+            + (f" · ★청크 {chunk_ms:.0f}ms 누적" if chunk_ms > 0 else " · 전 시점 저장"))
+        t0 = time.time()
+        Ve_local = solve_fepsp(t_end)
         log(f"[LTP 구동완료] {time.time()-t0:.0f}s")
-        I = np.array([np.asarray(v) for v in vecs]) if vecs else None
-        Ve_local = (M_rank @ I) * 1e3 if (I is not None and I.size) else np.zeros((NELEC, 1))
         if NHOST > 1:
             parts = [np.array(p) for p in pc.py_allgather(Ve_local.tolist())]
             L0 = min(p.shape[1] for p in parts); Ve = np.sum([p[:, :L0] for p in parts], axis=0)
@@ -515,7 +555,7 @@ def main():
                      plastic=plastic, stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over,
                      r_stim=r_stim, N=N, el_layer=el_layer, s_el=s_el,
                      n_sc=n_sc_all, n_syn=n_syn_all, n_sccell=n_sccell_all, sc_class=sc_class,
-                     stim_layer=str(el_layer[stim_elec]), Hh=Hh, nhost=NHOST, det=det, io_test=n_test)
+                     stim_layer=str(el_layer[stim_elec]), Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn, io_test=n_test)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     pc.barrier(); pc.done()
