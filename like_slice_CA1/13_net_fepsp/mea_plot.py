@@ -21,6 +21,10 @@ plt.rcParams["font.family"] = "Malgun Gothic"
 plt.rcParams["axes.unicode_minus"] = False
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(HERE, "figures")
+sys.path.insert(0, HERE)
+# ρ↔전달강도 환산식과 상수(b, ρ*)는 mea_postproc 한 곳에만 둔다. 여기서 다시 적으면
+# mod 파라미터가 바뀌었을 때 그림만 옛 숫자로 남는다.
+from mea_postproc import GB_RHO_STAR, rho_to_weight  # noqa: E402
 tag = sys.argv[1] if len(sys.argv) > 1 else "io"
 D = np.load(os.path.join(FIG, f"_mea_{tag}.npz"), allow_pickle=True)
 kind = str(D["kind"]); N = int(D["N"]); stim_elec = int(D["stim_elec"]); rec_j = int(D["rec_j"])
@@ -127,9 +131,19 @@ elif kind == "ltp":
     # (C) 효능 ρ
     axC = fig.add_subplot(gs[1, 1]); axC.axis("off")
     axC.text(0, 1.0, "(C) 시냅스 효능 ρ (칼슘 가소성)", fontsize=11, fontweight="bold", va="top")
-    lines = [f"가소성 시냅스 : {rn:,} 개", f"ρ0 (유도 전)  : 0.000 (DOWN)",
-             f"ρ 평균(유도 후): {rho_m:.3f}", f"ρ>0.5 (UP)    : {rup:,} 개 ({100*rup/max(rn,1):.1f}%)",
-             f"전달강도 w    : 1 → {1 + rho_m * (5.28145 - 1):.2f} 배",
+    # ρ0 는 파일에서 읽는다. 예전엔 "0.000 (DOWN)"이 **하드코딩**돼 있어서, --rho0 를 주고
+    # 돌린 런도 그림에는 무조건 0으로 찍혔다. 기록이 없는 옛 파일은 '기록없음'으로 구분한다.
+    if "rho0_mean" in D.files:
+        r0 = float(G("rho0_mean")); r0s = f"{r0:.3f} ({'UP' if r0 > GB_RHO_STAR else 'DOWN'})"
+    elif "rho0" in D.files:
+        r0 = float(G("rho0")); r0s = f"{r0:.3f} ({'UP' if r0 > GB_RHO_STAR else 'DOWN'}) · 설정값"
+    else:
+        r0 = float("nan"); r0s = "기록없음 (0-2 이전 파일)"
+    dtxt = f" → Δ {rho_m - r0:+.3f}" if np.isfinite(r0) else ""
+    lines = [f"가소성 시냅스 : {rn:,} 개", f"ρ0 (유도 전)  : {r0s}",
+             f"ρ 평균(유도 후): {rho_m:.3f}{dtxt}",
+             f"ρ>{GB_RHO_STAR} (UP)    : {rup:,} 개 ({100*rup/max(rn,1):.1f}%)",
+             f"전달강도 w    : 1 → {rho_to_weight(rho_m):.2f} 배",
              f"TBS 유발 스파이크: {nspk:,}", "",
              f"fEPSP 변화     : {pct:+.1f}%"]
     for i, s in enumerate(lines):

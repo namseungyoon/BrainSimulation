@@ -34,6 +34,9 @@ import params_table3 as P3
 from synapse_pair import build_synapse
 import lfp_calc as L
 from scipy.spatial import cKDTree
+# ★fEPSP 계량은 mea_postproc 한 곳에만 둔다(NEURON 불필요한 순수 계산 모듈).
+#   여기 사본을 따로 두면 사후 분석과 런 중 계산이 조용히 갈라질 수 있다.
+from mea_postproc import measure_fepsp
 
 pc = h.ParallelContext()
 RANK = int(pc.id()); NHOST = int(pc.nhost())
@@ -48,6 +51,31 @@ SYN_DELAY = 1.0
 SIG_T, SIG_S, SIG_G, N_IMG = 0.3, 1.5, 0.0, 20
 PITCH, R_ON, NCOL, NROW = 200.0, 100.0, 8, 3
 Z_GLASS_MARGIN = 20.0
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ★시냅스 모델 등록표 (0-5) — `--syn_model <이름>` 으로 SC 경로 시냅스를 통째로 교체한다.
+#
+#   목적: 새 가소성 모델을 만들었을 때 **mod 파일 하나 + 여기 한 줄**만 추가하면
+#         똑같은 실험(1~4단계)이 그대로 돌아가게 하는 것. 세포·시드·배선·자극 일정·전극이
+#         모델 간 완전히 동일해야 비교가 성립하므로, 바꾸는 지점을 이 표 하나로 묶는다.
+#
+#   cls   : NEURON mod 클래스 이름. None이면 BBP 표준 경로(build_synapse)를 쓴다
+#   stp   : 단기가소성(Use/Dep/Fac, ~100ms) 유무
+#   ltp   : 장기가소성(칼슘→효능 ρ, ~11.5분) 유무
+#   rho   : 가소성 상태변수 이름("" = 없음). 결과 저장·중간저장이 이 이름으로 값을 읽는다
+#   freeze: '얼리는 법' — 이 파라미터들을 0으로 두면 동역학은 같고 가소성만 멈춘다(엄격 대조군)
+#   init  : 초기 상태값을 넣는 파라미터 이름("" = 없음)
+# ══════════════════════════════════════════════════════════════════════════════
+SYN_MODELS = {
+    "det": dict(cls=None, stp=True, ltp=False, rho="", freeze=(), init="",
+                desc="DetAMPANMDA/DetGABAAB — 단기가소성만 · 기준선(변화는 전부 회로 효과)"),
+    "gb": dict(cls="GBPlasticitySyn", stp=False, ltp=True, rho="rho",
+               freeze=("gamma_p", "gamma_d"), init="rho0",
+               desc="Graupner-Brunel 칼슘 장기가소성만 · 모델 A(현재·기존 결과와 연결)"),
+    "gbstp": dict(cls="GBPlasticityStpSyn", stp=True, ltp=True, rho="rho",
+                  freeze=("gamma_p", "gamma_d"), init="rho0",
+                  desc="단기+장기 병합 · 모델 B(TBS 버스트 내 촉진 포함)"),
+}
 
 
 def log(m):
@@ -68,29 +96,6 @@ def quat_to_R(q):
         [1 - s * (y * y + z * z), s * (x * y - z * w), s * (x * z + y * w)],
         [s * (x * y + z * w), 1 - s * (x * x + z * z), s * (y * z - x * w)],
         [s * (x * z - y * w), s * (y * z + x * w), 1 - s * (x * x + y * y)]])
-
-
-def measure_fepsp(t, v, t0, dur=30.0, pre=5.0):
-    """자극 t0 후 dur창: 음성 fEPSP 진폭 + 초기 slope(µV/ms). 20~80% 하강 선형회귀.
-    기준선 = 자극 전 pre(ms) 구간 평균(단일 샘플보다 안정).
-    (12_lfp/e4a_fepsp.py measure_fepsp 이식·개선)."""
-    m = (t >= t0) & (t < t0 + dur)
-    pm = (t >= t0 - pre) & (t < t0)
-    base = float(v[pm].mean()) if pm.sum() else (float(v[m][0]) if m.sum() else 0.0)
-    tt = t[m]; vv = v[m] - base
-    if len(tt) < 5:
-        return dict(amp=0.0, slope=0.0, tpk=t0)
-    ipk = int(np.argmin(vv)); amp = vv[ipk]; tpk = tt[ipk]
-    if ipk < 2 or amp >= 0:
-        return dict(amp=float(amp), slope=0.0, tpk=float(tpk))
-    lo, hi = 0.2 * amp, 0.8 * amp
-    seg = (vv[:ipk + 1] <= lo) & (vv[:ipk + 1] >= hi)
-    idx = np.where(seg)[0]
-    if len(idx) >= 2:
-        a, b = idx[0], idx[-1]; slope = np.polyfit(tt[a:b + 1], vv[a:b + 1], 1)[0]
-    else:
-        slope = (vv[ipk] - vv[0]) / (tpk - tt[0] + 1e-9)
-    return dict(amp=float(amp), slope=float(slope), tpk=float(tpk))
 
 
 def sr_or_dend(cell, is_pc, rng):
@@ -119,18 +124,54 @@ def main():
     tag = argval("--tag", protocol)
     io_levels = [float(x) for x in argval("--io_levels", "0.05,0.1,0.2,0.35,0.5,0.75,1.0").split(",")]
     ppf_isi = [float(x) for x in argval("--ppf_isi", "10,20,50,100,200").split(",")]
-    plastic = "--plastic" in sys.argv                          # SC를 칼슘 가소성 시냅스(GBPlasticitySyn)로
+    plastic = "--plastic" in sys.argv                          # (구형 별칭) SC를 장기가소성 시냅스로
     freeze_rho = "--freeze_rho" in sys.argv                    # 엄격 대조군: 동일 mod·가소성만 차단(γ_p=γ_d=0)
     io_test = float(argval("--io_test", "0.4"))                # 테스트(약)자극 세기 비율
-    # LTP 스케줄(ms): baseline 약자극 → TBS 강자극(4펄스@100Hz 버스트 × 5회 @5Hz) → 사후 약자극
+    # ★0-5 모델 스위치. `--plastic`만 준 예전 명령줄도 그대로 돌도록 기본값을 맞춘다.
+    syn_model = argval("--syn_model", "gb" if plastic else "det")
+    if syn_model not in SYN_MODELS:
+        raise SystemExit(f"--syn_model 은 {list(SYN_MODELS)} 중 하나여야 합니다 (받은 값: {syn_model})")
+    SM = SYN_MODELS[syn_model]
+    plastic = bool(SM["ltp"])                                  # 이후 코드는 이 하나만 본다
+    rho0_scalar = float(argval("--rho0", "0.0"))               # 실험 시작 시점의 효능 ρ
+    rho_init_f = argval("--rho_init", "")                      # 시냅스별 ρ 주입 파일(.npz) — 4단계 60분 재측정용
+
+    # ── LTP 스케줄(ms) — 0-4: 전부 명령줄 손잡이. 기본값은 예전 하드코딩과 **완전히 동일** ──
+    #   기저선(약자극) n_base회 → TBS(강자극) tbs_n버스트 → 사후(약자극) n_post회
+    #   테스트 간격 200ms의 근거는 PPF가 아니라 **칼슘**이다: 감쇠 τ 48.84ms이므로
+    #   100ms 간격이면 잔류 칼슘 0.129 → 다음 피크 1.129 > 약화 문턱 θ_d=1.0 이 되어
+    #   '재는 자극'이 스스로 LTD를 유발한다. 200ms면 1.017로 겨우 안전하다.
     tbs_n = int(argval("--tbs_bursts", "5"))
-    t_base = [200.0, 400.0, 600.0]
-    tbs0 = 800.0
-    t_tbs = [tbs0 + b * 200.0 + q * 10.0 for b in range(tbs_n) for q in range(4)]
-    t_post = [float(tbs0 + tbs_n * 200.0 + 200.0 + 200.0 * i) for i in range(4)]
+    n_base = int(argval("--n_base", "3"))
+    n_post = int(argval("--n_post", "4"))
+    isi_test = float(argval("--isi_test", "200.0"))            # 테스트 자극 간격
+    tbs_isi = float(argval("--tbs_isi", "200.0"))              # 버스트 간격(Larson 1986: 200ms가 최대 LTP)
+    tbs_np = int(argval("--tbs_pulses", "4"))                  # 버스트 내 펄스 수
+    tbs_dt = float(argval("--tbs_dt", "10.0"))                 # 버스트 내 펄스 간격(10ms = 100Hz)
+    # ★첫 펄스까지의 안정화 시간. 기본값 = isi_test 이므로 **기존 일정과 완전히 동일**하다.
+    #   따로 뺀 이유: 4단계(TBS 없이 테스트 펄스만)에서 200ms를 그냥 버리면 전규모로 3.6h가 날아간다.
+    #   finitialize(-70mV) 직후의 과도응답이 가라앉을 시간이 필요해 0으로는 못 둔다(io는 100ms 사용).
+    t_settle = float(argval("--t_settle", str(isi_test)))
+    t_base = [t_settle + isi_test * i for i in range(n_base)]
+    tbs0 = (t_base[-1] + isi_test) if t_base else isi_test
+    t_tbs = [tbs0 + b * tbs_isi + q * tbs_dt for b in range(tbs_n) for q in range(tbs_np)]
+    t_post = [float(tbs0 + tbs_n * tbs_isi + isi_test + isi_test * i) for i in range(n_post)]
+    # ★프로토콜 종료시각 = 마지막 자극 + 60ms. 사후가 없으면(4단계: 테스트 펄스만) TBS·기저선 순으로 내려간다.
+    #   예전엔 사후가 없으면 무조건 1000ms였는데, 전규모에서 그 차이는 그대로 시간(56.2s/ms)이다.
+    #   헤더 로그와 실제 구동이 **같은 값**을 쓰도록 여기서 한 번만 계산한다.
+    _t_last = t_post[-1] if t_post else (t_tbs[-1] if t_tbs else (t_base[-1] if t_base else 1000.0))
+    t_sched_end = _t_last + 60.0
     no_inh = "--no_inh" in sys.argv
     no_conn = "--no_conn" in sys.argv          # 내부 커넥톰 전체 배선 생략(회로 개입 OFF 조건)
     chunk_ms = float(argval("--chunk", "0"))   # >0이면 시간 청크 누적(막전류 전 시점 저장 회피)
+    ckpt_every = int(argval("--ckpt_every", "4"))   # 토막 N개마다 중간 저장(0=끔). 청크 모드에서만 동작
+
+    # ★일정 길이 검사 — 자극 스케줄이 tstop 밖으로 나가면 측정창이 조용히 잘려 없어진다.
+    #   (io/ppf는 tstop이 종료시각 · ltp는 아래에서 스케줄로부터 t_end를 따로 계산한다)
+    need = {"io": stim_t + 40.0, "ppf": stim_t + max(ppf_isi) + 40.0}.get(protocol, 0.0)
+    if need > tstop:
+        log(f"[경고] 자극 일정이 tstop 밖으로 나갑니다 — 필요 {need:.0f}ms > tstop {tstop:.0f}ms → 자동 연장")
+        tstop = need
 
     # ---- 세포 ----
     c = np.load(CELLS, allow_pickle=True)
@@ -152,14 +193,20 @@ def main():
     log("=" * 78)
     log(f"[구성] 프로토콜 {protocol} · 태그 {tag} · 랭크 {NHOST}")
     log(f"[규모] 세포 {N:,} / 전체 {Ntot:,} ({100*N/Ntot:.1f}%)  ·  이 중 PC {npc_sub:,}")
-    log(f"[방출] {'결정론(det=True, 룰베이스)' if det else '확률(--prob, BBP EMS Random123)'}"
-        f"  ·  가소성 {'ON(GBPlasticitySyn)' if plastic else 'OFF'}"
-        f"{' · γ=0 고정(엄격대조)' if (plastic and freeze_rho) else ''}")
+    # ★방출 모드는 **두 줄**로 적는다 — 내부 커넥톰과 SC 자극 경로가 서로 다른 모델을 쓴다.
+    _det_txt = "결정론(룰베이스)" if det else "확률(--prob, BBP EMS Random123)"
+    log(f"[방출·내부연결] {_det_txt} · mod Det{'' if det else 'Prob'}AMPANMDA/GABAAB")
+    log(f"[방출·SC경로] {_det_txt if SM['cls'] is None else '결정론(선택지 없음)'}"
+        f" · 모델 '{syn_model}' = {SM['desc']}"
+        f" · 단기 {'O' if SM['stp'] else 'X'} / 장기 {'O' if SM['ltp'] else 'X'}"
+        f"{' · γ_p=γ_d=0 고정(엄격 대조군)' if (plastic and freeze_rho) else ''}")
     log(f"[회로] 내부 커넥톰 {'OFF' if no_conn else 'ON'} · 억제 {'OFF' if no_inh else 'ON'} · 배경 SC구동 없음(조용한 슬라이스)")
     # ltp는 tstop이 아니라 스케줄에서 종료시각이 정해진다 → 헤더에 **실제 프로토콜 길이**를 적는다.
-    t_show = (t_post[-1] + 60.0) if (protocol == "ltp" and t_post) else tstop
+    t_show = t_sched_end if protocol == "ltp" else tstop
     log(f"[수치] dt {dt}ms · 기록 {rec_dt}ms · 프로토콜 길이 {t_show:.0f}ms"
-        + (f" · 청크 {chunk_ms:.0f}ms → {int(np.ceil(t_show/chunk_ms))}조각" if chunk_ms > 0 else " · 전 시점 저장"))
+        + (f" · 청크 {chunk_ms:.0f}ms → {int(np.ceil(t_show/chunk_ms))}조각"
+           + (f" · 중간저장 {ckpt_every}조각마다" if ckpt_every > 0 else " · 중간저장 없음")
+           if chunk_ms > 0 else " · 전 시점 저장"))
     log("=" * 78)
 
     # ---- 기하 좌표계 (★층 인식: 실제 MEA는 슬라이스가 평평히 놓임) ----
@@ -281,6 +328,21 @@ def main():
     prm = P3.CLASSES[sc_class]; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
     sc_cells = []                                      # SC를 받은 세포(진단용)
     rho_syns = []                                      # 가소성 시냅스(효능 ρ 추적용)
+    rho_gid = []; rho_k = []                           # ★시냅스 신원 (세포 gid, 그 세포 안 몇 번째)
+
+    # ── 0-4: 시냅스별 ρ 주입(4단계 '60분 뒤 재측정'의 핵심) ──
+    #   ρ는 배열 순서가 아니라 **(gid, 세포 내 순번)** 으로 맞춘다. 랭크마다 시냅스를 만드는
+    #   순서가 달라 배열 인덱스는 재현되지 않지만, 이 두 값은 같은 시드·같은 랭크 수라면 동일하다.
+    rho_map = {}
+    if rho_init_f:
+        _ri = np.load(rho_init_f, allow_pickle=True)
+        if int(_ri.get("nhost", NHOST)) != NHOST:
+            log(f"[경고] --rho_init 파일은 랭크 {int(_ri['nhost'])}개에서 만들어졌는데 지금은 {NHOST}개"
+                f" → 시냅스 배치가 달라 매칭이 깨집니다")
+        rho_map = {(int(a), int(b)): float(r)
+                   for a, b, r in zip(_ri["rho_gid"], _ri["rho_k"], _ri["rho_all"])}
+        log(f"[ρ 주입] {os.path.basename(rho_init_f)} · {len(rho_map):,}개 시냅스 · "
+            f"평균 {np.mean(list(rho_map.values())):.3f}" if rho_map else "[ρ 주입] 비어 있음")
     for g in my:
         cg = cellgeom[g]; is_pc = gtype[g] == "PC"
         # SC 축삭은 밴드를 따라 길게 주행 → 자극전극은 '그 층대(SR 깊이)를 지나는 축삭'을 흥분시키고,
@@ -295,21 +357,26 @@ def main():
         k_syn = min(sc_pc if is_pc else sc_int, len(cand) * 3)   # 후보 세그당 최대 3접촉
         gnS = sc_g_pc if is_pc else sc_g_int
         sc_cells.append(g)
-        for _ in range(k_syn):
+        for kk in range(k_syn):
             seg = cg["geom"]["segs"][cand[scrng.randint(len(cand))]]
-            if plastic:
+            if SM["cls"] is not None:
                 # 칼슘 기반 장기가소성 시냅스(Graupner-Brunel, Wittenberg2006 파라미터=mod 기본값).
-                # ⚠️ 이 mod엔 단기가소성(Use/Dep/Fac)이 없다 → PPF는 안 나옴(모델 한계, 문서화).
-                syn = h.GBPlasticitySyn(seg)
+                # 'gb'는 단기가소성이 없다 → PPF가 안 나옴(모델 한계). 'gbstp'가 그것을 메운다.
+                syn = getattr(h, SM["cls"])(seg)
                 syn.tau_r_AMPA = prm["tau_r_AMPA"]; syn.tau_d_AMPA = prm["tau_d_AMPA"]
-                syn.NMDA_ratio = prm["NMDA_ratio"]; syn.rho0 = float(argval("--rho0", "0.0"))
+                syn.NMDA_ratio = prm["NMDA_ratio"]
+                if SM["stp"]:                      # 병합 mod만: SC 단기가소성 파라미터(⚠️튜닝값)
+                    syn.Use = prm["Use"]; syn.Dep = prm["Dep"]; syn.Fac = prm["Fac"]
+                if SM["init"]:
+                    setattr(syn, SM["init"], rho_map.get((g, kk), rho0_scalar))
                 if freeze_rho:                     # 엄격 대조군: 동일 mod·동일 동역학, 가소성만 차단
-                    syn.gamma_p = 0.0; syn.gamma_d = 0.0
+                    for _p in SM["freeze"]:
+                        setattr(syn, _p, 0.0)
                 # 후시냅스 스파이크 → 칼슘 점프(weight<0 sentinel). 시냅스와 세포가 같은 rank라 로컬 NetCon.
                 s0 = cells[g].soma[0]
                 ncp = h.NetCon(s0(0.5)._ref_v, syn, sec=s0)
                 ncp.threshold = -20.0; ncp.weight[0] = -1.0; ncp.delay = 0.0
-                keeph.append(ncp); rho_syns.append(syn)
+                keeph.append(ncp); rho_syns.append(syn); rho_gid.append(g); rho_k.append(kk)
             else:
                 syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1), deterministic=det)
             nc = h.NetCon(fibers[scrng.randint(n_fiber)], syn); nc.weight[0] = gnS; nc.delay = SYN_DELAY
@@ -348,7 +415,94 @@ def main():
     nt = int(round(tstop / rec_dt)) + 1
     log(f"[4/4 전달행렬] rank세그 {len(rads)} · Hh={Hh:.0f}µm · {time.time()-t0:.0f}s")
 
+    # ══ 0-2 원자료 저장 ══════════════════════════════════════════════════════
+    # 98시간짜리 런을 돌리고 요약 숫자 몇 개만 남기면 다시 돌릴 수밖에 없다.
+    # ① 설정값 전부(cfg) ② 스파이크 시각·gid 전부 ③ 시냅스별 ρ 전부 — 세 가지를 남긴다.
+    # cfg는 모든 프로토콜의 결과 파일에 **같은 이름**으로 들어가므로, 모델·프로토콜을
+    # 바꿔가며 비교할 때 파일 하나만 열어도 조건을 전부 알 수 있다.
+    cfg = dict(
+        protocol=protocol, tag=tag, counts=counts_s, N=N, n_pc=npc_sub, n_tot=Ntot,
+        dt=dt, rec_dt=rec_dt, tstop=tstop, seed=seed, nhost=NHOST, chunk_ms=chunk_ms,
+        syn_model=syn_model, syn_model_desc=SM["desc"], syn_stp=SM["stp"], syn_ltp=SM["ltp"],
+        plastic=plastic, freeze_rho=freeze_rho, rho0=rho0_scalar,
+        rho_init=os.path.basename(rho_init_f), det=det, no_inh=no_inh, no_conn=no_conn,
+        n_fiber=n_fiber, io_test=io_test, n_test=n_test, r_stim=r_stim, stim_t=stim_t,
+        sc_class=sc_class, sc_pc=sc_pc, sc_int=sc_int, sc_g_pc=sc_g_pc, sc_g_int=sc_g_int,
+        tbs_bursts=tbs_n, tbs_isi=tbs_isi, tbs_pulses=tbs_np, tbs_dt=tbs_dt,
+        n_base=n_base, n_post=n_post, isi_test=isi_test,
+        n_sc=n_sc_all, n_syn=n_syn_all, n_sccell=n_sccell_all,
+        stim_elec=stim_elec, stim_layer=str(el_layer[stim_elec]), Hh=Hh,
+    )
+
+    def gather_rho():
+        """전 rank의 시냅스별 ρ + 신원(세포 gid, 그 세포 안 몇 번째)을 모은다.
+
+        반환 형식이 곧 `--rho_init` 입력 형식이다 → 결과 파일을 그대로 재주입할 수 있다.
+        (평균만 남기면 분포를 못 보고, 분포를 못 보면 'ρ>0.5가 몇 개냐'를 판정할 수 없다)
+        """
+        rl = [float(getattr(s, SM["rho"])) for s in rho_syns] if SM["rho"] else []
+        gl = list(rho_gid); kl = list(rho_k)
+        if NHOST > 1:
+            rl = [x for part in pc.py_allgather(rl) for x in part]
+            gl = [x for part in pc.py_allgather(gl) for x in part]
+            kl = [x for part in pc.py_allgather(kl) for x in part]
+        return np.asarray(rl, np.float32), np.asarray(gl, np.int32), np.asarray(kl, np.int32)
+
+    def gather_spikes():
+        """전 rank의 스파이크 (시각 ms, 세포 gid)를 시각순으로. 지금까지는 개수만 남겼다."""
+        st = list(spt); sg = list(spg)
+        if NHOST > 1:
+            st = [x for part in pc.py_allgather(st) for x in part]
+            sg = [x for part in pc.py_allgather(sg) for x in part]
+        st = np.asarray(st, np.float32); sg = np.asarray(sg, np.int32)
+        o = np.argsort(st)
+        return st[o], sg[o]
+
     h.celsius = 34.0; h.cvode_active(0); h.dt = dt; pc.set_maxstep(10)
+    # ★MPI 감시(watchdog) 해제 — 전규모 런이 강제 종료된 **직접 원인**(2026-08-06 확정).
+    #   NEURON은 스파이크 교환 사이의 실제 경과가 pc.timeout()(기본 20.0초)을 넘으면
+    #   `nrn_timeout`을 띄우고 MPI_ABORT한다. 전규모는 교환 주기(=SYN_DELAY 1ms)마다
+    #   실측 56.2초가 걸리므로 기본값으로는 3번째 토막(t=57ms)에서 무조건 죽는다
+    #   (figures/fullscale.log:36425). 느린 것은 정상이므로 감시를 끈다(0=무제한).
+    pc.timeout(0)
+
+    ckpt_path = os.path.join(FIG, f"_mea_{tag}_ckpt.npz")
+
+    def save_ckpt(k, nchunk, t_done, parts):
+        """토막 진행 중 **중간 저장**. 98시간 런이 막판에 죽어도 여기까지는 건진다.
+
+        전 rank의 부분 fEPSP를 합산하고 가소성 상태 ρ를 전부 모아 rank0이 한 파일로 쓴다.
+        (덮어쓰기 — 항상 '가장 멀리 간 시점' 하나만 남긴다)
+        ⚠ 전 rank가 **같은 k에서 함께** 불러야 한다(집합통신). k·nchunk는 모든 rank 동일.
+        """
+        Vl = np.concatenate(parts, axis=1) if parts else np.zeros((NELEC, 0))
+        if NHOST > 1:
+            ps = [np.array(p) for p in pc.py_allgather(Vl.tolist())]
+            L0 = min(p.shape[1] for p in ps)
+            Vg = np.sum([p[:, :L0] for p in ps], axis=0)
+        else:
+            Vg = Vl
+        rho_all, rgid, rk = gather_rho()
+        st, sg = gather_spikes()
+        if RANK != 0:
+            return
+        rmean = float(rho_all.mean()) if rho_all.size else 0.0
+        rup = int((rho_all > 0.5).sum())
+        np.savez(ckpt_path, kind="ckpt", chunk_k=k, chunk_n=nchunk, t_done=t_done,
+                 t=np.arange(Vg.shape[1]) * rec_dt, Ve=Vg.astype(np.float64),
+                 rho_all=rho_all, rho_gid=rgid, rho_k=rk, rho_n=int(rho_all.size),
+                 rho_mean=rmean, rho_up=rup, spike_t=st, spike_gid=sg, nspk=int(st.size),
+                 t_base=np.array(t_base), t_tbs=np.array(t_tbs), t_post=np.array(t_post),
+                 E=E2d, el_layer=el_layer, s_el=s_el, over=over, rec_j=rec_j,
+                 gtype=np.array(gtype), keep=keep, **cfg)
+        log(f"  [중간저장] {os.path.basename(ckpt_path)} · t={t_done:.0f}ms({k}/{nchunk}토막) · "
+            f"ρ평균 {rmean:.3f} · ρ>0.5 {rup:,}/{rho_all.size:,}개 · 스파이크 {st.size:,}")
+
+    # ★전극당 기여(Neff·r90) 요청 상자 — `run_once(..., contrib=(전극, t_lo, t_hi))`가 채우고
+    #   solve_fepsp가 **막전류 버퍼가 살아 있는 동안** 계산해 contrib_res에 남긴다.
+    #   청크 모드는 청크마다 버퍼를 비우므로 사후 계산이 불가능하다 → 그 순간에 재는 수밖에 없다.
+    contrib_req = {}
+    contrib_res = {}
 
     def solve_fepsp(t_end, nt_fallback=None):
         """psolve 후 이 rank의 fEPSP(NELEC, nt_actual)를 µV로 반환.
@@ -383,17 +537,53 @@ def main():
                 out += M_rank[:, i:i + blk.shape[0]] @ blk
             return out * 1e3
 
+        def try_contrib(V, n_prev, t_start, t_stop):
+            """전극당 기여를 **이 버퍼가 살아 있는 지금** 계산한다.
+
+            측정창에 걸치는 청크마다 계산하고 |Ve|가 가장 큰 시점의 값만 남긴다
+            → 창이 청크 경계에 걸쳐도 통째 계산과 같은 시점을 고른다.
+            ⚠ py_allgather·contrib_stats는 집합통신이다. 판정에 rank마다 1 어긋날 수 있는
+              **버퍼 길이를 쓰면 교착**하므로, 전 rank가 동일한 청크 시각과 전역 Ve만 쓴다.
+            """
+            if not contrib_req:
+                return
+            j, t_lo, t_hi = contrib_req["j"], contrib_req["t_lo"], contrib_req["t_hi"]
+            if not (t_stop > t_lo - 1e-9 and t_start < t_hi + 1e-9):
+                return
+            row = V[j].tolist() if V is not None else []
+            if NHOST > 1:
+                rows = pc.py_allgather(row)
+                L = min(len(r) for r in rows)
+                gr = np.sum([np.asarray(r[:L]) for r in rows], axis=0) if L else np.zeros(0)
+            else:
+                gr = np.asarray(row)
+            tt = (n_prev + np.arange(gr.size)) * rec_dt
+            m = (tt >= t_lo) & (tt <= t_hi)
+            if not m.any():
+                return
+            i_loc = int(np.where(m)[0][int(np.argmax(np.abs(gr[m])))])
+            amp = float(abs(gr[i_loc]))
+            if amp <= contrib_res.get("amp", -1.0):      # 전역 Ve 기준 → rank 판정 동일
+                return
+            neff, r90, nz = contrib_stats(j, i_loc)
+            contrib_res.update(neff=neff, r90=r90, nz=nz, amp=amp,
+                               t=float((n_prev + i_loc) * rec_dt))
+
         if chunk_ms <= 0:
             pc.psolve(t_end)
             V = grab()
+            try_contrib(V, 0, 0.0, t_end)
             return V if V is not None else np.zeros((NELEC, nt_fb))
         parts = []; t_next = 0.0; k = 0
         nchunk = int(np.ceil((t_end - 1e-9) / chunk_ms))
         t_c0 = time.time()
         while t_next < t_end - 1e-9:
+            t_start = t_next
             t_next = min(t_next + chunk_ms, t_end); k += 1
             pc.psolve(t_next)
             V = grab()
+            # ★버퍼를 비우기 **전에** 기여를 계산해야 한다(청크 모드에서는 여기가 유일한 기회).
+            try_contrib(V, sum(p.shape[1] for p in parts), t_start, t_next)
             if V is not None:
                 parts.append(V)
             for v in vecs:                            # ★버퍼 비우고 재사용 = 메모리 상수화
@@ -406,10 +596,19 @@ def main():
                 log(f"  [청크 {k}/{nchunk}] t={t_next:.0f}/{t_end:.0f}ms · "
                     f"누적 {sum(p.shape[1] for p in parts):,}점 · "
                     f"경과 {el/60:.1f}분 · 잔여 {eta/60:.0f}분")
+            if ckpt_every > 0 and (k % ckpt_every == 0 or k == nchunk):
+                save_ckpt(k, nchunk, t_next, parts)
         return np.concatenate(parts, axis=1) if parts else np.zeros((NELEC, nt_fb))
 
-    def run_once(n_active, times):
-        """활성 섬유 n_active개를 times(ms)에 발화 → rank fEPSP(NELEC,nt) 합."""
+    def run_once(n_active, times, contrib=None):
+        """활성 섬유 n_active개를 times(ms)에 발화 → rank fEPSP(NELEC,nt) 합.
+
+        contrib=(전극번호, t_lo, t_hi)를 주면 그 창의 |Ve| 최대 시점에서 전극당 기여
+        (Neff·기여세포수·90% 반경)를 재서 `contrib_res`에 남긴다. 청크 모드에서도 동작한다.
+        """
+        contrib_req.clear(); contrib_res.clear()
+        if contrib is not None:
+            contrib_req.update(j=int(contrib[0]), t_lo=float(contrib[1]), t_hi=float(contrib[2]))
         for k, ns in enumerate(fibers):
             if k < n_active:
                 ns.number = len(times); ns.start = times[0]
@@ -438,21 +637,26 @@ def main():
         return Ve, nspk, dep
 
     def contrib_stats(j, ip):
-        """전극 j·시각 ip에서 **세포별 기여**로 유효 세포 수 Neff와 유효반경(90%) 산출.
-        Neff=(Σ|c|)²/Σ|c|² (participation ratio) · 전 rank 합산."""
-        if chunk_ms > 0:
-            # ★청크 모드에서는 막전류 버퍼를 비우므로 사후 세포별 기여를 계산할 수 없다.
-            #   0을 실제 측정값으로 오해하지 않도록 명시 경고. (io는 140ms라 청크 불필요)
-            log("[경고] --chunk 모드에서는 전극당 기여(Neff/r90) 계산 불가 → 0으로 저장됨")
-            return 0.0, 0.0, 0
-        I = np.array([np.asarray(v) for v in vecs]) if vecs else None
-        if I is None or not I.size or ip >= I.shape[1]:
-            return 0.0, 0.0, 0
-        cvals = []; cdist = []
-        for (g, a, b) in cseg:
-            cvals.append(abs(float(M_rank[j, a:b] @ I[a:b, ip])))
-            cdist.append(float(np.linalg.norm(cellgeom[g]["uv"].mean(0) - E2d[j])))
-        cvals = np.array(cvals); cdist = np.array(cdist)
+        """전극 j·시각 ip(**버퍼 안의 국소 인덱스**)에서 세포별 기여로 유효 세포 수 Neff와
+        유효반경(90%)을 낸다. Neff=(Σ|c|)²/Σ|c|² (participation ratio) · 전 rank 합산.
+
+        ★한 시점만 뽑는다. 예전에는 `np.array([np.asarray(v) for v in vecs])` 로 막전류를
+          **통째로 한 벌 더** 만들었는데, 전규모 140ms에서 그 복사본만 10.7 GiB다(가용 12.6 GiB).
+          필요한 건 열 하나뿐이라 열 하나만 뽑으면 1.5 MB로 끝난다.
+
+        ⚠ 아래 allreduce는 **모든 rank가 반드시 통과**해야 한다. rank마다 버퍼 길이가 1 어긋날 수
+          있으므로(기록 반올림), '못 뽑는 rank'는 조기 return 하지 말고 **빈 기여로 참여**시킨다.
+          예전처럼 조기 return 하면 그 rank만 allreduce를 건너뛰어 **교착**한다.
+        """
+        cvals = np.zeros(0); cdist = np.zeros(0)
+        n = int(vecs[0].size()) if vecs else 0
+        if n and 0 <= ip < n:
+            Icol = np.fromiter((v.x[ip] for v in vecs), dtype=float, count=len(vecs))
+            cv = []; cd = []
+            for (g, a, b) in cseg:
+                cv.append(abs(float(M_rank[j, a:b] @ Icol[a:b])))
+                cd.append(float(np.linalg.norm(cellgeom[g]["uv"].mean(0) - E2d[j])))
+            cvals = np.array(cv); cdist = np.array(cd)
         # rank별 (합, 제곱합) 및 거리정렬 기여 → 전역 합산(근사: 반경 히스토그램)
         s1 = float(pc.allreduce(float(cvals.sum()), 1)); s2 = float(pc.allreduce(float((cvals ** 2).sum()), 1))
         nz = int(pc.allreduce(int((cvals > 1e-12).sum()), 1))
@@ -472,18 +676,24 @@ def main():
     rec_j = rec_idx[int(np.argmin([np.linalg.norm(E2d[j] - E2d[stim_elec]) for j in rec_idx]))] if rec_idx else 0
 
     if protocol == "io":
-        rows = []; waves = []
+        rows = []; waves = []; spk_t = []; spk_g = []; spk_lv = []
         log(f"{'세기(섬유)':>10} {'slope(µV/ms)':>13} {'amp(µV)':>9} {'창내최대|Ve|':>12} {'스파이크':>7} {'소마탈분극mV':>12}")
         neff = r90 = 0.0; nz = 0
         for lv in io_levels:
             na = max(1, int(round(lv * n_fiber)))
-            Ve, nspk, dep = run_once(na, [stim_t])
+            # 전극당 기여는 최대 세기에서 한 번만 잰다(측정창 = 자극 후 30ms)
+            Ve, nspk, dep = run_once(na, [stim_t],
+                                     contrib=(rec_j, stim_t, stim_t + 30.0) if lv == io_levels[-1] else None)
+            # ★0-2: 세기별 스파이크 래스터. 1단계 통과 기준 "선택 지점에서 유발 스파이크 0개"를
+            #   개수만이 아니라 **어느 세포가 언제** 쐈는지까지 남겨 사후 재확인할 수 있게 한다.
+            _st, _sg = gather_spikes()
+            spk_t.append(_st); spk_g.append(_sg); spk_lv.append(np.full(_st.size, lv, np.float32))
             tarr = np.arange(Ve.shape[1]) * rec_dt       # 실제 기록 길이에 맞춤(nt와 1 어긋날 수 있음)
             if lv == io_levels[-1]:                      # 최대 세기에서 전극당 기여 세포 수(전 rank 참여)
-                wi = np.where((tarr >= stim_t) & (tarr <= stim_t + 30.0))[0]
-                ipk_g = int(wi[np.argmax(np.abs(Ve[rec_j][wi]))]) if len(wi) else 0
-                neff, r90, nz = contrib_stats(rec_j, ipk_g)
-                log(f"[전극당 기여] 기록전극#{rec_j}: 유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
+                neff = float(contrib_res.get("neff", 0.0)); r90 = float(contrib_res.get("r90", 0.0))
+                nz = int(contrib_res.get("nz", 0))
+                log(f"[전극당 기여] 기록전극#{rec_j} @ t={contrib_res.get('t', float('nan')):.1f}ms: "
+                    f"유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
             if RANK == 0:
                 fe = measure_fepsp(tarr, Ve[rec_j], stim_t, 30.0)
                 w = (tarr >= stim_t) & (tarr <= stim_t + 30.0)
@@ -494,13 +704,16 @@ def main():
         if RANK == 0:
             R = np.array([(r[0], r[1], r[2], r[3], r[4], r[5]) for r in rows], float)
             np.savez(out, kind="io", levels=R[:, 0], nact=R[:, 1], slope=R[:, 2], amp=R[:, 3],
-                     nspk=R[:, 4], pk_abs=R[:, 5], waves=np.array(waves), twin=tarr[(tarr >= stim_t) & (tarr <= stim_t + 30.0)],
-                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N, n_fiber=n_fiber,
-                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx),
-                     neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
-                     n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
+                     nspk=R[:, 4], pk_abs=R[:, 5], waves=np.array(waves),
+                     twin=tarr[(tarr >= stim_t) & (tarr <= stim_t + 30.0)],
+                     spike_t=np.concatenate(spk_t) if spk_t else np.zeros(0, np.float32),
+                     spike_gid=np.concatenate(spk_g) if spk_g else np.zeros(0, np.int32),
+                     spike_lv=np.concatenate(spk_lv) if spk_lv else np.zeros(0, np.float32),
+                     gtype=np.array(gtype), keep=keep,
+                     rec_j=rec_j, E=E2d, over=over, el_layer=el_layer, s_el=s_el,
+                     rec_idx=np.array(rec_idx), neff=neff, r90=r90, n_contrib=nz,
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
-                     Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn)
+                     **cfg)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
@@ -508,13 +721,14 @@ def main():
         na = max(1, int(round(float(argval('--io_test', '0.4')) * n_fiber)))   # 테스트 세기
         log(f"{'ISI(ms)':>8} {'slope1':>9} {'slope2':>9} {'PPR':>6} {'스파이크':>7} {'탈분극mV':>9}")
         for isi in ppf_isi:
-            Ve, nspk, dep = run_once(na, [stim_t, stim_t + isi])
+            Ve, nspk, dep = run_once(na, [stim_t, stim_t + isi],
+                                     contrib=(rec_j, stim_t, stim_t + 30.0) if isi == ppf_isi[0] else None)
             tarr = np.arange(Ve.shape[1]) * rec_dt       # 실제 기록 길이에 맞춤
             if isi == ppf_isi[0]:                        # 첫 ISI에서 전극당 기여 세포 수(전 rank)
-                wi = np.where((tarr >= stim_t) & (tarr <= stim_t + 30.0))[0]
-                ipk_g = int(wi[np.argmax(np.abs(Ve[rec_j][wi]))]) if len(wi) else 0
-                neff, r90, nz = contrib_stats(rec_j, ipk_g)
-                log(f"[전극당 기여] 기록전극#{rec_j}: 유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
+                neff = float(contrib_res.get("neff", 0.0)); r90 = float(contrib_res.get("r90", 0.0))
+                nz = int(contrib_res.get("nz", 0))
+                log(f"[전극당 기여] 기록전극#{rec_j} @ t={contrib_res.get('t', float('nan')):.1f}ms: "
+                    f"유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
             if RANK == 0:
                 waves.append(Ve[:, (tarr >= stim_t - 10) & (tarr <= stim_t + isi + 40)])
                 f1 = measure_fepsp(tarr, Ve[rec_j], stim_t, min(isi, 30.0))
@@ -526,22 +740,24 @@ def main():
             R = np.array(rows, float)
             np.savez(out, kind="ppf", isi=R[:, 0], slope1=R[:, 1], slope2=R[:, 2], ppr=R[:, 3],
                      nspk=R[:, 4], dep=R[:, 5],
-                     stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over, r_stim=r_stim, N=N,
-                     el_layer=el_layer, s_el=s_el, rec_idx=np.array(rec_idx),
-                     neff=neff, r90=r90, n_contrib=nz, n_sc=n_sc_all, n_syn=n_syn_all,
-                     n_sccell=n_sccell_all, sc_class=sc_class, stim_layer=str(el_layer[stim_elec]),
+                     gtype=np.array(gtype), keep=keep,
+                     rec_j=rec_j, E=E2d, over=over, el_layer=el_layer, s_el=s_el,
+                     rec_idx=np.array(rec_idx), neff=neff, r90=r90, n_contrib=nz, n_test_fiber=na,
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
-                     Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn, io_test=na)
+                     **cfg)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ltp":
         # ── 실제 LTP 실험 모사: baseline(약자극) → TBS(강자극 유도) → 사후(약자극), **한 번의 연속 구동** ──
         if not plastic:
-            log("[경고] --plastic 없이 ltp 실행 → 장기가소성 없음(대조군으로만 유효)")
-        rho0m = float(pc.allreduce(float(np.mean([s.rho for s in rho_syns])) if rho_syns else 0.0, 1)) / max(NHOST, 1)
+            log(f"[경고] 장기가소성 없는 모델('{syn_model}')로 ltp 실행 → 대조군으로만 유효")
         h.finitialize(-70.0); spt.resize(0); spg.resize(0)
-        t_end = (t_post[-1] if t_post else 1000.0) + 60.0
-        log(f"[LTP 구동] tstop={t_end:.0f}ms 연속 · 가소성시냅스 rank0 {len(rho_syns)}개 · ρ0={rho0m:.3f}"
+        # ★ρ0는 finitialize **뒤에** 읽어야 한다. mod의 INITIAL 블록이 그때 rho=rho0 를 넣기 때문에,
+        #   전에 읽으면 항상 0으로 보인다(예전 로그의 ρ0=0.000이 늘 0이던 이유 중 하나).
+        rho_init_all, rgid0, rk0 = gather_rho()
+        rho0m = float(rho_init_all.mean()) if rho_init_all.size else 0.0
+        t_end = t_sched_end            # 헤더에 찍은 값과 동일(스케줄에서 한 번만 계산)
+        log(f"[LTP 구동] tstop={t_end:.0f}ms 연속 · 가소성시냅스 전체 {rho_init_all.size:,}개 · ρ0 평균 {rho0m:.3f}"
             + (f" · ★청크 {chunk_ms:.0f}ms 누적" if chunk_ms > 0 else " · 전 시점 저장"))
         t0 = time.time()
         Ve_local = solve_fepsp(t_end)
@@ -552,35 +768,54 @@ def main():
         else:
             Ve = Ve_local
         tarr = np.arange(Ve.shape[1]) * rec_dt
-        nspk = int(pc.allreduce(len(spt), 1))
-        # 효능 ρ: 전 rank 평균·분포
-        rl = [float(s.rho) for s in rho_syns]
-        rsum = float(pc.allreduce(float(np.sum(rl)) if rl else 0.0, 1))
-        rcnt = int(pc.allreduce(len(rl), 1))
-        rup = int(pc.allreduce(int(np.sum(np.array(rl) > 0.5)) if rl else 0, 1))
-        rho_mean = rsum / max(rcnt, 1)
-        log(f"[효능] 가소성 시냅스 {rcnt:,}개 · ρ 평균 {rho_mean:.3f} · ρ>0.5(UP) {rup:,}개({100*rup/max(rcnt,1):.1f}%)")
+        # ★측정창 검사 — 기록이 짧으면 사후 기울기가 조용히 0/NaN이 되어 LTP%가 거짓이 된다.
+        if t_post and tarr.size and (t_post[-1] + 30.0) > tarr[-1] + 1e-6:
+            log(f"[경고] 기록 길이 {tarr[-1]:.0f}ms < 마지막 사후 측정창 끝 {t_post[-1]+30.0:.0f}ms"
+                f" → 사후 기울기가 잘립니다(LTP% 신뢰 불가)")
+        # ★0-2 원자료: 스파이크 시각·gid 전부 · 시냅스별 ρ 전부 · 진단 막전위 파형
+        spike_t, spike_gid = gather_spikes()
+        nspk = int(spike_t.size)
+        rho_all, rgid, rk = gather_rho()
+        rcnt = int(rho_all.size)
+        rho_mean = float(rho_all.mean()) if rcnt else 0.0
+        rup = int((rho_all > 0.5).sum())
+        vmw = np.array([np.asarray(vv) for vv in vm_diag], np.float32) if vm_diag else np.zeros((0, 0), np.float32)
+        log(f"[효능] 가소성 시냅스 {rcnt:,}개 · ρ 평균 {rho_mean:.3f} · ρ>0.5(UP) {rup:,}개({100*rup/max(rcnt,1):.1f}%)"
+            f" · ρ0 평균 {rho0m:.3f} → Δ {rho_mean-rho0m:+.3f}")
         if RANK == 0:
             sb = [measure_fepsp(tarr, Ve[rec_j], tt, 30.0) for tt in t_base]
             sp_ = [measure_fepsp(tarr, Ve[rec_j], tt, 30.0) for tt in t_post]
             b_m = float(np.mean([abs(x["slope"]) for x in sb])) if sb else 0.0
             p_m = float(np.mean([abs(x["slope"]) for x in sp_])) if sp_ else 0.0
-            ltp_pct = 100.0 * (p_m / b_m - 1.0) if b_m > 1e-12 else float("nan")
+            # ★사후가 없으면(4단계: 테스트 펄스만) LTP%는 **정의되지 않는다**. 예전 식이면
+            #   p_m=0 → -100%가 찍혀 "완전 소실"로 오독된다. 4단계는 이 런의 기저선 기울기를
+            #   2단계 기저선과 비교해 60분 뒤 %를 내는 것이므로 여기서는 NaN이 맞다.
+            ltp_pct = (100.0 * (p_m / b_m - 1.0)) if (sp_ and b_m > 1e-12) else float("nan")
             log(f"{'구간':>8} {'slope(µV/ms)':>13}")
             for tt, x in zip(t_base, sb):
                 log(f"{'base '+str(int(tt)):>8} {x['slope']:>13.4f}")
             for tt, x in zip(t_post, sp_):
                 log(f"{'post '+str(int(tt)):>8} {x['slope']:>13.4f}")
             log(f"[LTP] baseline 평균 {b_m:.4f} → 사후 평균 {p_m:.4f} µV/ms · **변화 {ltp_pct:+.1f}%** · 유발 스파이크 {nspk:,}")
-            np.savez(out, kind="ltp", t=tarr, Ve=Ve.astype(np.float32),
+            # ★Ve는 **float64**로 저장한다(2026-08-06 변경). 예전 float32 저장은 기울기
+            #   회귀 결과를 상대오차 ~1e-7 만큼 흔들어, 나중에 분석 코드를 고쳤을 때
+            #   "계산이 바뀐 것인지 저장 정밀도 탓인지" 구분할 수 없게 만들었다.
+            #   전규모라도 24전극 × 15,650점 × 8B = 3.0 MB 뿐이라 비용이 사실상 없다.
+            np.savez(out, kind="ltp", t=tarr, Ve=Ve.astype(np.float64),
                      t_base=np.array(t_base), t_tbs=np.array(t_tbs), t_post=np.array(t_post),
                      slope_base=np.array([x["slope"] for x in sb]),
                      slope_post=np.array([x["slope"] for x in sp_]),
                      ltp_pct=ltp_pct, rho_mean=rho_mean, rho_up=rup, rho_n=rcnt, nspk=nspk,
-                     plastic=plastic, stim_elec=stim_elec, rec_j=rec_j, E=E2d, over=over,
-                     r_stim=r_stim, N=N, el_layer=el_layer, s_el=s_el,
-                     n_sc=n_sc_all, n_syn=n_syn_all, n_sccell=n_sccell_all, sc_class=sc_class,
-                     stim_layer=str(el_layer[stim_elec]), Hh=Hh, nhost=NHOST, det=det, chunk_ms=chunk_ms, no_conn=no_conn, io_test=n_test)
+                     # ── 0-2 원자료 ──
+                     rho_all=rho_all, rho_gid=rgid, rho_k=rk,            # 이 3개가 곧 --rho_init 입력
+                     rho0_all=rho_init_all, rho0_mean=rho0m,
+                     spike_t=spike_t, spike_gid=spike_gid,
+                     vm_diag=vmw, vm_diag_gid=np.array([x for x in sc_cells if gtype[x] == "PC"][:3], np.int32),
+                     gtype=np.array(gtype), keep=keep,
+                     rec_idx=np.array(rec_idx), rec_j=rec_j, E=E2d, over=over, s_el=s_el,
+                     el_layer=el_layer,
+                     s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
+                     **cfg)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     pc.barrier(); pc.done()
