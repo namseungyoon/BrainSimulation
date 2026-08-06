@@ -355,22 +355,41 @@ def main():
 
         `--chunk C`(ms)를 주면 t_end까지 C 단위로 끊어 **청크마다 M@I를 계산해 이어붙이고
         기록 Vector를 비운다** → 막전류 보관 메모리가 청크 크기로 상수 유지된다.
-        전규모(300만 세그)에서 6.6초를 통째로 저장하면 396GB지만 청크 250ms면 15GB.
         행렬곱을 시간축으로 분할해 이어붙이는 것은 통째 계산과 **수치적으로 동일**하며,
         `_chunk_verify.py`로 A(시간축)·B(막전류)·C(전극전위) 3항목 동일성을 검증한다.
         ⚠ 호출 전에 h.finitialize()가 되어 있어야 한다(이 함수는 psolve만 반복 호출).
+
+        ★메모리 실측(2026-08-06 전규모): rank당 세그 191,374 × 20랭크 = 3,827,480개.
+          rec_dt 0.4ms → 2.5샘플/ms × 8B = **76.5 MB / 시뮬레이션 1ms**(전 랭크 합).
+          tstop 2,260ms를 통째로 저장하면 173GB → WSL 82GB 초과. 청크 250ms도 19.1GB인데
+          거기에 예전 `grab()`이 `np.array([...])`로 **같은 크기 복사본을 하나 더** 만들어
+          38.2GB를 요구했다(가용 12.9GB) → 반드시 OOM. 그래서 아래 두 가지를 고쳤다:
+            (1) 세그먼트 블록 단위 누적 → 복사본이 블록 크기(수십 MB)로 줄어 **피크 2배 → 1배**
+            (2) 청크 기본값을 작게 쓰기(전규모 권장 `--chunk 25` = 1.9GB)
         """
         nt_fb = nt_fallback if nt_fallback else max(int(round(t_end / rec_dt)) + 1, 1)
+        SEG_BLK = 8192      # 블록당 8192세그 × 청크길이 → 복사본 수십 MB로 억제
 
         def grab():
-            I = np.array([np.asarray(v) for v in vecs]) if vecs else None
-            return (M_rank @ I) * 1e3 if (I is not None and I.size) else None
+            """M_rank @ I 를 세그먼트 블록으로 나눠 누적. 전체 I를 한 번에 스택하지 않는다."""
+            if not vecs:
+                return None
+            n = int(vecs[0].size())
+            if n == 0:
+                return None
+            out = np.zeros((NELEC, n))
+            for i in range(0, len(vecs), SEG_BLK):
+                blk = np.array([np.asarray(v) for v in vecs[i:i + SEG_BLK]])
+                out += M_rank[:, i:i + blk.shape[0]] @ blk
+            return out * 1e3
 
         if chunk_ms <= 0:
             pc.psolve(t_end)
             V = grab()
             return V if V is not None else np.zeros((NELEC, nt_fb))
         parts = []; t_next = 0.0; k = 0
+        nchunk = int(np.ceil((t_end - 1e-9) / chunk_ms))
+        t_c0 = time.time()
         while t_next < t_end - 1e-9:
             t_next = min(t_next + chunk_ms, t_end); k += 1
             pc.psolve(t_next)
@@ -379,8 +398,14 @@ def main():
                 parts.append(V)
             for v in vecs:                            # ★버퍼 비우고 재사용 = 메모리 상수화
                 v.resize(0)
-            if RANK == 0 and (k % 4 == 0 or t_next >= t_end):
-                log(f"  [청크 {k}] t={t_next:.0f}/{t_end:.0f}ms · 누적 {sum(p.shape[1] for p in parts):,}점")
+            # ★매 청크 기록: 전규모는 1청크가 수십 분이라 4청크마다 찍으면 속도를 늦게 안다.
+            #   경과·잔여를 함께 남겨 첫 청크만 보고도 총 소요를 판단할 수 있게 한다.
+            if RANK == 0:
+                el = time.time() - t_c0
+                eta = el / k * (nchunk - k)
+                log(f"  [청크 {k}/{nchunk}] t={t_next:.0f}/{t_end:.0f}ms · "
+                    f"누적 {sum(p.shape[1] for p in parts):,}점 · "
+                    f"경과 {el/60:.1f}분 · 잔여 {eta/60:.0f}분")
         return np.concatenate(parts, axis=1) if parts else np.zeros((NELEC, nt_fb))
 
     def run_once(n_active, times):

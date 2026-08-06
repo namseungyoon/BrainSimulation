@@ -4,13 +4,19 @@
 검증 질문: **record 중인 Vector에 시뮬레이션 도중 resize(0)을 호출하면 이후 기록이 정상적으로
 이어지는가?** 이어진다면 청크마다 M@I를 계산·누적하고 버퍼를 비워 메모리를 상수로 유지할 수 있다.
 
-판정 기준(셋 다 통과해야 전규모 실행 허용):
+판정 기준(넷 다 통과해야 전규모 실행 허용):
   A. 시간축 동일   — 청크 이어붙인 t == 통째 t (원소별)
   B. 막전류 동일   — 청크 이어붙인 i_membrane_ == 통째 i_membrane_ (원소별, rtol=0)
   C. 전극전위 동일 — (M @ I) 를 청크별로 계산해 이어붙인 것 == 통째 계산 (rtol=1e-12)
+  D. 블록 누적 동일 — M@I 를 **세그먼트 블록으로 쪼개 더한 것** == 한 번에 곱한 것 (rtol=1e-12)
 
 C가 핵심이다. 실제 코드는 청크마다 M@I를 곱해 누적하므로, 행렬곱의 시간축 분할이
 이어붙이기와 같음을 확인한다(분배법칙 — 수학적으로는 자명하지만 부동소수 순서까지 확인).
+
+D는 2026-08-06 추가. 전규모에서 `np.array([asarray(v) for v in vecs])`가 기록버퍼와 **같은
+크기의 복사본**을 만들어 메모리 피크가 2배(38.2GB)가 되는 문제를 없애려고, 실제 코드의
+`grab()`을 세그먼트 블록 단위 누적으로 바꿨다. 블록으로 나눠 더하면 부동소수 덧셈 순서가
+달라지므로 동일성을 여기서 확인한다.
 
 실행: <ca1sim>/python.exe 13_net_fepsp/_chunk_verify.py
      (MPI 불필요 — 단일 랭크로 API 동작만 확인. 랭크별 M@I는 독립이므로 결론이 그대로 적용됨)
@@ -142,6 +148,18 @@ if Ve_chunk.shape == Ve_whole.shape:
 else:
     print(f"❌ C 전극전위 shape 불일치: {Ve_whole.shape} vs {Ve_chunk.shape}")
     ok = False
+
+# ── D. 세그먼트 블록 누적 == 한 번에 곱하기 (mea_experiment.grab() 의 실제 구현) ──
+#    블록 크기를 일부러 작게(3) 잡아 여러 블록으로 갈리게 한다(실제는 8192).
+BLK = 3
+Ve_blk = np.zeros_like(Ve_whole)
+for i in range(0, NSEG, BLK):
+    Ve_blk += (M[:, i:i + BLK] @ I_whole[i:i + BLK]) * 1e3
+dmax = float(np.max(np.abs(Ve_blk - Ve_whole)))
+rel = dmax / max(float(np.max(np.abs(Ve_whole))), 1e-30)
+nblk = int(np.ceil(NSEG / BLK))
+print(f"{'✅' if rel < 1e-12 else '❌'} D 블록누적({nblk}블록): 최대차 {dmax:.3e} (상대 {rel:.3e})")
+ok &= rel < 1e-12
 
 print()
 print("=" * 70)

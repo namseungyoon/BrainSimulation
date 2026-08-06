@@ -83,3 +83,11 @@ like_slice_CA1/11_schaffer/figures/_e3_io.npy
 # WSL CoreNEURON 임시 헬퍼 스크립트(로컬 전용)
 like_slice_CA1/_wsl_*.sh
 like_slice_CA1/_wsl_*.py
+like_slice_CA1/13_net_fepsp/_memprobe.py
+
+# 중간 산출물: figures 하위 언더스코어 데이터(.npz/.npy)와 실행 로그
+# 저장소에는 코드 + 결과 그림(PNG)만 올린다는 규칙에 따름
+like_slice_CA1/*/figures/_*.npz
+like_slice_CA1/*/figures/_*.npy
+like_slice_CA1/*/figures/*.log
+like_slice_CA1/13_net_fepsp/figures/MEA_ppfsmoke*.png
