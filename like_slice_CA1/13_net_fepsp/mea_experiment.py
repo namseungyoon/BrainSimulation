@@ -36,7 +36,7 @@ import lfp_calc as L
 from scipy.spatial import cKDTree
 # ★fEPSP 계량은 mea_postproc 한 곳에만 둔다(NEURON 불필요한 순수 계산 모듈).
 #   여기 사본을 따로 두면 사후 분석과 런 중 계산이 조용히 갈라질 수 있다.
-from mea_postproc import measure_fepsp
+from mea_postproc import measure_fepsp, SLOPE_METHOD
 
 pc = h.ParallelContext()
 RANK = int(pc.id()); NHOST = int(pc.nhost())
@@ -731,13 +731,21 @@ def main():
                 fe = measure_fepsp(tarr, Ve[rec_j], stim_t, 30.0)
                 w = (tarr >= stim_t) & (tarr <= stim_t + 30.0)
                 pk_abs = float(Ve[rec_j][w][np.argmax(np.abs(Ve[rec_j][w]))]) if w.sum() else 0.0
-                rows.append((lv, na, fe["slope"], fe["amp"], nspk, pk_abs))
+                # ★기울기 세 정의를 **모두** 남긴다. 기본은 cross(교차시각·문헌표준)이고
+                #   legacy(옛 표본회귀)·maxd(최대하강)는 진단용이다. 0.4ms 기록에서 legacy가
+                #   무너지는 것을 스모크에서 확인했으므로, 나중에 근거를 다시 볼 수 있어야 한다.
+                rows.append((lv, na, fe["slope"], fe["amp"], nspk, pk_abs,
+                             fe["slope_cross"], fe["slope_legacy"], fe["slope_maxd"],
+                             fe["n_band"], fe["t20"], fe["t80"]))
                 waves.append(Ve[:, w])                     # 진단: 전극별 창내 파형
                 log(f"{na:>10} {fe['slope']:>13.4f} {fe['amp']:>9.4f} {pk_abs:>12.4f} {nspk:>7} {dep:>12.2f}")
         if RANK == 0:
-            R = np.array([(r[0], r[1], r[2], r[3], r[4], r[5]) for r in rows], float)
+            R = np.array(rows, float)
             np.savez(out, kind="io", levels=R[:, 0], nact=R[:, 1], slope=R[:, 2], amp=R[:, 3],
-                     nspk=R[:, 4], pk_abs=R[:, 5], waves=np.array(waves),
+                     nspk=R[:, 4], pk_abs=R[:, 5],
+                     slope_cross=R[:, 6], slope_legacy=R[:, 7], slope_maxd=R[:, 8],
+                     n_band=R[:, 9], t20=R[:, 10], t80=R[:, 11],
+                     slope_method=SLOPE_METHOD, waves=np.array(waves),
                      twin=tarr[(tarr >= stim_t) & (tarr <= stim_t + 30.0)],
                      spike_t=np.concatenate(spk_t) if spk_t else np.zeros(0, np.float32),
                      spike_gid=np.concatenate(spk_g) if spk_g else np.zeros(0, np.int32),
@@ -750,7 +758,7 @@ def main():
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
-        rows = []; waves = []; neff = r90 = 0.0; nz = 0
+        rows = []; waves = []; twins = []; neff = r90 = 0.0; nz = 0
         na = max(1, int(round(float(argval('--io_test', '0.4')) * n_fiber)))   # 테스트 세기
         log(f"{'ISI(ms)':>8} {'slope1':>9} {'slope2':>9} {'PPR':>6} {'스파이크':>7} {'탈분극mV':>9}")
         for isi in ppf_isi:
@@ -763,9 +771,14 @@ def main():
                 log(f"[전극당 기여] 기록전극#{rec_j} @ t={contrib_res.get('t', float('nan')):.1f}ms: "
                     f"유효세포 Neff={neff:.0f} · 기여세포 {nz}개 · 신호90% 반경 {r90:.0f}µm")
             if RANK == 0:
-                waves.append(Ve[:, (tarr >= stim_t - 10) & (tarr <= stim_t + isi + 40)])
+                wm = (tarr >= stim_t - 10) & (tarr <= stim_t + isi + 40)
+                waves.append(Ve[:, wm]); twins.append(tarr[wm])
                 f1 = measure_fepsp(tarr, Ve[rec_j], stim_t, min(isi, 30.0))
-                f2 = measure_fepsp(tarr, Ve[rec_j], stim_t + isi, 30.0)
+                # ★2발째 기준선: 기본 pre=5.0 ms를 쓰면 ISI 10·20 ms에서 기준선 창이
+                #   **1발째 응답 한복판**에 들어앉는다(기준선이 크게 음수 → amp2 과소 →
+                #   PPR 과소). 관례대로 **2발째 자극 순간의 값**을 기준선으로 삼는다(pre=0).
+                #   남는 한계: 1발째의 감쇠가 2발째 상승구간에도 계속 겹친다(감쇠 차감 미구현).
+                f2 = measure_fepsp(tarr, Ve[rec_j], stim_t + isi, 30.0, 0.0)
                 ppr = abs(f2["slope"]) / max(abs(f1["slope"]), 1e-9)
                 rows.append((isi, f1["slope"], f2["slope"], ppr, nspk, dep))
                 log(f"{isi:>8.0f} {f1['slope']:>9.4f} {f2['slope']:>9.4f} {ppr:>6.2f} {nspk:>7} {dep:>9.2f}")
@@ -773,6 +786,11 @@ def main():
             R = np.array(rows, float)
             np.savez(out, kind="ppf", isi=R[:, 0], slope1=R[:, 1], slope2=R[:, 2], ppr=R[:, 3],
                      nspk=R[:, 4], dep=R[:, 5],
+                     # ★원파형을 반드시 남긴다 — 예전 PPF npz는 요약 숫자만 담아
+                     #   기울기 정의를 바꾼 뒤 **다시 잴 방법이 없었다**(런을 다시 돌려야 했다).
+                     #   ISI마다 창 길이가 다르므로 object 배열로 담는다(load 시 allow_pickle=True).
+                     waves=np.array(waves, dtype=object), twin=np.array(twins, dtype=object),
+                     slope_method=SLOPE_METHOD,
                      gtype=np.array(gtype), keep=keep,
                      rec_j=rec_j, E=E2d, over=over, el_layer=el_layer, s_el=s_el,
                      rec_idx=np.array(rec_idx), neff=neff, r90=r90, n_contrib=nz, n_test_fiber=na,

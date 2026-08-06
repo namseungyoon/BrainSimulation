@@ -34,7 +34,9 @@ sys.path.insert(0, SHARED)
 sys.path.insert(0, os.path.join(PAPER, "03_synapses"))
 sys.path.insert(0, os.path.join(PAPER, "04_network"))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(ROOT, "13_net_fepsp"))
 
+from mea_postproc import measure_fepsp as _measure_fepsp, SLOPE_METHOD
 from common.nrn_env import h
 from common.cell_loader import load_cell
 import network_lib as net
@@ -68,27 +70,16 @@ def perp_dir(axis):
 
 
 def measure_fepsp(t, v, t0, dur=30.0):
-    """t0 이후 dur ms 창에서 음성 fEPSP: 음성피크 진폭 + 초기하강 slope(mV/ms).
-    slope = 음성피크까지 20~80% 하강구간 선형회귀."""
-    m = (t >= t0) & (t < t0 + dur)
-    tt = t[m]
-    vv = v[m] - v[m][0]                 # 자극직전 기준 0
-    if len(tt) < 5:
-        return dict(amp=0.0, slope=0.0, tpk=t0)
-    ipk = int(np.argmin(vv))            # 음성피크(가장 음의 값)
-    amp = vv[ipk]                       # 음수 예상
-    tpk = tt[ipk]
-    if ipk < 2 or amp >= 0:
-        return dict(amp=float(amp), slope=0.0, tpk=float(tpk))
-    lo, hi = 0.2 * amp, 0.8 * amp       # amp<0 이므로 lo> hi (음수)
-    seg = (vv[:ipk + 1] <= lo) & (vv[:ipk + 1] >= hi)
-    idx = np.where(seg)[0]
-    if len(idx) >= 2:
-        a, b = idx[0], idx[-1]
-        slope = np.polyfit(tt[a:b + 1], vv[a:b + 1], 1)[0]
-    else:
-        slope = (vv[ipk] - vv[0]) / (tpk - tt[0] + 1e-9)
-    return dict(amp=float(amp), slope=float(slope), tpk=float(tpk))
+    """공용 자(`13_net_fepsp/mea_postproc.measure_fepsp`)를 그대로 쓴다 — 얇은 감싸개.
+
+    ★예전에는 이 파일이 같은 함수를 **따로 복사해** 두고 있었다. 기울기 정의를
+      교차시각 방식으로 바꾼 뒤에도 이 사본만 옛 표본회귀로 남아, E4a의 slope·PPR이
+      MEA 쪽과 다른 자로 재어지고 있었다. 사본을 지우고 한 곳으로 모은다.
+    pre=0.0 — 기준선을 창 첫 표본으로 잡던 옛 동작을 그대로 유지한다(짝펄스 2발째의
+      기준선 창이 1발째 감쇠구간에 걸치는 것을 피하려면 이쪽이 안전하다).
+    단위는 mV(자체 LSA 출력) — 함수는 단위를 가리지 않는다.
+    """
+    return _measure_fepsp(t, v, t0, dur, 0.0)
 
 
 def run_protocol(imem_vecs, tvec, number):
@@ -234,6 +225,9 @@ def main():
              fSR_amp=f_SR["amp"], fSR_slope=f_SR["slope"], fSR_tpk=f_SR["tpk"],
              ppr_slope=ppr_slope, ppr_amp=ppr_amp,
              e1_slope=f1["slope"], e2_slope=f2["slope"], e1_amp=f1["amp"], e2_amp=f2["amp"],
+             slope_method=SLOPE_METHOD,
+             fSR_slope_legacy=f_SR["slope_legacy"], e1_slope_legacy=f1["slope_legacy"],
+             e2_slope_legacy=f2["slope_legacy"], fSR_n_band=f_SR["n_band"],
              cons_ratio=cons_max / max(i_max, 1e-12), tname=str(tname), n_seg=N,
              g_nS=p["g_nS"], n_syn=N_SYN, vpk=vpk, spiked=spiked)
     print(f"[저장] {out}", flush=True)

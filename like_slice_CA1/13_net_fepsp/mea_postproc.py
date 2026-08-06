@@ -42,29 +42,113 @@ GB_W0 = 1.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# fEPSP 파형 계량 — mea_experiment.py 에서 이전(계산 내용 무변경)
+# fEPSP 파형 계량
 # ══════════════════════════════════════════════════════════════════════════════
-def measure_fepsp(t, v, t0, dur=30.0, pre=5.0):
-    """자극 t0 후 dur창: 음성 fEPSP 진폭 + 초기 slope(µV/ms). 20~80% 하강 선형회귀.
+# ★2026-08-06 기울기 정의 교체 — 왜 바꾸는가
+# ------------------------------------------------------------------------------
+# 옛 방식("legacy")은 "피크의 20~80% 구간에 **들어온 표본**으로 선형회귀"였다.
+# 우리 기록 간격은 0.4 ms인데 fEPSP 상승은 ~2 ms라, 그 구간에 표본이 1~2개밖에
+# 안 들어온다. 스모크(500세포·5레벨)에서 실제로 이렇게 무너졌다:
+#     세기  5% 15% 30% → 표본 2개씩 (우연히 동작)
+#     세기 50%          → 표본 **1개** → len(idx)>=2 가 거짓 → 전혀 다른 식(전체 평균)으로
+#                         **조용히** 떨어져 |기울기| 0.821 → 0.204 로 급락
+#     세기 80%          → 집단스파이크의 되튐까지 회귀에 끌려들어와 0.030 으로 붕괴
+# 진폭은 단조 증가(-0.12 → -1.35 µV)인데 기울기만 뒤집혔다 = 물리가 아니라 계량의 고장.
+#
+# 새 방식("cross")은 문헌 표준인 **교차 시각 기반 초기 기울기**다.
+#     기울기 = 0.6 × 진폭 / (t80 − t20),  t20·t80 = 20%·80% 선을 **처음 지나는** 시각(선형보간)
+# 표본 개수에 의존하지 않고, 피크 **이전**만 보므로 집단스파이크의 되튐이 섞이지 않는다.
+# 같은 0.4 ms 자료로 다시 재면 단조가 회복된다: 0.105 → 0.238 → 0.664 → 1.033 → 1.456
+#
+# legacy 는 지워두지 않고 남긴다 — 옛 결과 파일의 저장값을 비트 단위로 재현해
+# "계산을 망가뜨리지 않았다"를 증명해야 하기 때문이다(0단계 통과기준 #1).
+SLOPE_METHOD = "cross"       # 기본. "legacy" 로 바꾸면 옛 표본회귀 방식
+
+
+def _first_cross(tt, vv, level, ipk):
+    """0에서 출발해 피크(ipk)까지 내려오는 동안 `level`(음수)을 **처음 지나는 시각**.
+
+    표본 사이는 선형보간한다 — 이것이 표본 개수 의존을 없애는 핵심이다.
+    """
+    seg = vv[:ipk + 1]
+    idx = np.where(seg <= level)[0]
+    if idx.size == 0:
+        return float(tt[ipk])
+    k = int(idx[0])
+    if k == 0:
+        return float(tt[0])
+    v0, v1 = float(seg[k - 1]), float(seg[k])
+    if v1 == v0:
+        return float(tt[k])
+    f = (level - v0) / (v1 - v0)
+    return float(tt[k - 1] + f * (tt[k] - tt[k - 1]))
+
+
+def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
+    """자극 t0 후 dur창: 음성 fEPSP 진폭 + 초기 기울기(µV/ms).
+
     기준선 = 자극 전 pre(ms) 구간 평균(단일 샘플보다 안정).
-    (12_lfp/e4a_fepsp.py measure_fepsp 이식·개선)."""
+    base 를 주면 그 값을 기준선으로 강제한다 — 실측 자료처럼 **이미 기준선 보정이
+    끝났고**(base=0.0) 자극 아티팩트 때문에 창 앞쪽을 기준선으로 쓸 수 없을 때 필요하다.
+    method: "cross"(기본·교차시각) | "legacy"(옛 표본회귀). None이면 SLOPE_METHOD.
+
+    돌려주는 것 — slope 는 선택된 방식의 값이고, 나머지는 **진단용**으로 항상 함께 낸다:
+        amp    피크 진폭(µV, 음수)          tpk   피크 시각(ms)
+        slope  기울기(µV/ms, 음수)          t20/t80  20%·80% 교차 시각
+        slope_cross / slope_legacy / slope_maxd   세 방식의 값(비교용)
+        n_band 20~80% 띠 안에 실제로 들어온 표본 수 (2 미만이면 legacy가 위험)
+        fb_cross / fb_legacy  그 방식이 성립하지 않아 **대체식으로 넘어갔는지**.
+            True 면 그 값은 정의대로 잰 기울기가 아니다 — 호출부에서 걸러내야 한다.
+    """
+    meth = method or SLOPE_METHOD
     m = (t >= t0) & (t < t0 + dur)
     pm = (t >= t0 - pre) & (t < t0)
-    base = float(v[pm].mean()) if pm.sum() else (float(v[m][0]) if m.sum() else 0.0)
+    if base is None:
+        base = float(v[pm].mean()) if pm.sum() else (float(v[m][0]) if m.sum() else 0.0)
+    base = float(base)
     tt = t[m]; vv = v[m] - base
+    nil = dict(amp=0.0, slope=0.0, tpk=float(t0), t20=float(t0), t80=float(t0),
+               slope_cross=0.0, slope_legacy=0.0, slope_maxd=0.0, n_band=0, dt_legacy=0.0,
+               fb_cross=True, fb_legacy=True)
     if len(tt) < 5:
-        return dict(amp=0.0, slope=0.0, tpk=t0)
-    ipk = int(np.argmin(vv)); amp = vv[ipk]; tpk = tt[ipk]
+        return nil
+    ipk = int(np.argmin(vv)); amp = float(vv[ipk]); tpk = float(tt[ipk])
     if ipk < 2 or amp >= 0:
-        return dict(amp=float(amp), slope=0.0, tpk=float(tpk))
-    lo, hi = 0.2 * amp, 0.8 * amp
-    seg = (vv[:ipk + 1] <= lo) & (vv[:ipk + 1] >= hi)
-    idx = np.where(seg)[0]
+        out = dict(nil); out.update(amp=amp, tpk=tpk, t20=tpk, t80=tpk)
+        return out
+
+    lo, hi = 0.2 * amp, 0.8 * amp          # amp<0 이므로 lo가 0에 가깝고 hi가 더 깊다
+
+    # ① 교차 시각 방식(기본)
+    t20 = _first_cross(tt, vv, lo, ipk)
+    t80 = _first_cross(tt, vv, hi, ipk)
+    dtb = t80 - t20
+    # ★t20==t80 이면(=두 교차가 같은 표본에 몰림) 교차 방식이 성립하지 않는다.
+    #   조용히 다른 식으로 갈아타면 "왜 이 값이 나왔는지" 추적할 수 없으므로
+    #   대체값을 쓰되 **flag를 남긴다**. 호출부는 fb_cross 로 걸러낼 수 있다.
+    fb_cross = not (dtb > 1e-9)
+    s_cross = (amp / (tpk - float(tt[0]) + 1e-9)) if fb_cross else (0.6 * amp / dtb)
+
+    # ② 옛 표본회귀 방식(재현 확인 전용)
+    band = (vv[:ipk + 1] <= lo) & (vv[:ipk + 1] >= hi)
+    idx = np.where(band)[0]
     if len(idx) >= 2:
-        a, b = idx[0], idx[-1]; slope = np.polyfit(tt[a:b + 1], vv[a:b + 1], 1)[0]
+        a, b = int(idx[0]), int(idx[-1])
+        s_leg = float(np.polyfit(tt[a:b + 1], vv[a:b + 1], 1)[0])
+        dt_leg = float(tt[b] - tt[a])          # legacy가 실제로 쓴 시간 폭(허용오차 유도용)
     else:
-        slope = (vv[ipk] - vv[0]) / (tpk - tt[0] + 1e-9)
-    return dict(amp=float(amp), slope=float(slope), tpk=float(tpk))
+        s_leg = float((vv[ipk] - vv[0]) / (tpk - tt[0] + 1e-9))
+        dt_leg = float(tpk - tt[0])
+
+    # ③ 인접 표본 최대 하강 속도(진단용 — 기록 간격이 거친지 보는 잣대)
+    dv = np.diff(vv[:ipk + 1]); dt_ = np.diff(tt[:ipk + 1])
+    s_max = float(np.min(dv / np.where(dt_ == 0, 1e-9, dt_))) if dv.size else 0.0
+
+    slope = {"cross": s_cross, "legacy": s_leg, "maxd": s_max}[meth]
+    return dict(amp=amp, slope=float(slope), tpk=tpk, t20=float(t20), t80=float(t80),
+                slope_cross=float(s_cross), slope_legacy=float(s_leg),
+                slope_maxd=float(s_max), n_band=int(len(idx)), dt_legacy=float(dt_leg),
+                fb_cross=bool(fb_cross), fb_legacy=bool(len(idx) < 2))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -167,7 +251,8 @@ def analyse_all_electrodes(d, dur=30.0, pre=5.0):
                              int(bool(over[j])) if j < len(over) else 1,
                              round(dist, 1), int(j == stim_elec),
                              phase, i + 1, float(tt),
-                             fe["slope"], fe["amp"], fe["tpk"]])
+                             fe["slope"], fe["amp"], fe["tpk"],
+                             fe["slope_cross"], fe["slope_legacy"], fe["n_band"]])
         b = np.abs(np.array(bs)); p = np.abs(np.array(ps))
         bm = float(b.mean()) if b.size else 0.0
         pm = float(p.mean()) if p.size else 0.0
@@ -198,6 +283,7 @@ def phase_of(times, t_base, t_tbs, t_post, dur=30.0):
 
 # ══════════════════════════════════════════════════════════════════════════════
 def main():
+    global SLOPE_METHOD
     ap = argparse.ArgumentParser(description="MEA fEPSP 결과 사후 분석 (CSV 5종)")
     ap.add_argument("--npz", required=True, help="실험군 결과 파일")
     ap.add_argument("--ctrl", default="", help="대조군 결과 파일(--freeze_rho 런) — 차분 계산용")
@@ -205,10 +291,13 @@ def main():
     ap.add_argument("--out", default="", help="CSV 출력 폴더(기본: npz 옆 <tag>_csv)")
     ap.add_argument("--dur", type=float, default=30.0, help="측정창 길이(ms)")
     ap.add_argument("--pre", type=float, default=5.0, help="기준선 구간(ms)")
+    ap.add_argument("--slope_method", default=SLOPE_METHOD, choices=["cross", "legacy", "maxd"],
+                    help="기울기 정의. cross=교차시각(기본·문헌표준) · legacy=옛 표본회귀 · maxd=최대하강")
     ap.add_argument("--verify", action="store_true", help="저장된 요약값을 재계산해 일치 확인")
     ap.add_argument("--rho_export", default="", help="이완시킨 ρ를 --rho_init 형식으로 저장할 경로")
     ap.add_argument("--relax_min", type=float, default=60.0, help="--rho_export 시 이완 시간(분)")
     a = ap.parse_args()
+    SLOPE_METHOD = a.slope_method
 
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -234,13 +323,18 @@ def main():
           f"{' (γ_p=γ_d=0 · 엄격 대조군)' if flag(d,'freeze_rho') == '예' else ''}")
     print(f"[유도] TBS {g(d,'tbs_bursts','?')}버스트 · 기저선 {len(np.atleast_1d(g(d,'t_base',[])))}회 "
           f"· 사후 {len(np.atleast_1d(g(d,'t_post',[])))}회")
+    _mdesc = {"cross": "교차시각 20~80% (문헌 표준·기본)",
+              "legacy": "옛 표본회귀 20~80% (재현 확인 전용)",
+              "maxd": "인접표본 최대하강 (진단용)"}[SLOPE_METHOD]
+    print(f"[기울기 정의] {SLOPE_METHOD} — {_mdesc} · 측정창 {a.dur:.0f}ms · 기준선 {a.pre:.0f}ms")
     print("=" * 78)
 
     # ── ① slopes.csv ─────────────────────────────────────────────────────────
     rows, per_elec = analyse_all_electrodes(d, a.dur, a.pre)
     write_csv(os.path.join(out, "slopes.csv"),
               ["전극", "층", "조직위", "자극전극거리um", "자극전극여부",
-               "구간", "펄스번호", "자극시각ms", "기울기uV_per_ms", "진폭uV", "피크시각ms"],
+               "구간", "펄스번호", "자극시각ms", "기울기uV_per_ms", "진폭uV", "피크시각ms",
+               "기울기_교차시각", "기울기_옛표본회귀", "띠표본수"],
               rows)
 
     # ── ② ltp_index.csv (+ 실험군 − 대조군) ──────────────────────────────────
@@ -348,38 +442,80 @@ def main():
         rj = int(g(d, "rec_j", 0))
         Ve_raw = d["Ve"]
         t = np.asarray(d["t"], float); Ve = np.asarray(Ve_raw, float)
-        # ★허용오차의 근거 — 파형 Ve가 float32로 저장돼 있으면 원래 float64로 계산된 기울기를
-        #   **비트 단위로는 재현할 수 없다**(저장하는 순간 정밀도가 깎였기 때문). 그래서
-        #   기준을 float32 반올림 1단위(eps=1.19e-7)로 잡는다. 이보다 크게 어긋나면
-        #   그것은 저장 정밀도가 아니라 **계산이 바뀐 것**이다.
-        #   float64로 저장된 새 파일은 tol이 1e-12이라 사실상 완전 일치를 요구한다.
+        # ★허용오차의 근거 (2026-08-06 재유도) — 파형 Ve가 float32로 저장돼 있으면 원래
+        #   float64로 계산된 기울기를 **비트 단위로는 재현할 수 없다**. 문제는 "얼마나
+        #   어긋나도 괜찮은가"인데, 예전 기준(상대오차 = float32 eps)은 틀렸다.
+        #   기울기는 **두 표본의 차 ÷ 시간간격**이다. 표본 하나가 최대 q = eps·max|v|/2
+        #   만큼 어긋나므로 기울기 오차는 최대 2q/Δt = eps·max|v|/Δt 다. 파형이 크고
+        #   회귀 구간 Δt가 짧을수록 오차가 **증폭**되므로, 상대오차 eps로 재면 멀쩡한
+        #   재현도 실패로 찍힌다(실제로 대조군에서 그렇게 찍혔다).
+        #   → 그래서 **절대 오차 한계를 자료에서 직접 계산**해 쓴다.
+        #   ※ 이 검사는 "저장 정밀도" 문제만 본다. "코드를 고치며 계산이 바뀌지 않았는가"의
+        #      진짜 증명은 _slope_regress_check.py 의 옛 코드 대 새 코드 **비트 단위 전수 대조**다.
         f32 = (Ve_raw.dtype == np.float32)
-        tol = float(np.finfo(np.float32).eps) if f32 else 1e-12
-        print(f"   저장 정밀도 {Ve_raw.dtype} → 허용 상대오차 {tol:.3e}"
-              + ("  (float32 저장의 반올림 1단위. 2026-08-06 이후 파일은 float64)" if f32 else ""))
+        eps32 = float(np.finfo(np.float32).eps)
+        vmax = float(np.abs(Ve[rj]).max())
+
+        def _tol_abs(fe):
+            """이 펄스의 기울기가 float32 저장 때문에 어긋날 수 있는 **절대** 한계(µV/ms)."""
+            if not f32:
+                return 1e-9 * max(abs(fe["slope_legacy"]), 1.0)
+            return eps32 * vmax / max(fe["dt_legacy"], 1e-9)
+        print(f"   저장 정밀도 {Ve_raw.dtype} · 파형 최대 {vmax:.3f}µV → "
+              f"허용 오차 = eps·max|v|/Δt (펄스마다 계산)"
+              + ("  (2026-08-06 이후 파일은 float64)" if f32 else ""))
+        # ★저장된 slope_base/slope_post 가 **어느 정의로 계산됐는지**는 파일마다 다르다.
+        #   - 기울기 정의를 바꾸기 전(2026-08-06 이전) 파일: legacy. `slope_method` 키가 없다.
+        #   - 그 뒤 파일: 파일 안의 `slope_method` 가 알려준다(기본 cross).
+        #   재현 확인은 **저장할 때 쓴 그 정의로** 해야 뜻이 있다 — 그래야 "계산을
+        #   망가뜨리지 않았다"의 증명이 된다. 다른 정의의 값도 나란히 찍어, 정의를 바꿔서
+        #   숫자가 얼마나 달라지는지 숨기지 않고 그대로 보고한다.
+        saved_meth = str(g(d, "slope_method", "legacy"))
+        skey = "slope_" + ("cross" if saved_meth == "cross" else
+                           "maxd" if saved_meth == "maxd" else "legacy")
+        okey = "slope_cross" if skey != "slope_cross" else "slope_legacy"
+        print(f"   저장 당시 기울기 정의 = {saved_meth}"
+              + ("  (파일에 표기 없음 → legacy 로 간주)" if "slope_method" not in d.files else ""))
+        tb = np.atleast_1d(g(d, "t_base", [])); tps = np.atleast_1d(g(d, "t_post", []))
         sb_old = np.atleast_1d(np.asarray(g(d, "slope_base", []), float))
         sp_old = np.atleast_1d(np.asarray(g(d, "slope_post", []), float))
-        sb_new = np.array([measure_fepsp(t, Ve[rj], float(x), a.dur, a.pre)["slope"]
-                           for x in np.atleast_1d(g(d, "t_base", []))])
-        sp_new = np.array([measure_fepsp(t, Ve[rj], float(x), a.dur, a.pre)["slope"]
-                           for x in np.atleast_1d(g(d, "t_post", []))])
+        fb = [measure_fepsp(t, Ve[rj], float(x), a.dur, a.pre) for x in tb]
+        fp = [measure_fepsp(t, Ve[rj], float(x), a.dur, a.pre) for x in tps]
+        sb_new = np.array([f[skey] for f in fb])
+        sp_new = np.array([f[skey] for f in fp])
+        sb_cr = np.array([f[okey] for f in fb])
+        sp_cr = np.array([f[okey] for f in fp])
         ok = True
-        for nm, o, n in (("기저선", sb_old, sb_new), ("사후", sp_old, sp_new)):
+        tol_b, tol_p = [], []
+        for nm, o, n, c, ff, acc in (("기저선", sb_old, sb_new, sb_cr, fb, tol_b),
+                                     ("사후", sp_old, sp_new, sp_cr, fp, tol_p)):
             for i, (x, y) in enumerate(zip(o, n)):
-                rel = abs(x - y) / max(abs(x), 1e-30)
-                same = rel <= tol
+                ta = _tol_abs(ff[i]); acc.append(ta)
+                dev = abs(x - y)
+                same = dev <= ta
                 ok &= same
-                print(f"   {nm}{i+1}: 저장 {x:+.8f}  재계산 {y:+.8f}  "
-                      f"상대차 {rel:.2e}  {'일치' if same else '★불일치'}")
+                print(f"   {nm}{i+1}: 저장 {x:+.8f}  {saved_meth}재계산 {y:+.8f}  "
+                      f"차 {dev:.2e} (한계 {ta:.2e})  {'일치' if same else '★불일치'}"
+                      f"   | {okey[6:]} {c[i]:+.8f} (띠표본 {ff[i]['n_band']}개"
+                      + ("·★대체값" if ff[i]["fb_cross"] or ff[i]["fb_legacy"] else "") + ")")
         bm = float(np.abs(sb_new).mean()); pm = float(np.abs(sp_new).mean())
         pct_new = 100.0 * (pm / bm - 1.0) if bm > 1e-12 else float("nan")
         pct_old = float(g(d, "ltp_pct", float("nan")))
-        rel = abs(pct_new - pct_old) / max(abs(pct_old), 1e-30)
-        same = rel <= tol
+        # LTP%는 두 평균의 **비**다. 비가 1에 가까우면(대조군!) 상대오차가 폭발하므로
+        #   상대가 아니라 **퍼센트포인트 절대 한계**로 잰다. 오차 전파:
+        #   Δ(LTP%) ≈ 100·(사후/기저) · (Δ사후/사후 + Δ기저/기저)
+        eb = float(np.mean(tol_b)) if tol_b else 0.0
+        ep = float(np.mean(tol_p)) if tol_p else 0.0
+        tol_pct = 100.0 * (pm / max(bm, 1e-30)) * (ep / max(pm, 1e-30) + eb / max(bm, 1e-30))
+        dev = abs(pct_new - pct_old)
+        same = dev <= tol_pct
         ok &= same
-        print(f"   LTP%: 저장 {pct_old:+.10f}  재계산 {pct_new:+.10f}  "
-              f"상대차 {rel:.2e}  {'일치' if same else '★불일치'}")
-        print(f"   → 보고용 소수 1자리: 저장 {pct_old:+.1f}%  재계산 {pct_new:+.1f}%")
+        print(f"   LTP%: 저장 {pct_old:+.10f}  {saved_meth}재계산 {pct_new:+.10f}  "
+              f"차 {dev:.2e}%p (한계 {tol_pct:.2e}%p)  {'일치' if same else '★불일치'}")
+        bmc = float(np.abs(sb_cr).mean()); pmc = float(np.abs(sp_cr).mean())
+        pct_cr = 100.0 * (pmc / bmc - 1.0) if bmc > 1e-12 else float("nan")
+        print(f"   → 보고용 소수 1자리: 저장 {pct_old:+.1f}%  {saved_meth} {pct_new:+.1f}%  "
+              f"★{okey[6:]} {pct_cr:+.1f}%")
         print(f"[재현 확인] {'통과 — 계산을 망가뜨리지 않았습니다' if ok else '★실패 — 원인을 찾을 때까지 다음 단계로 가지 않습니다'}")
         if not ok:
             sys.exit(1)
