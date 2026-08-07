@@ -17,6 +17,7 @@ Source: Ecker et al. (2020) §2.1-2.2 (단일세포 모델) + §2.5 (EMS 시냅�
     python SourceCode/01_single_cell/s1_unify_mechanisms.py
 """
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,34 +56,78 @@ def collect_cell_mods():
     return mods
 
 
-def clean_mech_dir():
-    """01_mechanisms 의 기존 mod/빌드산물/dll 제거(깨끗한 재빌드)."""
-    if os.path.isdir(MECH_DIR):
-        for f in os.listdir(MECH_DIR):
-            p = os.path.join(MECH_DIR, f)
-            if os.path.isfile(p) and (f.endswith((".mod", ".c", ".o", ".dll")) or f == "mod_func.c"):
-                os.remove(p)
-            elif os.path.isdir(p) and f in ("x86_64", "arm64"):
-                shutil.rmtree(p, ignore_errors=True)
-    else:
+def clean_build_artifacts():
+    """nrnivmodl 생성물만 지운다(깨끗한 재빌드). **.mod 는 절대 건드리지 않는다.**
+
+    ⚠️ `shared/mechanisms` 는 like-slice 트랙과 **공용 폴더**다. 예전에는 여기서
+    모든 `*.mod` 를 지웠는데, 그러면 저쪽이 작성한 가소성 mod(GBPlasticity*.mod)가
+    사라지고 재컴파일된 nrnmech.dll 에서 해당 POINT_PROCESS 가 **조용히** 빠졌다.
+    `.c/.o/.dll` 과 x86_64/arm64 는 전부 nrnivmodl 이 다시 만들어 주므로 지워도 된다.
+    """
+    if not os.path.isdir(MECH_DIR):
         os.makedirs(MECH_DIR)
+        return
+    for f in os.listdir(MECH_DIR):
+        p = os.path.join(MECH_DIR, f)
+        if os.path.isdir(p):
+            if f in ("x86_64", "arm64"):
+                shutil.rmtree(p, ignore_errors=True)
+        elif f.endswith((".c", ".o", ".dll")):
+            os.remove(p)
+
+
+def _content(path):
+    """줄끝(CRLF/LF) 차이는 무시하고 내용만 비교하기 위한 정규화."""
+    with open(path, "rb") as fh:
+        return fh.read().replace(b"\r\n", b"\n")
+
+
+def install(src, dst):
+    """**없으면 새로 만들고, 이미 있으면 덮어쓰지 않는다.**
+
+    공용 폴더의 mod 는 다른 트랙이 손봤을 수 있다(예: like-slice 의 CoreNEURON
+    포팅 GLOBAL→RANGE, 커밋 ebf5cdd). 원본으로 덮으면 그 작업이 조용히 되돌아가므로,
+    내용이 다르면 **기존 파일을 그대로 두고** 호출자에게 알린다.
+
+    Returns: "new"(새로 복사) | "same"(원본과 동일) | "kept"(로컬 수정 보존)
+    """
+    if not os.path.isfile(dst):
+        shutil.copy2(src, dst)
+        return "new"
+    if _content(src) == _content(dst):
+        return "same"
+    return "kept"
 
 
 def assemble():
     cell_mods = collect_cell_mods()
-    clean_mech_dir()
-    # 1) 세포 채널 mod
-    for fn, src in sorted(cell_mods.items()):
-        shutil.copy2(src, os.path.join(MECH_DIR, fn))
-    # 2) 시냅스/유틸 mod
+    clean_build_artifacts()
+    sources = dict(cell_mods)                       # 파일명 -> 원본 경로
     for name in SYNAPSE_MODS:
         src = os.path.join(SYN_SRC, name + ".mod")
         if not os.path.isfile(src):
             raise FileNotFoundError(f"시냅스 mod 없음: {src}")
-        shutil.copy2(src, os.path.join(MECH_DIR, name + ".mod"))
+        sources[name + ".mod"] = src
+
+    kept = []
+    for fn, src in sorted(sources.items()):
+        if install(src, os.path.join(MECH_DIR, fn)) == "kept":
+            kept.append(fn)
+
+    # 원본 목록에 없는 mod = 다른 트랙 소유(GBPlasticity* 등). 함께 컴파일된다.
+    others = sorted(f for f in os.listdir(MECH_DIR)
+                    if f.endswith(".mod") and f not in sources)
+
     print(f"[assemble] 채널 {len(cell_mods)}개 + 시냅스 {len(SYNAPSE_MODS)}개 "
-          f"= {len(cell_mods)+len(SYNAPSE_MODS)}개 mod → {MECH_DIR}")
-    return sorted(cell_mods), SYNAPSE_MODS
+          f"= {len(sources)}개 mod → {MECH_DIR}")
+    if kept:
+        print(f"[assemble] [주의] 로컬 수정본 유지(원본으로 덮지 않음) {len(kept)}개: "
+              f"{', '.join(kept)}")
+        print("[assemble]    원본을 강제로 쓰려면 해당 파일을 지우고 다시 실행하세요.")
+    if others:
+        print(f"[assemble] 타 트랙 소유 mod {len(others)}개 함께 컴파일: "
+              f"{', '.join(others)}")
+    return sorted(cell_mods), SYNAPSE_MODS, others
 
 
 def compile_mods():
@@ -101,7 +146,16 @@ def compile_mods():
     print("[compile] nrnmech.dll 생성 완료")
 
 
-def verify(cell_mods, synapse_mods):
+_DECL_RE = re.compile(r"^\s*(?:POINT_PROCESS|SUFFIX|ARTIFICIAL_CELL)\s+(\w+)", re.M)
+
+
+def declared_names(mod_file):
+    """mod 파일이 선언하는 POINT_PROCESS/SUFFIX/ARTIFICIAL_CELL 이름."""
+    with open(os.path.join(MECH_DIR, mod_file), encoding="utf-8", errors="replace") as fh:
+        return _DECL_RE.findall(fh.read())
+
+
+def verify(cell_mods, synapse_mods, foreign_mods):
     # 컴파일 후에야 neuron 로드 (auto-load 타이밍 회피)
     sys.path.insert(0, SOURCECODE)
     from common.nrn_env import h, load_project_mechanisms, have_mechanism  # noqa
@@ -112,11 +166,19 @@ def verify(cell_mods, synapse_mods):
     print("[verify] 시냅스:", "OK" if not missing else f"MISSING {missing}")
     if missing:
         raise AssertionError(f"누락 시냅스: {missing}")
-    print(f"[verify] 총 mod 파일 {len(cell_mods)+len(synapse_mods)}개 컴파일·로드 성공")
+    # 타 트랙(like-slice) mod 도 살아남아 컴파일됐는지 확인 — 조용히 깨지는 걸 막는다
+    if foreign_mods:
+        lost = [n for f in foreign_mods for n in declared_names(f) if not have_mechanism(n)]
+        print(f"[verify] 보존 mod {len(foreign_mods)}개:",
+              "OK" if not lost else f"MISSING {lost}")
+        if lost:
+            raise AssertionError(f"보존했어야 할 타 트랙 메커니즘 누락: {lost}")
+    print(f"[verify] 총 mod 파일 {len(cell_mods)+len(synapse_mods)+len(foreign_mods)}개 "
+          f"컴파일·로드 성공")
     print("\n[SUCCESS] 통합 메커니즘 준비 완료 — 세포 로드(s2) 진행 가능.")
 
 
 if __name__ == "__main__":
-    cell, syn = assemble()
+    cell, syn, foreign = assemble()
     compile_mods()
-    verify(cell, syn)
+    verify(cell, syn, foreign)
