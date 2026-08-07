@@ -127,6 +127,13 @@ def main():
     sc_g_pc = float(argval("--sc_g_pc", "1.5")); sc_g_int = float(argval("--sc_g_int", "1.0"))
     n_fiber = int(argval("--n_fiber", "200"))
     r_stim = float(argval("--r_stim", "200"))                 # 자극전극 국소 반경(µm)
+    # ★대표 기록전극. 기본 auto = 자극전극과 **유클리드 거리**가 가장 가까운 기록전극.
+    #   그런데 SC 시냅스는 거리가 아니라 **층좌표 띠**로 배정된다(아래 국소SC 절 참조).
+    #   두 기준이 어긋나면 fEPSP가 아예 없는 전극이 대표가 된다 — 전규모 1단계에서
+    #   실제로 그랬다(#3: 진폭 -7µV·피크 29.6ms = 흐름 꼬리 / 같은 SR층 #18: -2,532µV·3.2ms).
+    #   ※ 24전극 파형은 어차피 전부 저장되므로 이 값은 **실시간 로그와 요약 숫자**만 바꾼다.
+    #     사후 재분석은 mea_io_pick.py --rec / mea_postproc.py 로 전극을 다시 고를 수 있다.
+    rec_elec = argval("--rec_elec", "auto")
     stim_t = float(argval("--stim_t", "20"))
     seed = int(argval("--seed", "1"))
     tag = argval("--tag", protocol)
@@ -465,6 +472,7 @@ def main():
         n_base=n_base, n_post=n_post, isi_test=isi_test,
         n_sc=n_sc_all, n_syn=n_syn_all, n_sccell=n_sccell_all,
         stim_elec=stim_elec, stim_layer=str(el_layer[stim_elec]), Hh=Hh,
+        rec_elec_arg=rec_elec,
     )
 
     def gather_rho():
@@ -707,6 +715,16 @@ def main():
     tarr = np.arange(nt) * rec_dt
     out = os.path.join(FIG, f"_mea_{tag}.npz")
     rec_j = rec_idx[int(np.argmin([np.linalg.norm(E2d[j] - E2d[stim_elec]) for j in rec_idx]))] if rec_idx else 0
+    if rec_elec != "auto":
+        rec_j = int(rec_elec)
+        if not (0 <= rec_j < len(E2d)):
+            raise SystemExit(f"--rec_elec 은 0~{len(E2d)-1} 범위여야 합니다 (받은 값: {rec_elec})")
+        log(f"[대표전극] --rec_elec 지정 → #{rec_j}({el_layer[rec_j]}·층좌표 {s_el[rec_j]:+.0f}µm)"
+            f"{'' if over[rec_j] else ' ★조직 밖!'}")
+    else:
+        log(f"[대표전극] auto(거리 최소) → #{rec_j}({el_layer[rec_j]}·층좌표 {s_el[rec_j]:+.0f}µm) "
+            f"· 층좌표 차 {s_el[rec_j]-s_el[stim_elec]:+.0f}µm"
+            f"{'' if abs(s_el[rec_j]-s_el[stim_elec]) <= r_stim else ' ★SC 층대 밖 — fEPSP가 없을 수 있음'}")
 
     if protocol == "io":
         rows = []; waves = []; spk_t = []; spk_g = []; spk_lv = []

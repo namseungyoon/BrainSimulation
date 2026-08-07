@@ -64,6 +64,22 @@ GB_W0 = 1.0
 # "계산을 망가뜨리지 않았다"를 증명해야 하기 때문이다(0단계 통과기준 #1).
 SLOPE_METHOD = "cross"       # 기본. "legacy" 로 바꾸면 옛 표본회귀 방식
 
+# ★흐름 꼬리 판별 문턱 — 피크가 창의 뒤쪽 (1-EDGE_FRAC) 안에 들어오면 실격 표시.
+# 근거: 전규모 레벨2(섬유 30) 24전극 실측에서 전극이 두 무리로 완전히 갈렸다.
+#   진짜 fEPSP 17개 → 피크 2.4~6.0 ms   /   흐름 꼬리 6개(#0,1,2,3,8,9) → 18.8~29.6 ms
+# 30 ms 창에서 0.6*30 = 18 ms. 두 무리 사이(6.0 ~ 18.8 ms)를 가르므로 여유가 크다.
+EDGE_FRAC = 0.6
+
+# ★집단스파이크 오염 판별 문턱 — 하강 중 **되돌림**(위로 되올라간 양)의 최대 비율.
+# 왜 필요한가: 세기가 올라가면 fEPSP 위에 집단스파이크가 겹친다. 그러면 파형이
+#   '내려가다 잠깐 되올랐다가 훨씬 깊게 꽂히는' 두 성분 모양이 되고, 20~80% 교차가
+#   전부 집단스파이크의 상승면 안에 몰려 기울기가 폭증한다. 실측 예 — 전극#17 레벨3:
+#   되돌림 38.7% · 20~80% 띠 표본 **1개** · 기울기 -8,274 µV/ms(같은 파형 진폭은
+#   #18보다 작은데 기울기는 2.6배). 이건 시냅스 세기의 대리 지표가 아니다.
+# 문턱 0.20 의 근거: 전규모 레벨2·3 의 24전극 x 2레벨 = 48개 실측에서
+#   깨끗한 파형 최대 10.0% / 오염된 파형 최소 27.7% — 사이가 비어 있다.
+POP_REV_FRAC = 0.20
+
 
 def _first_cross(tt, vv, level, ipk):
     """0에서 출발해 피크(ipk)까지 내려오는 동안 `level`(음수)을 **처음 지나는 시각**.
@@ -99,23 +115,47 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
         n_band 20~80% 띠 안에 실제로 들어온 표본 수 (2 미만이면 legacy가 위험)
         fb_cross / fb_legacy  그 방식이 성립하지 않아 **대체식으로 넘어갔는지**.
             True 면 그 값은 정의대로 잰 기울기가 아니다 — 호출부에서 걸러내야 한다.
+        base   실제로 쓴 기준선(µV) — 창 앞 표본이 없어 대체값으로 넘어갔는지 추적용
+        pre_n  기준선 평균에 쓴 자극 전 표본 수. 0이면 창 첫 표본을 기준선으로 썼다는 뜻
+        edge_peak  ★피크가 창 **끝자락**(뒤 20%)에 붙었는가.
+            True 면 이것은 fEPSP가 아니라 **느린 흐름의 꼬리**일 가능성이 크다.
+            진짜 SR층 fEPSP는 자극 후 2~6 ms에 피크가 온다. 창을 더 길게 잡으면
+            그만큼 더 내려가므로 "진폭"이 창 길이에 따라 커지는 가짜 값이 된다.
+            EDGE_FRAC 로 기준을 조절한다.
+        rev_frac / pop_spike  ★하강 중 되돌림 비율과 그 실격 판정.
+            fEPSP 위에 **집단스파이크**가 겹치면 파형이 두 성분으로 꺾인다.
+            pop_spike=True 면 slope 가 시냅스 세기가 아니라 집단발화의 상승면을
+            잰 값일 수 있다 — 기울기를 LTP 지표로 쓰면 안 된다. POP_REV_FRAC 참조.
     """
     meth = method or SLOPE_METHOD
     m = (t >= t0) & (t < t0 + dur)
     pm = (t >= t0 - pre) & (t < t0)
+    pre_n = int(pm.sum())
     if base is None:
-        base = float(v[pm].mean()) if pm.sum() else (float(v[m][0]) if m.sum() else 0.0)
+        base = float(v[pm].mean()) if pre_n else (float(v[m][0]) if m.sum() else 0.0)
     base = float(base)
     tt = t[m]; vv = v[m] - base
     nil = dict(amp=0.0, slope=0.0, tpk=float(t0), t20=float(t0), t80=float(t0),
                slope_cross=0.0, slope_legacy=0.0, slope_maxd=0.0, n_band=0, dt_legacy=0.0,
-               fb_cross=True, fb_legacy=True)
+               fb_cross=True, fb_legacy=True, base=base, pre_n=pre_n, edge_peak=False,
+               rev_frac=0.0, pop_spike=False)
     if len(tt) < 5:
         return nil
     ipk = int(np.argmin(vv)); amp = float(vv[ipk]); tpk = float(tt[ipk])
+    edge_peak = bool((tpk - t0) >= EDGE_FRAC * dur)
     if ipk < 2 or amp >= 0:
-        out = dict(nil); out.update(amp=amp, tpk=tpk, t20=tpk, t80=tpk)
+        out = dict(nil); out.update(amp=amp, tpk=tpk, t20=tpk, t80=tpk, edge_peak=edge_peak)
         return out
+
+    # ★집단스파이크 오염도 — 피크까지 내려가는 동안 되올라간 최대량.
+    #   비교 기준은 **그 시점까지의 최저값**이다("이만큼 내려왔는데 이만큼 되올랐다").
+    #   아직 거의 안 내려온 초반은 |최저| < 0.1·|진폭| 로 걸러 잡음 확대를 막는다.
+    _seg = vv[:ipk + 1]
+    _run = np.minimum.accumulate(_seg)
+    _ok = np.abs(_run) >= 0.1 * abs(amp)
+    _rev = (_seg - _run)[_ok]
+    rev_frac = float((_rev / np.abs(_run[_ok])).max()) if _rev.size else 0.0
+    pop_spike = bool(rev_frac > POP_REV_FRAC)
 
     lo, hi = 0.2 * amp, 0.8 * amp          # amp<0 이므로 lo가 0에 가깝고 hi가 더 깊다
 
@@ -148,7 +188,9 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
     return dict(amp=amp, slope=float(slope), tpk=tpk, t20=float(t20), t80=float(t80),
                 slope_cross=float(s_cross), slope_legacy=float(s_leg),
                 slope_maxd=float(s_max), n_band=int(len(idx)), dt_legacy=float(dt_leg),
-                fb_cross=bool(fb_cross), fb_legacy=bool(len(idx) < 2))
+                fb_cross=bool(fb_cross), fb_legacy=bool(len(idx) < 2),
+                base=base, pre_n=pre_n, edge_peak=edge_peak,
+                rev_frac=rev_frac, pop_spike=pop_spike)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -97,3 +97,5 @@ like_slice_CA1/*/figures/_*.npy
 like_slice_CA1/*/figures/*.log
 like_slice_CA1/13_net_fepsp/figures/MEA_ppfsmoke*.png
 like_slice_CA1/09_run/figures/PREVIEW_*.gif
+# 런처가 남기는 종료코드 흔적(로컬 전용)
+like_slice_CA1/*/figures/.last_rc
