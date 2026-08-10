@@ -80,6 +80,50 @@ EDGE_FRAC = 0.6
 #   깨끗한 파형 최대 10.0% / 오염된 파형 최소 27.7% — 사이가 비어 있다.
 POP_REV_FRAC = 0.20
 
+# ★2026-08-08 — 위 rev_frac 하나로는 **못 잡는 경우가 둘** 있다는 것이 드러났다.
+# ------------------------------------------------------------------------------
+# rev_frac 은 `vv[:ipk+1]` 즉 **피크 이전**만 본다. 그래서 집단스파이크가
+#   (a) fEPSP **뒤에** 얹히면      → 피크 전 구간이 깨끗해 rev_frac = 0
+#   (b) fEPSP보다 **더 깊게** 꽂히면 → 그 스파이크가 곧 최저점(ipk)이 되어 하강이
+#       단조로우므로 역시 rev_frac = 0. 게다가 이때는 tpk·t20·t80·진폭이 전부
+#       **fEPSP가 아니라 스파이크의 것**이 된다.
+# 전규모 1단계 8점(전극 #18, `mea_wave_check.py`)에서 실제로 (a)는 섬유 30개,
+# (b)는 섬유 60·100·160개에서 일어났고 rev_frac 은 8점 모두 0.0000 이었다.
+#
+# 그래서 기준 없이(=다른 파형과 비교하지 않고) 잴 수 있는 지표 둘을 짝으로 둔다.
+#
+#   ① post_redip — 피크 **이후** 되돌림. (a)를 잡는다.
+#       피크를 지나 위로 회복하다가 **다시 내려가면** 두 번째 성분이 있다는 뜻.
+#       rev_frac 과 정의가 대칭이므로 문턱도 같은 POP_REV_FRAC 을 쓴다.
+#   ② w_ratio = 반치폭 / 20~80% 상승시간. (b)를 잡는다.
+#       순수 fEPSP의 시간 폭은 **시냅스 전도도 동역학 + 수상돌기 필터**가 정하므로
+#       섬유를 몇 개 발화시키든 거의 변하지 않는다. 반면 집단스파이크는 훨씬
+#       뾰족해 같은 상승시간 대비 폭이 좁다.
+#       ─ 근거(전극 #18 · 8점 · `S1all_io_gb_levels.csv` 의 width_ratio 열) ─
+#         깨끗(섬유 2·4·7·10·30) : 3.67 / 3.92 / 3.17 / 2.99 / 4.18
+#         오염(섬유 60·100·160)  : 1.79 / 1.78 / 1.98
+#       두 무리 사이(1.98 ~ 2.99)가 비어 있다. 로그 중점 sqrt(1.98*2.99)=2.43.
+#
+#   ★위 숫자와 `mea_wave_check.py` 가 찍는 숫자가 다르다 — 헷갈리지 말 것.
+#     20~80% 상승시간은 두 코드가 **완전히 같다**(1.4436/1.3921/1.3712/1.3875/
+#     1.5581/1.8586/1.2257/0.9486). 다른 것은 반치폭 하나다.
+#       · wave_check : `tt[vv<=0.5*amp]` 의 max-min = **표본 격자에 스냅**.
+#                      양 끝이 각각 최대 한 표본(0.4 ms)씩 안쪽으로 깎여 과소평가된다.
+#       · 여기(_half_width) : 반값선 교차를 **선형보간**. 정의대로의 반치폭.
+#     그래서 wave_check 쪽 폭비가 일관되게 작다(깨끗 2.92~3.85 / 오염 1.30~1.68,
+#     사이 1.68~2.92). 문턱 2.2 는 **두 gap 안에 모두 들어가는** 값이라 그대로 둔다.
+#     판정에 쓰는 것은 보간한 이쪽 값이다.
+#
+# ⚠ 한계 — 이 둘도 만능이 아니다. 표본이 8개뿐인 한 런에서 얻은 경계이고,
+#   기록간격 0.4 ms 에서 반치폭 1.87 ms 는 **표본 5개**라 분해능이 거칠다.
+#   ★그리고 실제로 하나를 놓쳤다 — 섬유 30개(침습률 14.7%)는 파형만 보면
+#     되돌림후 11.4%(문턱 20% 미만) · 폭비 4.18(문턱 2.2 초과)로 **깨끗하게 통과**한다.
+#     스파이크를 683개나 유발한 세기인데도 그렇다. 아래 문장이 빈말이 아니다.
+#   시뮬레이션에서는 **스파이크를 직접 셀 수 있으므로**(mea_io_pick 의 침습률)
+#   그쪽이 진짜 근거이고, 이 파형 지표는 "실제 실험자라면 무엇을 봤겠는가"를
+#   맞추기 위한 것이다. 둘이 어긋나면 스파이크 수가 옳다.
+POP_WRATIO = 2.2
+
 
 def _first_cross(tt, vv, level, ipk):
     """0에서 출발해 피크(ipk)까지 내려오는 동안 `level`(음수)을 **처음 지나는 시각**.
@@ -98,6 +142,30 @@ def _first_cross(tt, vv, level, ipk):
         return float(tt[k])
     f = (level - v0) / (v1 - v0)
     return float(tt[k - 1] + f * (tt[k] - tt[k - 1]))
+
+
+def _half_width(tt, vv, amp, ipk):
+    """반치폭(ms) — 진폭의 50% 선을 **내려갈 때 처음** 넘고 **올라올 때 처음** 되넘는 시각 차.
+
+    `_first_cross` 와 같은 이유로 표본 사이를 선형보간한다 — 기록간격 0.4 ms 에서
+    반치폭이 표본 4개(1.6 ms)까지 좁아지므로, 보간 없이 세면 0.4 ms 단위로 튄다.
+    창이 끝날 때까지 반이 안 올라오면 창 끝을 되넘는 시각으로 본다(과소평가 아님).
+    """
+    half = 0.5 * amp                       # amp<0 이므로 half 도 음수
+    t_dn = _first_cross(tt, vv, half, ipk)
+    seg = vv[ipk:]
+    idx = np.where(seg >= half)[0]         # 피크 뒤에서 반 위로 되올라오는 첫 표본
+    if idx.size == 0:
+        t_up = float(tt[-1])
+    else:
+        k = ipk + int(idx[0])
+        if k == ipk:
+            t_up = float(tt[ipk])
+        else:
+            v0, v1 = float(vv[k - 1]), float(vv[k])
+            fr = (half - v0) / (v1 - v0) if v1 != v0 else 0.0
+            t_up = float(tt[k - 1] + fr * (tt[k] - tt[k - 1]))
+    return max(0.0, t_up - t_dn)
 
 
 def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
@@ -126,6 +194,12 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
             fEPSP 위에 **집단스파이크**가 겹치면 파형이 두 성분으로 꺾인다.
             pop_spike=True 면 slope 가 시냅스 세기가 아니라 집단발화의 상승면을
             잰 값일 수 있다 — 기울기를 LTP 지표로 쓰면 안 된다. POP_REV_FRAC 참조.
+        post_redip / fwhm / w_ratio  ★2026-08-08 신설 — rev_frac 의 사각지대 둘을 메운다.
+            post_redip  피크 **이후** 되돌림 비율(집단스파이크가 fEPSP 뒤에 얹힌 경우)
+            fwhm        반치폭(ms)
+            w_ratio     fwhm / (t80-t20). 순수 fEPSP는 세기와 무관하게 ~3, 집단스파이크가
+                        최저점을 차지하면 ~1.5로 떨어진다. POP_WRATIO 참조.
+            pop_why     어느 지표가 pop_spike 를 켰는지("" | "rev" | "redip" | "narrow", 복수는 "+")
     """
     meth = method or SLOPE_METHOD
     m = (t >= t0) & (t < t0 + dur)
@@ -138,7 +212,8 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
     nil = dict(amp=0.0, slope=0.0, tpk=float(t0), t20=float(t0), t80=float(t0),
                slope_cross=0.0, slope_legacy=0.0, slope_maxd=0.0, n_band=0, dt_legacy=0.0,
                fb_cross=True, fb_legacy=True, base=base, pre_n=pre_n, edge_peak=False,
-               rev_frac=0.0, pop_spike=False)
+               rev_frac=0.0, pop_spike=False,
+               post_redip=0.0, fwhm=0.0, w_ratio=float("nan"), pop_why="")
     if len(tt) < 5:
         return nil
     ipk = int(np.argmin(vv)); amp = float(vv[ipk]); tpk = float(tt[ipk])
@@ -155,7 +230,15 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
     _ok = np.abs(_run) >= 0.1 * abs(amp)
     _rev = (_seg - _run)[_ok]
     rev_frac = float((_rev / np.abs(_run[_ok])).max()) if _rev.size else 0.0
-    pop_spike = bool(rev_frac > POP_REV_FRAC)
+
+    # ★사각지대 (a) — 피크 **이후** 되돌림. 피크를 지나 회복하다가 다시 내려가면
+    #   두 번째 성분이 뒤에 얹힌 것이다. 정의가 rev_frac 과 대칭이라 문턱도 같다.
+    _post = vv[ipk:]
+    if _post.size > 2:
+        _prun = np.maximum.accumulate(_post)
+        post_redip = float(((_prun - _post) / abs(amp)).max())
+    else:
+        post_redip = 0.0
 
     lo, hi = 0.2 * amp, 0.8 * amp          # amp<0 이므로 lo가 0에 가깝고 hi가 더 깊다
 
@@ -168,6 +251,22 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
     #   대체값을 쓰되 **flag를 남긴다**. 호출부는 fb_cross 로 걸러낼 수 있다.
     fb_cross = not (dtb > 1e-9)
     s_cross = (amp / (tpk - float(tt[0]) + 1e-9)) if fb_cross else (0.6 * amp / dtb)
+
+    # ★사각지대 (b) — 파형이 **너무 뾰족**한가. 순수 fEPSP의 폭은 시냅스 동역학이
+    #   정하므로 세기와 거의 무관하지만, 집단스파이크가 최저점을 차지하면 좁아진다.
+    #   dtb 가 0이면(교차 두 개가 같은 표본에 몰림) 비율이 무의미하므로 판정을 보류한다.
+    fwhm = _half_width(tt, vv, amp, ipk)
+    w_ratio = (fwhm / dtb) if (dtb > 1e-9 and fwhm > 0) else float("nan")
+
+    _why = []
+    if rev_frac > POP_REV_FRAC:
+        _why.append("rev")
+    if post_redip > POP_REV_FRAC:
+        _why.append("redip")
+    if w_ratio == w_ratio and w_ratio < POP_WRATIO:
+        _why.append("narrow")
+    pop_spike = bool(_why)
+    pop_why = "+".join(_why)
 
     # ② 옛 표본회귀 방식(재현 확인 전용)
     band = (vv[:ipk + 1] <= lo) & (vv[:ipk + 1] >= hi)
@@ -190,7 +289,9 @@ def measure_fepsp(t, v, t0, dur=30.0, pre=5.0, method=None, base=None):
                 slope_maxd=float(s_max), n_band=int(len(idx)), dt_legacy=float(dt_leg),
                 fb_cross=bool(fb_cross), fb_legacy=bool(len(idx) < 2),
                 base=base, pre_n=pre_n, edge_peak=edge_peak,
-                rev_frac=rev_frac, pop_spike=pop_spike)
+                rev_frac=rev_frac, pop_spike=pop_spike,
+                post_redip=float(post_redip), fwhm=float(fwhm),
+                w_ratio=float(w_ratio), pop_why=pop_why)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

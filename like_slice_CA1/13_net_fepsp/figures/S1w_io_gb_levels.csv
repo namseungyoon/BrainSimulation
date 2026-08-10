@@ -1,0 +1,4 @@
+﻿level,n_fiber_active,slope_uV_per_ms,abs_slope,evoked_amp_uV,peak_time_ms,direction,n_spike,raw_peak_Ve_uV,slope_legacy_uV_per_ms,n_band_samples,reversal_frac,edge_peak,pop_spike,thin,slope_trust,rec_elec
+0.0100,2,-37.166002,37.166002,-89.423649,3.600,음(-),0,-17.599868,-34.697845,4,0.0000,0,0,0,정상,18
+0.0200,4,-83.372402,83.372402,-193.434755,4.000,음(-),0,-17.599868,-72.091156,3,0.0000,0,0,0,정상,18
+0.0350,7,-187.940315,187.940315,-429.503321,3.200,음(-),3,20.857708,-129.398347,3,0.0000,0,0,0,정상,18
