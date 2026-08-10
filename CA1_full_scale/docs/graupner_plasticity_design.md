@@ -12,7 +12,7 @@
 - **권장 접근:**
   1. **Tier 1 (지금 당장, EASY-MODERATE):** 내장 pair-STDP를 CA3→Pyr에 배선, 배관(SynGroup 생성·부착·weight 스냅샷·HDF5·프로토콜 훅) 완성. 배관 80% 존재.
   2. **Tier 2 (충실 목표, HARD):** conn_struct 확장(`c`,`ρ`,`t_last`) + Graupner를 이벤트 구동 해석적 재구성 맵으로 재정식화해 device kernel 이식. paper-02 `integrate_rho`(σ=0)를 오라클로 회귀.
-  3. 검증 게이트는 두 티어 동일 — like_slice NEURON 트랙 통과값(+70.4% vs 대조 −0.1%)을 회귀 앵커로 재사용.
+  3. 검증 게이트는 두 티어 동일 — like_slice NEURON 트랙 통과값(**+39.5% vs 엄격대조 −0.07%**)을 회귀 앵커로 재사용. ★2026-08-07 정정: 옛 앵커 +70.4% / −0.1% 는 **폐기된 기울기 정의**(20~80% 구간 표본 회귀) 값이다. 현행 정의는 **20%·80% 첫 교차점 기반** `slope = 0.6·amp/(t80−t20)` 이며, **같은 원자료**를 새 정의로 재계산하면 +39.5% / −0.07% 다(`13_net_fepsp/figures/_mea_ltp_plastic_csv/ltp_index.csv` 전극 #3).
 
 > "graupner.cu 하나 추가"로 끝나지 않는다. 진짜 칼슘 모델은 **core 데이터구조 수술**이다.
 
@@ -88,7 +88,7 @@
 |---|---|---|
 | 1 엔진 정확성 | GPU ρ ↔ Python `integrate_rho`(σ=0) `|Δρ|<1e-3` | NEURON 트랙 max~3e-4 통과 |
 | 2 STDP malleability | single=LTD-only, doublet=causal LTP crossover | 통과 (Tier 1 STDP로는 불가) |
-| 3 TBS LTP | plastic ≥ +20%, 엄격대조(γ=0) `|Δ|`≤5% | plastic +70.4% vs 대조 −0.1% (`e8d1910`) |
+| 3 TBS LTP | plastic ≥ +20%, 엄격대조(γ=0) `|Δ|`≤5% | plastic **+39.5%** vs 대조 **−0.07%** (전극 #3, 현행 교차 기울기 정의). 옛 표기 +70.4% / −0.1% 는 폐기된 회귀 기울기 정의 값 |
 | 4 주파수 의존(선택) | 저율 LTD, 고율 LTP, crossover ~5–15Hz | |
 
 실행: baseline(`--stim-protocol none`) vs post(`tbs`) 시드 공유 2회 런 → (source_idx,target_idx) 정렬 후 per-synapse Δw. **엄격 γ=0 동일모델 대조만 Gate 3 카운트.**
