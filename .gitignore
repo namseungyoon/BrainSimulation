@@ -85,10 +85,13 @@ like_slice_CA1/_e3_tune.err
 like_slice_CA1/_sc_smoke.log
 like_slice_CA1/11_schaffer/figures/_e3_io.npy
 
-# WSL CoreNEURON 임시 헬퍼 스크립트(로컬 전용)
-like_slice_CA1/_wsl_*.sh
-like_slice_CA1/_wsl_*.py
-like_slice_CA1/13_net_fepsp/_memprobe.py
+# 2026-08-10 제거 — 옛 규칙: like_slice_CA1/_wsl_*.sh · _wsl_*.py · 13_net_fepsp/_memprobe.py
+# "WSL CoreNEURON 임시 헬퍼 스크립트(로컬 전용)"라는 분류였으나 더는 임시가 아니다.
+# _wsl_stage.sh 는 전규모 LTP 실험 1~4단계의 프로덕션 런처이고, _wsl_net_fepsp.sh ·
+# _wsl_build_ltp_mods.sh · _wsl_nrn_*.sh 는 WSL2 NEURON 빌드 절차 자체를 담고 있다.
+# 71개 259KB 순수 텍스트인데 전부 저장소 밖에 있어, 컴퓨터를 옮기면 통째로 사라진다.
+# CA1_full_scale/_wsl_build/*.sh 는 이미 추적 중이라 두 트랙의 처리도 어긋나 있었다.
+# 다시 추가하지 말 것 — 용량 문제가 아니라 절차 기록의 문제다.
 
 # 중간 산출물: figures 하위 언더스코어 데이터(.npz/.npy)와 실행 로그
 # 저장소에는 코드 + 결과 그림(PNG)만 올린다는 규칙에 따름
