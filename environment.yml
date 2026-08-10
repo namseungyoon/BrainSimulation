@@ -1,0 +1,181 @@
+# ============================================================================
+#  ca1sim — 해마 CA1 in silico 프로젝트 파이썬 환경 (Windows / conda)
+#  생성: 2026-08-10  ·  `conda env export -n ca1sim` 결과에서 prefix 줄만 제거
+#  재생성 명령:  conda env export -n ca1sim | findstr /v "^prefix:" > environment.yml
+# ============================================================================
+#
+#  ★이 파일 하나로는 실행 환경이 복원되지 않습니다. 아래 4가지가 더 필요합니다.
+#    조사 결과 이 목록에 NEURON 자체가 없기 때문입니다(2026-08-10 확인).
+#
+# ----------------------------------------------------------------------------
+#  1) conda 환경 만들기
+# ----------------------------------------------------------------------------
+#     conda env create -f environment.yml
+#     (같은 win-64 플랫폼 전제. 빌드 문자열까지 고정돼 있어 다른 OS에서는 실패합니다.
+#      Linux/mac 이면 `- python=3.10` 만 남기고 pip: 목록만 재사용하세요.)
+#
+# ----------------------------------------------------------------------------
+#  2) ★NEURON 은 이 환경 안에 없습니다 — 별도 설치입니다
+# ----------------------------------------------------------------------------
+#     확인된 사실 (ca1sim 인터프리터에서 직접 조회):
+#         neuron.__version__ = 8.2.7+
+#         neuron.__file__    = C:\Users\SYNAM-OFFICE\nrn\lib\python\neuron\__init__.py
+#     즉 pip/conda 패키지가 아니라 **커스텀 설치본**(약 108 MB)을 PYTHONPATH 로 끌어옵니다.
+#     `pip list` 에 neuron 이 안 보이는 이유가 이것입니다.
+#
+#     새 컴퓨터에서 할 일:
+#       a. NEURON 8.2.7 공식 설치본을 받아 임의 경로에 설치 (20~30분)
+#       b. 아래 activate.d 훅 2개를 새로 만들어 넣기 (conda env create 로는 복원 안 됨)
+#
+#     <CONDA_PREFIX>\etc\conda\activate.d\neuron_env.bat
+#     ----------------------------------------------------------------
+#       @echo off
+#       set "NEURONHOME=C:\Users\<사용자>\nrn"
+#       set "PATH=%NEURONHOME%\bin;%NEURONHOME%\mingw\usr\bin;%PATH%"
+#       set "PYTHONPATH=%NEURONHOME%\lib\python;%PYTHONPATH%"
+#     ----------------------------------------------------------------
+#
+#     <CONDA_PREFIX>\etc\conda\activate.d\neuron_env.ps1
+#     ----------------------------------------------------------------
+#       $env:NEURONHOME = "C:\Users\<사용자>\nrn"
+#       $env:PATH = "$env:NEURONHOME\bin;$env:NEURONHOME\mingw\usr\bin;" + $env:PATH
+#       $env:PYTHONPATH = "$env:NEURONHOME\lib\python;" + $env:PYTHONPATH
+#     ----------------------------------------------------------------
+#
+#     설치 경로가 위와 다르면 shared/common/nrn_env.py:23 의 기본값도 함께 고치세요.
+#     (환경변수 NEURONHOME 을 설정하면 코드 수정 없이도 동작합니다 — 그 줄이
+#      os.environ.get("NEURONHOME", r"C:\Users\SYNAM-OFFICE\nrn") 이기 때문입니다.)
+#
+# ----------------------------------------------------------------------------
+#  3) mod 메커니즘 재컴파일 — nrnmech.dll 은 안 가져갑니다
+# ----------------------------------------------------------------------------
+#     shared/mechanisms/ 에서 mknrndll (Windows) 실행. 약 5분.
+#     .dll 은 .gitignore 대상이고 기계마다 다시 만들어야 합니다.
+#
+# ----------------------------------------------------------------------------
+#  4) ★전규모 MPI 런은 이 환경에서 돌지 않습니다 — WSL2 Ubuntu 입니다
+# ----------------------------------------------------------------------------
+#     이 환경에는 mpi4py 도 mpich 도 없습니다(위 목록 확인). 12.48h·98.9h 짜리
+#     전규모 런은 전부 WSL2 안의 별도 NEURON 빌드에서 돕니다.
+#       - WSL 쪽 실행 파일: $HOME/mods_ltp/x86_64/special  (23개 mod 포함)
+#       - 런처: like_slice_CA1/_wsl_stage.sh → _wsl_net_fepsp.sh
+#       - 호스트 튜닝: C:\Users\<사용자>\.wslconfig 의 processors / memory
+#         ⚠ .wslconfig 의 processors 와 _wsl_stage.sh 의 NRANK(현재 16)는
+#           반드시 같아야 합니다. 어긋나면 과다구독으로 컴퓨터가 멈춥니다
+#           (2026-08-07 실제로 재부팅까지 갔던 항목입니다).
+#     WSL 재구축 절차는 memory 의 wsl-coreneuron-gpu 항목을 참고하세요.
+#
+# ============================================================================
+name: ca1sim
+channels:
+  - defaults
+dependencies:
+  - bzip2=1.0.8=h2bbff1b_6
+  - ca-certificates=2026.5.14=haa95532_0
+  - libexpat=2.8.1=hd7fb8db_0
+  - libffi=3.4.8=h2b21627_2
+  - libzlib=1.3.2=h1c6eee0_0
+  - openssl=3.5.7=hbb43b14_0
+  - packaging=26.0=py310haa95532_0
+  - pip=26.1.1=pyhc872135_1
+  - python=3.10.20=h1044e36_0
+  - sqlite=3.51.2=hee5a0db_0
+  - tk=8.6.15=hf199647_0
+  - ucrt=10.0.22621.0=haa95532_0
+  - vc=14.3=h2df5915_12
+  - vc14_runtime=14.44.35208=h4927774_12
+  - vs2015_runtime=14.44.35208=ha6b5a95_12
+  - wheel=0.46.3=py310haa95532_0
+  - xz=5.8.2=h53af0af_0
+  - zlib=1.3.2=h1c6eee0_0
+  - pip:
+    - asttokens==3.0.1
+    - attrs==26.1.0
+    - beautifulsoup4==4.15.0
+    - bleach==6.4.0
+    - bs4==0.0.2
+    - cachebox==5.2.3
+    - cached-property==2.0.1
+    - cerberus==1.3.8
+    - click==8.4.1
+    - colorama==0.4.6
+    - comm==0.2.3
+    - contourpy==1.3.2
+    - cycler==0.12.1
+    - debugpy==1.8.21
+    - decorator==5.3.1
+    - deepdiff==9.1.0
+    - defusedxml==0.7.1
+    - efel==5.7.25
+    - exceptiongroup==1.3.1
+    - executing==2.2.1
+    - fastjsonschema==2.21.2
+    - fonttools==4.63.0
+    - future==1.0.0
+    - gitdb==4.0.12
+    - gitpython==3.1.50
+    - h5py==3.16.0
+    - hippounit==1.4.1
+    - importlib-metadata==9.0.0
+    - ipykernel==7.3.0
+    - ipython==8.39.0
+    - jedi==0.20.0
+    - jinja2==3.1.6
+    - jsonpickle==4.1.2
+    - jsonschema==4.26.0
+    - jsonschema-specifications==2025.9.1
+    - jupyter-client==8.9.1
+    - jupyter-core==5.9.1
+    - jupyterlab-pygments==0.3.0
+    - kiwisolver==1.5.0
+    - lxml==6.1.1
+    - markupsafe==3.0.3
+    - matplotlib==3.10.9
+    - matplotlib-inline==0.2.2
+    - mistune==3.3.1
+    - morphio==3.4.2
+    - nbclient==0.11.0
+    - nbconvert==7.17.1
+    - nbformat==5.10.4
+    - neo==0.14.4
+    - nest-asyncio2==1.7.2
+    - neurom==4.0.5
+    - numpy==2.2.6
+    - orderly-set==5.5.0
+    - pandas==2.3.3
+    - pandocfilters==1.5.1
+    - parso==0.8.7
+    - pillow==12.2.0
+    - platformdirs==4.10.0
+    - prompt-toolkit==3.0.52
+    - psutil==7.2.2
+    - pure-eval==0.2.3
+    - pygments==2.20.0
+    - pynrrd==1.1.3
+    - pyparsing==3.3.2
+    - pypdf==6.14.2
+    - python-dateutil==2.9.0.post0
+    - python-pptx==1.0.2
+    - pytz==2026.2
+    - pyyaml==6.0.3
+    - pyzmq==27.1.0
+    - quantities==0.16.4
+    - referencing==0.37.0
+    - rpds-py==0.30.0
+    - scipy==1.15.3
+    - sciunit==0.2.8
+    - setuptools==80.10.2
+    - six==1.17.0
+    - smmap==5.0.3
+    - soupsieve==2.8.4
+    - stack-data==0.6.3
+    - tinycss2==1.5.1
+    - tornado==6.5.7
+    - tqdm==4.68.3
+    - traitlets==5.15.1
+    - typing-extensions==4.15.0
+    - tzdata==2026.2
+    - wcwidth==0.8.1
+    - webencodings==0.5.1
+    - xlsxwriter==3.2.9
+    - zipp==4.1.0
