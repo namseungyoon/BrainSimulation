@@ -5,7 +5,7 @@
 # =====================================================================
 
 # 대용량 데이터 (Romani Dataverse 다운로드, 13.8GB)
-like_slice_CA1/data/
+01_Like_slice_CA1_Simulation/data/
 
 # 라이선스 자산 — BBP me-model 형태 라이브러리 (재배포 불가)
 shared/models/
@@ -18,8 +18,14 @@ _archive/
 legacy/
 BrainSimulation/
 
-# 로컬 git 백업 (like_slice_CA1 독립 저장소 흔적)
-like_slice_CA1/.git_local_backup/
+# 로컬 git 백업 (독립 저장소 시절 흔적 · 커밋 2개)
+01_Like_slice_CA1_Simulation/.git_local_backup/
+
+# 2026-08-12 폴더 재편 — like_slice_CA1 -> 01_Like_slice_CA1_Simulation 으로 이름 변경.
+# 옛 폴더는 물리 삭제 예정이라 통째로 무시한다(삭제 전까지 미추적 9,663개가 뜨는 것 방지).
+# ⚠️ 위아래 32개 경로 규칙도 함께 새 이름으로 바꿨다. 폴더를 또 옮기면 같이 고쳐야 한다 —
+#    규칙이 경로 이름에 묶여 있어서, 안 고치면 66시간짜리 원자료가 커밋에 딸려 들어간다.
+like_slice_CA1/
 
 # Python
 __pycache__/
@@ -46,23 +52,23 @@ shared/mechanisms/*.c
 *.zip
 
 # like-slice 09_run 대용량 산출물(스파이크 CSV·20kHz 막전위 npy) — 재생성 가능, git 제외
-like_slice_CA1/09_run/spikes/
+01_Like_slice_CA1_Simulation/09_run/spikes/
 # like-slice 11_schaffer E2-c 대용량 산출물(스파이크 CSV·막전위 npy) — 재생성 가능, git 제외
-like_slice_CA1/11_schaffer/sc_full_spikes/
+01_Like_slice_CA1_Simulation/11_schaffer/sc_full_spikes/
 # like-slice 결정론 GPU 풀런 대용량 스파이크 데이터 — 재생성 가능, git 제외(그림·코드는 추적)
-like_slice_CA1/11_schaffer/sc_det_gpu/
-like_slice_CA1/_scfs_run.log
-like_slice_CA1/_scfs_run.err
+01_Like_slice_CA1_Simulation/11_schaffer/sc_det_gpu/
+01_Like_slice_CA1_Simulation/_scfs_run.log
+01_Like_slice_CA1_Simulation/_scfs_run.err
 # like-slice 실행 로그·임시·테스트 파일
-like_slice_CA1/_full_run.log
-like_slice_CA1/_full_run.err
-like_slice_CA1/_full_run.pid
-like_slice_CA1/_bench_mpi.log
-like_slice_CA1/_bench_mpi2.log
-like_slice_CA1/_win_bench.log
-like_slice_CA1/_mpitest.py
-like_slice_CA1/_mpitest2.py
-like_slice_CA1/09_run/figures/_test_firing.gif
+01_Like_slice_CA1_Simulation/_full_run.log
+01_Like_slice_CA1_Simulation/_full_run.err
+01_Like_slice_CA1_Simulation/_full_run.pid
+01_Like_slice_CA1_Simulation/_bench_mpi.log
+01_Like_slice_CA1_Simulation/_bench_mpi2.log
+01_Like_slice_CA1_Simulation/_win_bench.log
+01_Like_slice_CA1_Simulation/_mpitest.py
+01_Like_slice_CA1_Simulation/_mpitest2.py
+01_Like_slice_CA1_Simulation/09_run/figures/_test_firing.gif
 
 # 에디터/도구 설정
 .claude/
@@ -74,16 +80,16 @@ Thumbs.db
 .DS_Store
 
 _drive_sweep.log
-like_slice_CA1/_drive_sweep.log
-like_slice_CA1/10_analysis/figures/_drive_sweep.npy
-like_slice_CA1/_e3_full.log
-like_slice_CA1/_e3_full.err
-like_slice_CA1/_e3_smoke.log
-like_slice_CA1/_e3_smoke.err
-like_slice_CA1/_e3_tune.log
-like_slice_CA1/_e3_tune.err
-like_slice_CA1/_sc_smoke.log
-like_slice_CA1/11_schaffer/figures/_e3_io.npy
+01_Like_slice_CA1_Simulation/_drive_sweep.log
+01_Like_slice_CA1_Simulation/10_analysis/figures/_drive_sweep.npy
+01_Like_slice_CA1_Simulation/_e3_full.log
+01_Like_slice_CA1_Simulation/_e3_full.err
+01_Like_slice_CA1_Simulation/_e3_smoke.log
+01_Like_slice_CA1_Simulation/_e3_smoke.err
+01_Like_slice_CA1_Simulation/_e3_tune.log
+01_Like_slice_CA1_Simulation/_e3_tune.err
+01_Like_slice_CA1_Simulation/_sc_smoke.log
+01_Like_slice_CA1_Simulation/11_schaffer/figures/_e3_io.npy
 
 # 2026-08-10 제거 — 옛 규칙: like_slice_CA1/_wsl_*.sh · _wsl_*.py · 13_net_fepsp/_memprobe.py
 # "WSL CoreNEURON 임시 헬퍼 스크립트(로컬 전용)"라는 분류였으나 더는 임시가 아니다.
@@ -95,10 +101,10 @@ like_slice_CA1/11_schaffer/figures/_e3_io.npy
 
 # 중간 산출물: figures 하위 언더스코어 데이터(.npz/.npy)와 실행 로그
 # 저장소에는 코드 + 결과 그림(PNG)만 올린다는 규칙에 따름
-like_slice_CA1/*/figures/_*.npz
-like_slice_CA1/*/figures/_*.npy
-like_slice_CA1/*/figures/*.log
-like_slice_CA1/13_net_fepsp/figures/MEA_ppfsmoke*.png
-like_slice_CA1/09_run/figures/PREVIEW_*.gif
+01_Like_slice_CA1_Simulation/*/figures/_*.npz
+01_Like_slice_CA1_Simulation/*/figures/_*.npy
+01_Like_slice_CA1_Simulation/*/figures/*.log
+01_Like_slice_CA1_Simulation/13_net_fepsp/figures/MEA_ppfsmoke*.png
+01_Like_slice_CA1_Simulation/09_run/figures/PREVIEW_*.gif
 # 런처가 남기는 종료코드 흔적(로컬 전용)
-like_slice_CA1/*/figures/.last_rc
+01_Like_slice_CA1_Simulation/*/figures/.last_rc
