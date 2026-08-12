@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Polygon
 
-OUT = "/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/CA1_full_scale/_study/figures/pyramidal_reduction.png"
+OUT = "/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/_study/figures/pyramidal_reduction.png"
 import os; os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 fig, ax = plt.subplots(figsize=(12, 5.5)); ax.set_xlim(0, 12); ax.set_ylim(0, 6); ax.axis("off")

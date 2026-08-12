@@ -18,7 +18,7 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 
-ROOT = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/CA1_full_scale")
+ROOT = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator")
 DS = ROOT / "bezaire_modeldb/datasets"
 
 # HOC identifier -> short canonical label (order = Bezaire cell-type order)

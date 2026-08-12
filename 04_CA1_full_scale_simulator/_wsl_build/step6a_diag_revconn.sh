@@ -17,6 +17,6 @@ export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$VENV/lib/nestgpu:${LD_LIBRARY_PATH:-}"
 export NESTGPU_LIB="$(find "$VENV" -name 'libnestgpukernel.so' | head -1)"
 export CUDA_VISIBLE_DEVICES=0
 echo "== official STDP test (watch for [GRAUPNER-DIAG]) =="
-"$PY" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/CA1_full_scale/_wsl_build/step5g_official.py 2>&1 \
+"$PY" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/_wsl_build/step5g_official.py 2>&1 \
   | grep -E "GRAUPNER-DIAG|resulting weights|weights changed|STDP (WORKS|NOT)"
 echo "== STEP6A DONE =="

@@ -12,7 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 plt.rcParams["axes.unicode_minus"] = False
 
-OUT = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/CA1_full_scale/_study/figures")
+OUT = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/_study/figures")
 OUT.mkdir(parents=True, exist_ok=True)
 TEAL, CORAL = "#1D9E75", "#D85A30"
 

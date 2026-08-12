@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-CELLS = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/CA1_full_scale/bezaire_modeldb/cells")
+CELLS = Path("/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/bezaire_modeldb/cells")
 TYPES = {
     "Pyramidal": "class_poolosyncell.hoc",
     "PV_Basket": "class_pvbasketcell.hoc",
