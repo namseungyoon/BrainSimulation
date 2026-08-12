@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 plt.rcParams["axes.unicode_minus"] = False
 
-BASE = Path(__file__).resolve().parents[1]          # 04_CA1_full_scale_simulator/
+BASE = Path(__file__).resolve().parents[1]          # 02_CA1_full_scale_Simulation/
 GEN = BASE / "docs" / "generated"
 PARAMS = BASE / "src" / "ca1" / "params"
 OUT = BASE / "_study" / "figures"

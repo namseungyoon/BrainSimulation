@@ -6,7 +6,7 @@ to the A40 the project targets — so the `sm_86` NEST-GPU build runs unchanged.
 
 ## Layout / sync model
 
-- **Single source of truth = the Windows git repo** (`D:\...\04_CA1_full_scale_simulator`).
+- **Single source of truth = the Windows git repo** (`D:\...\02_CA1_full_scale_Simulation`).
 - The build/run copy lives on the WSL native filesystem at `~/ca1_full_scale`
   (compiling on `/mnt/d` is slow and unreliable).
 - Build artifacts (`.venv`, `nest-gpu*`, `results`, `output`) are WSL-local and

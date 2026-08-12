@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Step 1 — copy source into WSL home and create the uv Python 3.12 env.
-# Run inside WSL:  bash /mnt/d/.../04_CA1_full_scale_simulator/_wsl_build/step1_env.sh
+# Run inside WSL:  bash /mnt/d/.../02_CA1_full_scale_Simulation/_wsl_build/step1_env.sh
 set -euo pipefail
 
-SRC="/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/"
+SRC="/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/02_CA1_full_scale_Simulation/"
 DST="$HOME/ca1_full_scale"
 
 echo "== HOME: $HOME =="

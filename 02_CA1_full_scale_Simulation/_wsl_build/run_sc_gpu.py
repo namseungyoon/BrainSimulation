@@ -9,7 +9,7 @@ from pathlib import Path
 
 _OUT = Path(
     "/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/"
-    "04_CA1_full_scale_simulator/_study/single_cell_gpu_aglif_repro.json"
+    "02_CA1_full_scale_Simulation/_study/single_cell_gpu_aglif_repro.json"
 )
 
 

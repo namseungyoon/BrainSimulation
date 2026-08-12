@@ -11,5 +11,5 @@ export PYTHONPATH="$ROOT/src:${PYTHONPATH:-}"
 cd "$ROOT"
 echo "== stage2.5 item1 GPU: A-GLIF (user_m1) f-I replay via NEST-GPU =="
 echo "NESTGPU_LIB=$NESTGPU_LIB"
-"$VENV/bin/python" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/_wsl_build/run_sc_gpu.py
+"$VENV/bin/python" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/02_CA1_full_scale_Simulation/_wsl_build/run_sc_gpu.py
 echo "== GPU DONE =="

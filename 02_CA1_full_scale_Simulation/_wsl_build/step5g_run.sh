@@ -5,4 +5,4 @@ CUDA_HOME="/opt/nvidia/hpc_sdk/Linux_x86_64/26.5/cuda/13.2"
 export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$VENV/lib/nestgpu:${LD_LIBRARY_PATH:-}"
 export NESTGPU_LIB="$(find "$VENV" -name 'libnestgpukernel.so' | head -1)"
 export CUDA_VISIBLE_DEVICES=0
-"$PY" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator/_wsl_build/step5c_diag.py 2>&1 | grep -vE "NEST GPU|Copyright|WARRANTY|Homepage|program is provided|^$"
+"$PY" /mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/02_CA1_full_scale_Simulation/_wsl_build/step5g_official.py 2>&1 | grep -vE "NEST GPU|Copyright|WARRANTY|Homepage|program is provided|Calibrating|Building time|Simulation time|Simulating|Neural activity|^$"

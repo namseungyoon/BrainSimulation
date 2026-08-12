@@ -11,7 +11,7 @@
 #                           #   (then commit + push from the repo, and update Notion)
 set -euo pipefail
 
-REPO="/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/04_CA1_full_scale_simulator"
+REPO="/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/02_CA1_full_scale_Simulation"
 WSL="$HOME/ca1_full_scale"
 
 # Never sync these (build artifacts / host-only / huge)
