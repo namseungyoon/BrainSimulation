@@ -1,0 +1,20 @@
+# 마이크로 슬라이스 기하 — 단일 출처 (스크립트 하드코딩 금지, lib 이 여기서 읽음)
+# 확정값(사용자 승인)과 파이프라인 유도값(TBD)을 구분한다.
+
+footprint_um:        # 확정 (2026-08-13)
+  layer_axis: 800    #   SO/SP/SR 층관통 방향 (전극 2~3개 + 사방 200um 여유)
+  perp_axis: 500     #   수직축
+thickness_um: 400    # 확정 — 일반 in vitro 급성 슬라이스
+
+# 층 경계 (radial, um) — TBD: Stage4(01_tissue/4_layers) atlas 실측으로 확정
+# 참고(like-slice atlas 실측): SO 230 / SP 80 / SR 380 / SLM 199
+layers_um:
+  SO: null
+  SP: null
+  SR: null
+  SLM: null
+
+# 창 배치 원점·회전 — TBD: Stage1(01_tissue/1_bbox)에서 atlas 좌표로 확정
+window:
+  center_xyz_um: null
+  orientation: null

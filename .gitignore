@@ -108,3 +108,32 @@ _drive_sweep.log
 01_Like_slice_CA1_Simulation/09_run/figures/PREVIEW_*.gif
 # 런처가 남기는 종료코드 흔적(로컬 전용)
 01_Like_slice_CA1_Simulation/*/figures/.last_rc
+
+# =====================================================================
+#  05 Micro-slice CA1 Simulation — 신규 트랙 (2026-08-13 시작)
+#  코드 + 결과 PNG 만 추적. 대용량 원자료·산출물·스크래치는 제외.
+# =====================================================================
+
+# 라이선스 자산 — BBP 단일세포 번들 (재배포 불가). 루트 Models/ 는 현재 미추적 노출 상태.
+Models/
+
+# Romani 원자료·중간 산출물 (Dataverse 재다운로드 가능, ~5.8GB)
+05_Micro_slice_CA1_Simulation/data/
+
+# 구동 대용량 산출물 (스파이크 CSV·20kHz 막전위 npy — 재생성 가능)
+05_Micro_slice_CA1_Simulation/**/runs/
+05_Micro_slice_CA1_Simulation/**/spikes/
+
+# figures 하위 중간 데이터(.npz/.npy)·로그 — PNG 만 추적 (2계층: 카테고리/단계/figures)
+05_Micro_slice_CA1_Simulation/*/*/figures/_*.npz
+05_Micro_slice_CA1_Simulation/*/*/figures/_*.npy
+05_Micro_slice_CA1_Simulation/*/*/figures/*.log
+05_Micro_slice_CA1_Simulation/*/*/figures/.last_rc
+
+# 스크래치 (일회성 스모크·진단)
+05_Micro_slice_CA1_Simulation/scratch/
+
+# 실행 로그·임시
+05_Micro_slice_CA1_Simulation/_*.log
+05_Micro_slice_CA1_Simulation/_*.err
+05_Micro_slice_CA1_Simulation/_*.pid

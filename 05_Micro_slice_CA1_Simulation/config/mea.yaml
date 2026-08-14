@@ -1,0 +1,19 @@
+# MEA 전극 사양 — 단일 출처
+# 확정값(사용자 승인) + 배치 상세는 E4b에서 확정.
+
+pitch_um: 200        # 확정 — 전극 간격
+diameter_um: 10      # 확정 — 전극 직경
+n_electrodes: 3      # 확정 — 2~3개 (800um 축)
+
+# 배치 (E4b/experiments 에서 확정)
+layout:
+  arrangement: null  #   예: line / grid
+  angle_deg: null
+  margin_um: 200     #   조직 가장자리 여유 (기능적 기여 반경 ~200um 근거)
+
+# 세포외 순방향 매질 상수 (Ness 2015 MoI 기본값) — lib/mea_forward 사용
+medium:
+  sigma_T: 0.3       #   조직 (S/m)
+  sigma_S: 1.5       #   식염수
+  sigma_G: 0.0       #   유리(MEA면, 절연)
+  n_img: 20          #   영상급수 항수

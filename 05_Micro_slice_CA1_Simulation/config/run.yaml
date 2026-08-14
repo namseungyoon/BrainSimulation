@@ -1,0 +1,21 @@
+# 구동·환경 파라미터 — 단일 출처
+
+# NEURON 적분 (BBP EMS 시냅스 cvode 비호환 → 고정 dt)
+dt_ms: 0.025         # 확정 — 고정 dt
+celsius: 34          # 확정
+v_init_mv: -70       # 확정
+
+# 자산 경로 (05 기준 상대경로, 복사 금지 참조)
+paths:
+  models_root: ../Models          #   BBP 20 단일세포 번들
+  shared_common: ../shared/common
+  shared_mechanisms: ../shared/mechanisms
+
+# 구동 파라미터 — TBD: Stage9/실험에서 확정
+drive:
+  seed: null
+  external_rate_hz: null
+
+# 재현성
+rng:
+  base_seed: null
