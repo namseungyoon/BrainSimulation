@@ -10,7 +10,7 @@ Romani atlas는 이미 후처리 완료(coordinates·orientation·brain_regions�
   - brain_regions (층 라벨 1~4)
   - [PH]y (깊이 좌표)  ·  [PH]SO[0]=base  ·  [PH]SLM[1]=top   → nd=([PH]y-base)/(top-base)
 
-산출: data/derived/atlas_crop.npz  (lib/atlas_query.py 가 읽음) + figures/V2p_atlas_crop.png
+산출: data/derived/atlas_crop.npz  (lib/atlas_query.py 가 읽음) + figures/1-3_atlas_crop.png
 검증: 확정 전극(E1 SO·E2 SP·E3 SR)을 질의해 config 층 라벨과 일치하는지.
 
 실행: python 01_tissue/3_atlas_prep/crop_atlas.py
@@ -154,7 +154,7 @@ def fig_crop(reg, cfg, origin, vs):
                    loc="upper right", title="층", fontsize=8)
     fig.suptitle(f"V2-prep  atlas 크롭 (창 {cfg['name']} +여유{MARGIN_UM:.0f}µm) — 층 라벨 확인", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "V2p_atlas_crop.png"), dpi=130)
+    fig.savefig(os.path.join(FIG, "1-3_atlas_crop.png"), dpi=130)
     plt.close(fig)
 
 
@@ -183,9 +183,9 @@ def fig_context(regions, bbox):
         axes[1, a].set_title(f"크롭 · 축{a} 단면 {cc[a]}")
     axes[0, 0].legend(handles=[Patch(facecolor=LC[v], label=v) for v in LAYERS.values()],
                       title="층", loc="upper right", fontsize=8)
-    fig.suptitle("V2p  atlas 크롭 위치 — 위: 전체(검정박스=크롭영역) · 아래: 크롭", fontsize=13)
+    fig.suptitle("1-3  atlas 크롭 위치 — 위: 전체(검정박스=크롭영역) · 아래: 크롭", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "V2p_crop_context.png"), dpi=130)
+    fig.savefig(os.path.join(FIG, "1-3_crop_context.png"), dpi=130)
     plt.close(fig)
 
 
@@ -218,11 +218,11 @@ def fig_local(cfg, reg, origin, vs):
         ax.annotate(f'{e["id"]}·{e["layer"]}', (e["u"], e["r"]), textcoords="offset points",
                     xytext=(13, 0), va="center", fontsize=10, fontweight="bold", color=col)
     ax.set_aspect("equal"); ax.set_xlabel("종축 proximodistal (µm)"); ax.set_ylabel("층관통 radial (µm, SP=0)")
-    ax.set_title(f'V2p  atlas 층 (국소 프레임) — 창·전극 대응 「{cfg["name"]}」')
+    ax.set_title(f'1-3  atlas 층 (국소 프레임) — 창·전극 대응 「{cfg["name"]}」')
     ax.legend(handles=[Patch(facecolor=LC[v], label=v) for v in LAYERS.values()],
               title="층(atlas)", loc="upper right")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "V2p_atlas_local.png"), dpi=140)
+    fig.savefig(os.path.join(FIG, "1-3_atlas_local.png"), dpi=140)
     plt.close(fig)
 
 

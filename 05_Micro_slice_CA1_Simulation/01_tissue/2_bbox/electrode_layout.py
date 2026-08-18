@@ -99,7 +99,7 @@ def main():
         print(f"   {name:5s} 종축 l={el:+5.0f}  층관통 r={er:+5.0f} µm   {desc}")
 
     fig_layout(lw, rw, Lw, electrodes, sp_hi, sr_mid, margin)
-    print(f"\n[그림] V1a_electrode_layout.png 저장 -> {FIG_DIR}")
+    print(f"\n[그림] 1-2_electrode_layout.png 저장 -> {FIG_DIR}")
 
 
 def fig_layout(lw, rw, Lw, electrodes, sp_hi, sr_mid, margin):
@@ -126,7 +126,7 @@ def fig_layout(lw, rw, Lw, electrodes, sp_hi, sr_mid, margin):
                  "긴 축(종축)에 배치 → 바깥 전극 기여반경 확보")
     ax.legend(title="층", loc="lower right"); ax.set_aspect("equal")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V1a_electrode_layout.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-2_electrode_layout.png"), dpi=130)
     plt.close(fig)
 
 

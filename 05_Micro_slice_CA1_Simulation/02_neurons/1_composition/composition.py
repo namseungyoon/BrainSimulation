@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-02_neurons/1_composition/composition.py  —  2-1: 창 세포 조성 집계 (V2a)
+02_neurons/1_composition/composition.py  —  2-1: 창 세포 조성 집계 (2-1)
 
 확정 창(층관통_v1) 안 세포의 조성을 SONATA nodes.h5에서 층별로 집계한다.
   - 층별 세포수, m-type(12) 분포, e-type(4), 흥분/억제(EXC/INH), 형태강(PYR/INT)
   - 밀도(cells/mm³), E:I 비, 대표 형태 개수(morphology 다양성)
-결과: data/derived/composition.json (2-2 배치 재사용) + 그림 V2a_composition.png
+결과: data/derived/composition.json (2-2 배치 재사용) + 그림 2-1_composition.png
 
 재료: config/window_layout.json · circuit nodes.h5(hippocampus_neurons) · slice400.nrrd
 실행: python 02_neurons/1_composition/composition.py
@@ -110,9 +110,9 @@ def main():
 
     json.dump(comp, open(os.path.join(DERIVED, "composition.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=2)
-    print(f"\n[V2a] 조성표 저장 -> data/derived/composition.json")
+    print(f"\n[2-1] 조성표 저장 -> data/derived/composition.json")
     fig_composition(comp, N, n_exc, n_inh)
-    print(f"[V2a] 그림 저장 -> {FIG}/V2a_composition.png")
+    print(f"[2-1] 그림 저장 -> {FIG}/2-1_composition.png")
 
 
 def fig_composition(comp, N, n_exc, n_inh):
@@ -156,8 +156,8 @@ def fig_composition(comp, N, n_exc, n_inh):
            wedgeprops=dict(edgecolor="white"))
     ax.set_title(f"(c) 흥분:억제 = {n_exc/max(n_inh,1):.1f}:1\n총 {N:,}개 · {comp['density_per_mm3']:,.0f} cells/mm³")
 
-    fig.suptitle("V2a  창 세포 조성 (층관통_v1 · 국소 atlas)", fontsize=13)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "V2a_composition.png"), dpi=130)
+    fig.suptitle("2-1  창 세포 조성 (층관통_v1 · 국소 atlas)", fontsize=13)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "2-1_composition.png"), dpi=130)
     plt.close(fig)
 
 

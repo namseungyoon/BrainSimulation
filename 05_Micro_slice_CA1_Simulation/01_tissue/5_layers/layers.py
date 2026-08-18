@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-01_tissue/5_layers/layers.py  —  1-5: 층 경계·두께 확정 (V1c)
+01_tissue/5_layers/layers.py  —  1-5: 층 경계·두께 확정 (1-5)
 
 확정 창(층관통_v1) 안에서, 국소 크롭 atlas(lib/atlas_query)로 방사축을 따라
 층(SO/SP/SR/SLM) 경계와 두께(µm)를 산출한다.
-검증(V1c): 4층이 SO→SP→SR→SLM 순서로 나타나고 두께가 생리적으로 타당.
+검증(1-5): 4층이 SO→SP→SR→SLM 순서로 나타나고 두께가 생리적으로 타당.
 
 재료: config/window_layout.json · data/derived/atlas_crop.npz (lib/atlas_query)
 실행: python 01_tissue/5_layers/layers.py
@@ -64,19 +64,19 @@ def main():
 
     # 중앙 라인 경계(r 값)
     lc = line_layers(c["u"])
-    print(f"[V1c] 창 방사축 층 두께(µm, 종축 9라인 중앙값):")
+    print(f"[1-5] 창 방사축 층 두께(µm, 종축 9라인 중앙값):")
     for Ln in LAYER_ORDER:
         print(f"   {Ln:<4} {thick[Ln]:6.0f}")
     print(f"   합계 {sum(thick.values()):.0f} µm (창 층관통 {w['radial']}µm 중 실제 조직)")
     # 경계 r
-    print("[V1c] 중앙라인(u=center) 층 r-범위(µm):")
+    print("[1-5] 중앙라인(u=center) 층 r-범위(µm):")
     for Ln in LAYER_ORDER:
         m = lc == Ln
         if m.any():
             print(f"   {Ln:<4} r=[{r_s[m].min():.0f}, {r_s[m].max():.0f}]")
 
     fig_layers(r_s, us, line_layers, lc, thick, c, w)
-    print(f"\n[V1c] 그림 저장 -> {FIG}/V1c_layers.png")
+    print(f"\n[1-5] 그림 저장 -> {FIG}/1-5_layers.png")
 
 
 def fig_layers(r_s, us, line_layers, lc, thick, c, w):
@@ -104,8 +104,8 @@ def fig_layers(r_s, us, line_layers, lc, thick, c, w):
     for i, v in enumerate(vals[::-1]):
         ax.text(v, i, f" {v:.0f}µm", va="center", fontsize=10)
     ax.set_xlabel("두께 (µm)"); ax.set_title("층 두께 (종축 9라인 중앙값)")
-    fig.suptitle("V1c  층 경계·두께 (atlas 국소질의)", fontsize=13)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "V1c_layers.png"), dpi=130)
+    fig.suptitle("1-5  층 경계·두께 (atlas 국소질의)", fontsize=13)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "1-5_layers.png"), dpi=130)
     plt.close(fig)
 
 

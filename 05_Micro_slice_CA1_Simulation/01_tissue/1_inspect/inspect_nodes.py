@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-01_tissue/1_inspect/inspect_nodes.py  —  Stage 1: Romani circuit SONATA nodes 검사 (V0)
+01_tissue/1_inspect/inspect_nodes.py  —  Stage 1: Romani circuit SONATA nodes 검사 (1-1)
 
 목적:
   Romani(2024) CA1 circuit 의 nodes.h5 (약 456k 세포 배치)를 열어
@@ -8,9 +8,9 @@
     - 데이터셋(필드) 목록: 좌표 x/y/z, orientation quaternion, 범주형(layer/mtype/etype 등)
     - 층/타입 분포, E:I 비율
     - 좌표 범위(µm), quaternion 정규화 점검
-  를 확인하고, 검증 그림(figures/V0_*.png)을 저장한다.
+  를 확인하고, 검증 그림(figures/1-1_*.png)을 저장한다.
 
-검증 기준 (V0): 세포수 ≈ 456,380 · E:I ≈ 89:11 · 층 SO/SP/SR/SLM · m-type 12종.
+검증 기준 (1-1): 세포수 ≈ 456,380 · E:I ≈ 89:11 · 층 SO/SP/SR/SLM · m-type 12종.
 
 필요 패키지: numpy, h5py, matplotlib   (NEURON·pynrrd 불필요)
 실행 (VS Code 터미널에서, 05 어디서든):
@@ -89,7 +89,7 @@ def decode_library(grp, name):
 def main():
     nodes_h5 = find_nodes_h5()
     print("=" * 70)
-    print(f"[V0] nodes.h5 = {nodes_h5}")
+    print(f"[1-1] nodes.h5 = {nodes_h5}")
     print("=" * 70)
 
     with h5py.File(nodes_h5, "r") as f:
@@ -105,7 +105,7 @@ def main():
                 print(f"   - {k:<22} (group: {list(item.keys())})")
 
         N = grp["x"].shape[0]
-        print(f"\n[V0] 총 세포수 N = {N:,}   (참고 기대값 {EXPECT_N:,})")
+        print(f"\n[1-1] 총 세포수 N = {N:,}   (참고 기대값 {EXPECT_N:,})")
 
         # --- 범주형 분포 ---
         dist = {}
@@ -153,8 +153,8 @@ def main():
         fig_ei_pie(exc, inh)
     if layer_dec is not None:
         fig_scatter_2d(xyz, layer_dec)
-    print(f"\n[V0] 그림 저장 완료 -> {FIG_DIR}")
-    print("[V0] 완료. 위 세포수·E:I·층/타입 분포를 확인하세요.")
+    print(f"\n[1-1] 그림 저장 완료 -> {FIG_DIR}")
+    print("[1-1] 완료. 위 세포수·E:I·층/타입 분포를 확인하세요.")
 
 
 def fig_distributions(dist, N):
@@ -179,9 +179,9 @@ def fig_distributions(dist, N):
         axes[2].set_title("e-type 분포"); axes[2].set_ylabel("세포 수 (로그)")
         axes[2].set_yscale("log")
         axes[2].tick_params(axis="x", rotation=45)
-    fig.suptitle(f"V0  CA1 nodes.h5 — 총 세포수 N = {N:,}", fontsize=13)
+    fig.suptitle(f"1-1  CA1 nodes.h5 — 총 세포수 N = {N:,}", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V0_distributions.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-1_distributions.png"), dpi=130)
     plt.close(fig)
 
 
@@ -190,9 +190,9 @@ def fig_ei_pie(exc, inh):
     ax.pie([exc, inh], labels=[f"흥분 EXC\n{exc:,}", f"억제 INH\n{inh:,}"],
            autopct="%1.1f%%", colors=["#DD8452", "#4C72B0"],
            startangle=90, wedgeprops=dict(edgecolor="w"))
-    ax.set_title("V0  흥분 : 억제 (참고 목표 ~89:11)")
+    ax.set_title("1-1  흥분 : 억제 (참고 목표 ~89:11)")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V0_EI_ratio.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-1_EI_ratio.png"), dpi=130)
     plt.close(fig)
 
 
@@ -212,9 +212,9 @@ def fig_scatter_2d(xyz, layer_dec, n_sample=30000):
         ax.set_xlabel(f"{a} (µm)"); ax.set_ylabel(f"{b} (µm)")
         ax.set_title(f"CA1 배치 {a}-{b} 투영"); ax.set_aspect("equal", "datalim")
     axes[0].legend(markerscale=4, loc="best")
-    fig.suptitle(f"V0  CA1 세포 배치 (2D 투영, {len(idx):,}개 샘플)", fontsize=13)
+    fig.suptitle(f"1-1  CA1 세포 배치 (2D 투영, {len(idx):,}개 샘플)", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V0_placement_2d.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-1_placement_2d.png"), dpi=130)
     plt.close(fig)
 
 

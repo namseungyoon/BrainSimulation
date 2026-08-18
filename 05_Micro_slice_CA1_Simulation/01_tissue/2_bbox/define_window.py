@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-01_tissue/2_bbox/define_window.py  —  Stage 2: 마이크로 창(bbox) 후보 정의 (V1a)
+01_tissue/2_bbox/define_window.py  —  Stage 2: 마이크로 창(bbox) 후보 정의 (1-2)
 
 축 배정(2026-08-18 수정):
   - 종축(long, proximodistal = SC 섬유방향 = 전극 라인) = 800 µm  → 전극 스팬+여유 확보
@@ -130,7 +130,7 @@ def main():
         ensure_ascii=False, indent=2)
 
     fig_preview(u - u_c, (d @ radial_dir), Ls, l[inwin], r[inwin], Lw, n, exc, inh)
-    print(f"\n[V1a] window_def.json + 그림 저장 -> {HERE}")
+    print(f"\n[1-2] window_def.json + 그림 저장 -> {HERE}")
 
 
 def fig_preview(u_all, r_all, Ls, lw, rw, Lw, n, exc, inh):
@@ -155,9 +155,9 @@ def fig_preview(u_all, r_all, Ls, lw, rw, Lw, n, exc, inh):
     ax.set_aspect("equal"); ax.set_xlabel("종축 (µm, 전극라인)"); ax.set_ylabel("층관통 (µm, SP=0)")
     ax.set_title(f"창 내부 {n:,}개  E:I {100*exc/max(n,1):.0f}:{100*inh/max(n,1):.0f}")
     ax.legend(markerscale=2, fontsize=8, title="층")
-    fig.suptitle("V1a  마이크로 창 — 전극축=종축800(여유) · 층관통500(SP+SR)", fontsize=13)
+    fig.suptitle("1-2  마이크로 창 — 전극축=종축800(여유) · 층관통500(SP+SR)", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V1a_window_candidate.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-2_window_candidate.png"), dpi=130)
     plt.close(fig)
 
 

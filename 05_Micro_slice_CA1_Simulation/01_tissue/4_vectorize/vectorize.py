@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-01_tissue/4_vectorize/vectorize.py  —  1-4: 좌표·방향장 벡터화 (V1b)
+01_tissue/4_vectorize/vectorize.py  —  1-4: 좌표·방향장 벡터화 (1-4)
 
 확정 창(층관통_v1) 안 세포의 방향(orientation quaternion)에서 **방사 방향장**
 (정단 = R·[0,1,0], SP→SR/SLM 방향)을 계산·시각화·검증한다.
-검증(V1b): 방사벡터가 (1) 종축에 수직, (2) 층관통축(SO→SLM)과 정렬.
+검증(1-4): 방사벡터가 (1) 종축에 수직, (2) 층관통축(SO→SLM)과 정렬.
 
 재료: config/window_layout.json · circuit nodes.h5 · slice400.nrrd
 실행: python 01_tissue/4_vectorize/vectorize.py
@@ -77,12 +77,12 @@ def main():
     radial = Rot.from_quat(Q[:, [1, 2, 3, 0]]).apply([0.0, 1.0, 0.0])
     rad_u = radial @ L; rad_r = radial @ R    # 국소 프레임 성분
     print(f"[창 세포] {len(win):,}개")
-    print(f"[V1b] 방사·종축 정렬 |rad·û| 중앙 = {np.median(np.abs(rad_u)):.3f} (0에 가까울수록 종축 수직)")
-    print(f"[V1b] 방사·층관통 rad·r̂ 중앙 = {np.median(rad_r):.3f} (+1에 가까울수록 SO→SLM 정렬)")
-    print(f"[V1b] 층관통 정렬 세포 비율(rad·r̂>0.7) = {100*np.mean(rad_r>0.7):.1f}%")
+    print(f"[1-4] 방사·종축 정렬 |rad·û| 중앙 = {np.median(np.abs(rad_u)):.3f} (0에 가까울수록 종축 수직)")
+    print(f"[1-4] 방사·층관통 rad·r̂ 중앙 = {np.median(rad_r):.3f} (+1에 가까울수록 SO→SLM 정렬)")
+    print(f"[1-4] 층관통 정렬 세포 비율(rad·r̂>0.7) = {100*np.mean(rad_r>0.7):.1f}%")
 
     fig_vectors(Cu, Cr, rad_u, rad_r, Lw, c, w, len(win))
-    print(f"\n[V1b] 그림 저장 -> {FIG}/V1b_radial_field.png")
+    print(f"\n[1-4] 그림 저장 -> {FIG}/1-4_radial_field.png")
 
 
 def fig_vectors(u, r, rad_u, rad_r, Lw, c, w, n, n_arrow=1200):
@@ -98,9 +98,9 @@ def fig_vectors(u, r, rad_u, rad_r, Lw, c, w, n, n_arrow=1200):
     ax.add_patch(Rectangle((c["u"] - w["long"] / 2, c["r"] - w["radial"] / 2),
                            w["long"], w["radial"], fill=False, ec="black", lw=2, ls="--"))
     ax.set_aspect("equal"); ax.set_xlabel("종축 u (µm)"); ax.set_ylabel("층관통 r (µm, SP=0)")
-    ax.set_title(f"V1b  방사(정단) 방향장 — 창 세포 {n:,}개 · 화살표=R·[0,1,0] (SO→SLM)")
+    ax.set_title(f"1-4  방사(정단) 방향장 — 창 세포 {n:,}개 · 화살표=R·[0,1,0] (SO→SLM)")
     ax.legend(handles=[Patch(facecolor=LC[v], label=v) for v in LAYER_ORDER], title="층", loc="upper right")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "V1b_radial_field.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "1-4_radial_field.png"), dpi=130)
     plt.close(fig)
 
 

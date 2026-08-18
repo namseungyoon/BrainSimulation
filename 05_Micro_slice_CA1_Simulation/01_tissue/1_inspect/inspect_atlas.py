@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-01_tissue/1_inspect/inspect_atlas.py  —  Stage 1: Romani atlas(NRRD) 검사 (V0-atlas)
+01_tissue/1_inspect/inspect_atlas.py  —  Stage 1: Romani atlas(NRRD) 검사 (1-1-atlas)
 
 목적:
   Romani(2024) CA1 atlas 의 복셀 볼륨(NRRD)을 열어
     - 복셀 그리드·복셀크기·물리 bbox(µm)
     - brain_regions 층 라벨(0~4) ↔ 층(SO/SP/SR/SLM) 매핑 + 층별 복셀수·부피
     - 좌표장(coordinates, l/t/r)·방향장(orientation, quaternion) 성분·값범위
-  를 확인하고, CA1 층 단면 그림(figures/V0_atlas_layers.png)을 저장한다.
+  를 확인하고, CA1 층 단면 그림(figures/1-1_atlas_layers.png)을 저장한다.
   → 이 atlas 가 다음 단계(2_bbox: 800×500×400µm 마이크로 창 절취)의 재료.
 
-검증 기준 (V0-atlas): 층 4종(SO/SP/SR/SLM) 라벨 확인 · 복셀 16µm · 방향장 quaternion 4성분.
+검증 기준 (1-1-atlas): 층 4종(SO/SP/SR/SLM) 라벨 확인 · 복셀 16µm · 방향장 quaternion 4성분.
 
 필요 패키지: numpy, pynrrd, matplotlib
 실행 (VS Code/WSL):  python 01_tissue/1_inspect/inspect_atlas.py
@@ -57,7 +57,7 @@ def voxel_size_um(header):
 def main():
     atlas = find_atlas_dir()
     print("=" * 70)
-    print(f"[V0-atlas] atlas 디렉토리 = {atlas}")
+    print(f"[1-1-atlas] atlas 디렉토리 = {atlas}")
     print("=" * 70)
 
     # --- brain_regions (층 라벨) ---
@@ -119,8 +119,8 @@ def main():
 
     # --- 그림: 3 직교 단면 (CA1 가장 풍부한 슬라이스) ---
     fig_layers(regions, label_to_layer, vox)
-    print(f"\n[V0-atlas] 그림 저장 -> {FIG_DIR}/V0_atlas_layers.png")
-    print("[V0-atlas] 완료.")
+    print(f"\n[1-1-atlas] 그림 저장 -> {FIG_DIR}/1-1_atlas_layers.png")
+    print("[1-1-atlas] 완료.")
 
 
 def fig_layers(regions, label_to_layer, vox):
@@ -145,9 +145,9 @@ def fig_layers(regions, label_to_layer, vox):
         axes[a].set_ylabel(f"{axis_names[a][1]} 복셀")
     handles = [Patch(facecolor=LAYER_COLORS[l], label=l) for l in LAYERS]
     axes[0].legend(handles=handles, loc="upper right", title="층")
-    fig.suptitle("V0-atlas  CA1 층 구조 (brain_regions 직교 단면, 복셀 16µm)", fontsize=13)
+    fig.suptitle("1-1-atlas  CA1 층 구조 (brain_regions 직교 단면, 복셀 16µm)", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG_DIR, "V0_atlas_layers.png"), dpi=130)
+    fig.savefig(os.path.join(FIG_DIR, "1-1_atlas_layers.png"), dpi=130)
     plt.close(fig)
 
 

@@ -3,7 +3,7 @@
 01_tissue/3_atlas_prep/make_atlas_gif.py  —  국소(크롭) atlas 3D 회전 GIF
 
 data/derived/atlas_crop.npz 의 층 복셀(SO/SP/SR/SLM)을 물리좌표 점구름으로 3D 렌더 +
-확정 전극(자극/기록) 표시 → 방위각 회전 GIF(figures/V2p_atlas_3d.gif).
+확정 전극(자극/기록) 표시 → 방위각 회전 GIF(figures/1-3_atlas_3d.gif).
 
 실행: python 01_tissue/3_atlas_prep/make_atlas_gif.py
 """
@@ -73,7 +73,7 @@ def main():
         return []
 
     anim = FuncAnimation(fig, update, frames=36, interval=110, blit=False)
-    out = os.path.join(FIG, "V2p_atlas_3d.gif")
+    out = os.path.join(FIG, "1-3_atlas_3d.gif")
     anim.save(out, writer=PillowWriter(fps=12))
     plt.close(fig)
     sz = os.path.getsize(out) / 1e6
