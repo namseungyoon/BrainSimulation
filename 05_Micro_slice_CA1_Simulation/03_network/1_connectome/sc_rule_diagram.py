@@ -4,7 +4,7 @@
 
 Schaffer(SC) 연결 규칙을 그림으로: 소마 위치가 아니라 '수상돌기가 지나는 층'
 (SR/SO)에 SC가 붙는다는 원칙 + 세포별 SC 수용 표.
-결과: figures/3-1_sc_rule.png
+결과: figures/3-1a_sc_rule.png
 
 실행: python 03_network/1_connectome/sc_rule_diagram.py
 """
@@ -101,11 +101,11 @@ def main():
              "SLM tuft·축삭 제외 · fEPSP는 이 SC 전류가 SR–SP 쌍극자로 생성",
              ha="center", va="top", fontsize=9.5, transform=axt.transAxes, color="#666")
 
-    fig.suptitle("3-1  Schaffer(SC) 연결 규칙 — 마이크로슬라이스 CA1", fontsize=14)
+    fig.suptitle("3-1(a)  Schaffer(SC) 연결 규칙 — 마이크로슬라이스 CA1", fontsize=14)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    out = os.path.join(FIG, "3-1_sc_rule.png")
+    out = os.path.join(FIG, "3-1a_sc_rule.png")
     fig.savefig(out, dpi=140); plt.close(fig)
-    print(f"[3-1] 저장 -> {out}")
+    print(f"[3-1a] 저장 -> {out}")
 
 
 if __name__ == "__main__":
