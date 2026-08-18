@@ -101,6 +101,7 @@ def fig_orientation(uvw, xyz, Q, layer, mt, morph, ap_r, c, w, seed, M):
     # (a) 표본 전체형태 배치+회전 (u-r 단면)
     ax = axes[0]
     pick_pc, pick_int = _sample(mt, uvw, layer)
+    rmin, rmax = [0.0], [0.0]   # 그린 형태의 층관통 도달범위 추적
     def draw(ci, color, lw):
         p = os.path.join(MORPHLIB, str(morph[ci]) + ".swc")
         if not os.path.exists(p):
@@ -111,18 +112,39 @@ def fig_orientation(uvw, xyz, Q, layer, mt, morph, ap_r, c, w, seed, M):
             lcset = LineCollection([[(loc[a, 0], loc[a, 1]), (loc[b, 0], loc[b, 1])] for a, b in segs],
                                    colors=color, linewidths=lw, alpha=0.7)
             ax.add_collection(lcset)
+            rmin[0] = min(rmin[0], loc[:, 1].min()); rmax[0] = max(rmax[0], loc[:, 1].max())
         ax.plot(uvw[ci, 0], uvw[ci, 1], "o", color=color, ms=3, zorder=5)
     for ci in pick_pc:
         draw(ci, "#C44E52", 0.35)
     for ci in pick_int:
         draw(ci, "#3B75AF", 0.5)
-    ax.add_patch(Rectangle((c["u"] - w["long"] / 2, c["r"] - w["radial"] / 2),
-                           w["long"], w["radial"], fill=False, ec="black", lw=1.6, ls="--"))
-    ax.axhline(0, color="gray", lw=0.8, ls=":")
+
+    r_lo = c["r"] - w["radial"] / 2; r_hi = c["r"] + w["radial"] / 2
+    box_u0 = c["u"] - w["long"] / 2
+    # soma 배치 창(800) — 굵은 점선 + 음영
+    ax.add_patch(Rectangle((box_u0, r_lo), w["long"], w["radial"],
+                           fill=True, fc="black", alpha=0.05, ec="black", lw=1.8, ls="--", zorder=1))
+    ax.annotate(f"soma 배치 창 (층관통 {w['radial']:.0f}µm)", (c["u"], r_hi), ha="center", va="bottom",
+                fontsize=9, fontweight="bold", xytext=(0, 4), textcoords="offset points")
+    # 수상돌기 도달범위 표시
+    for rr, lab, va in [(rmax[0], f"정단수상돌기 도달 ~+{rmax[0]:.0f}µm (창 밖, SR/SLM 조직)", "bottom"),
+                        (rmin[0], f"기저수상돌기 ~{rmin[0]:.0f}µm (SO)", "top")]:
+        ax.axhline(rr, color="gray", lw=0.8, ls="-.")
+        ax.annotate(lab, (box_u0 + 10, rr), ha="left", va=va, fontsize=8, color="dimgray",
+                    xytext=(0, 3 if va == "bottom" else -3), textcoords="offset points")
+    # 총 span 화살표(오른쪽)
+    x_ar = c["u"] + w["long"] / 2 + 60
+    ax.annotate("", (x_ar, rmax[0]), (x_ar, rmin[0]),
+                arrowprops=dict(arrowstyle="<->", color="darkgreen", lw=1.5))
+    ax.text(x_ar + 12, (rmax[0] + rmin[0]) / 2, f"세포 형태 span\n~{rmax[0]-rmin[0]:.0f}µm",
+            fontsize=8, color="darkgreen", va="center")
+    ax.axhline(0, color="gray", lw=0.6, ls=":")
     ax.set_aspect("equal"); ax.set_xlabel("종축 u (µm)"); ax.set_ylabel("층관통 r (µm, SP=0 · +r=SR/SLM)")
-    ax.set_title(f"(a) 표본 전체형태 배치+회전 (u-r 단면)\n추체 {len(pick_pc)}개(빨강)·억제 {len(pick_int)}개(파랑) · 정단이 +r로")
-    ax.legend(handles=[Patch(color="#C44E52", label="추체 SP_PC"), Patch(color="#3B75AF", label="억제뉴런")],
-              loc="upper right", fontsize=9)
+    ax.set_title(f"(a) 표본 전체형태 배치+회전 (u-r 단면)\n"
+                 f"체세포=창 안 / 수상돌기=조직으로 뻗음 · 추체 {len(pick_pc)}(빨강)·억제 {len(pick_int)}(파랑)")
+    ax.legend(handles=[Patch(color="#C44E52", label="추체 SP_PC"), Patch(color="#3B75AF", label="억제뉴런"),
+                       Patch(facecolor="black", alpha=0.05, ec="black", ls="--", label="soma 창 800µm")],
+              loc="upper right", fontsize=8)
 
     # (b) mtype별 apical·r̂ 정렬
     ax = axes[1]
