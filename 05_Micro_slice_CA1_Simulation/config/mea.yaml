@@ -12,11 +12,12 @@ layout:
   spacing_um: 200
   stim_id: E3          #   E3(SR) 자극 · E1(SO)/E2(SP) 기록
   center_local_um: {u: -279, r: 53}
+  mea_face_w_um: -200  #   전극이 놓이는 잘린 면(표면). 두께 중앙(w=0) 아님 — 실제 MEA는 표면 접촉.
   margin_um: 200       #   조직 가장자리 여유 (기능적 기여 반경 ~200um 근거)
-  positions:
-    - {id: E1, role: rec,  layer: SO, xyz_um: [3001.6, 423.9, 4717.3]}
-    - {id: E2, role: rec,  layer: SP, xyz_um: [2972.2, 612.2, 4656.4]}
-    - {id: E3, role: stim, layer: SR, xyz_um: [2942.9, 800.4, 4595.6]}
+  positions:           #   표면(w=-200) 기준 물리좌표
+    - {id: E1, role: rec,  layer: SO, xyz_um: [2959.4, 478.1, 4905.1]}
+    - {id: E2, role: rec,  layer: SP, xyz_um: [2930.1, 666.4, 4844.3]}
+    - {id: E3, role: stim, layer: SR, xyz_um: [2900.7, 854.6, 4783.4]}
   source: config/window_layout.json
 
 # 세포외 순방향 매질 상수 (Ness 2015 MoI 기본값) — lib/mea_forward 사용

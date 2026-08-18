@@ -369,9 +369,9 @@ function exportCfg(){
     window_um:{long:box.Lu,radial:box.Lr,thick:box.Lw,angle_deg:+box.ang.toFixed(1),
       center_local:{u:box.cu,r:box.cr,w:box.cw},center_xyz:toPhys(box.cu,box.cr,box.cw)},
     electrodes:{rows:arr.rows,cols:arr.cols,spacing_um:arr.sp,diameter_um:arr.dia,angle_deg:+arr.ang.toFixed(1),
-      stim_id:"E"+arr.stim,center_local:{u:+arr.cu.toFixed(1),r:+arr.cr.toFixed(1)},
+      stim_id:"E"+arr.stim,mea_face_w_um:-box.Lw/2,center_local:{u:+arr.cu.toFixed(1),r:+arr.cr.toFixed(1)},
       list:eps.map(e=>({id:"E"+e.idx,role:e.idx===arr.stim?"stim":"rec",u:Math.round(e.u),r:Math.round(e.r),
-        layer:layerAt(e.u,e.r),xyz_um:toPhys(e.u,e.r,box.cw)}))}
+        layer:layerAt(e.u,e.r),xyz_um:toPhys(e.u,e.r,-box.Lw/2)}))}
   };
   document.getElementById('cfgout').value=JSON.stringify(cfg,null,2);
 }
