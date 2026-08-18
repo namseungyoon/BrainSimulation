@@ -37,7 +37,7 @@
 ## 4. 폴더 구조 규약
 
 - 최상위 = **의미 카테고리 1~4**(인덱스): `01_tissue/` · `02_neurons/` · `03_network/` · `04_experiments/`.
-- 각 카테고리 내부 하위폴더 = **단계(1-based 순번)**. **표기 통일: 「카테고리 N (이름) · M단계」** — 예: 카테고리1(tissue)·1단계 inspect · 카테고리1·2단계 bbox · 카테고리2(neurons)·2단계 placement. (카테고리를 "단계"라 부르지 않는다.) 실험은 E1~E11.
+- 각 카테고리 내부 하위폴더 = 순번. **표기 통일: 「N-M」** (N = 카테고리 1~4 · M = 하위 순번) — 예: `1-1 inspect` · `1-2 bbox` · `1-3 atlas_prep` · `2-2 placement`. 실험은 카테고리 4의 E1~E11.
 - 지원(인프라, 번호 없음): `config/`(기하·파라미터 YAML 단일 출처) · `docs/` · `lib/`(번호 없는 import 모듈) · `data/`(원자료, gitignore) · `env/`(빌드·구동 런처, 추적) · `scratch/`(일회성, gitignore).
 - **번호 import 제약**: import되는 재사용 코드는 전부 `lib/`. 단계 폴더(`01_tissue/1_bbox` 등)는 실행 스크립트만 두고 import하지 않는다.
 - **스크립트는 최상위에 두지 않는다** — 런처=`env/`(추적), 일회성=`scratch/`(제외).
