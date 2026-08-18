@@ -115,6 +115,11 @@ def main():
         "frame": {"seed": seed.tolist(), "long_dir": long_dir.tolist(),
                   "radial_dir": radial_dir.tolist(), "thick_dir": thick_dir.tolist()},
     }
+    # 확정 config 있으면 초기상태로 임베드(새로고침해도 유지 + 불러오기 기준)
+    cfg_path = os.path.join(ROOT, "config", "window_layout.json")
+    if os.path.exists(cfg_path):
+        data["saved"] = json.load(open(cfg_path, encoding="utf-8"))
+
     html = TEMPLATE.replace("/*__DATA__*/", json.dumps(data, ensure_ascii=False))
     out = os.path.join(HERE, "window_picker.html")
     with open(out, "w", encoding="utf-8") as f:
@@ -232,8 +237,9 @@ TEMPLATE = r'''<title>CA1 창·전극 배치기</title>
       <div class="btns">
         <button class="primary" onclick="exportCfg()">설정 생성</button>
         <button id="copybtn" onclick="copyCfg()">복사</button>
+        <button onclick="importCfg()">불러오기</button>
       </div>
-      <textarea id="cfgout" readonly rows="8" placeholder="[설정 생성] → 이름·창·전극·프레임 JSON (각 전극 물리 xyz 포함)"></textarea>
+      <textarea id="cfgout" rows="8" placeholder="[설정 생성] 또는 저장한 JSON을 붙여넣고 [불러오기]"></textarea>
       <p class="hint">이 JSON을 <b>config/</b>에 저장하면 파이프라인(5단계 배치·전극)이 국소 프레임으로 <b>3D 재구성</b>합니다.</p>
     </div>
   </div>
@@ -376,6 +382,26 @@ function copyCfg(){const t=document.getElementById('cfgout');if(!t.value)exportC
   catch(e){document.execCommand('copy');done();}}
 window.exportCfg=exportCfg;window.copyCfg=copyCfg;
 
+// ---- 설정 불러오기(복원) ----
+function applyCfg(cfg){
+  if(!cfg||!cfg.window_um) return;
+  const w=cfg.window_um; box.Lu=w.long;box.Lr=w.radial;box.Lw=w.thick;box.ang=w.angle_deg||0;
+  box.cu=w.center_local.u;box.cr=w.center_local.r;box.cw=w.center_local.w||0;
+  const e=cfg.electrodes; arr.rows=e.rows;arr.cols=e.cols;arr.sp=e.spacing_um;arr.dia=e.diameter_um;
+  arr.ang=e.angle_deg||0;arr.cu=e.center_local.u;arr.cr=e.center_local.r;
+  arr.stim=parseInt(String(e.stim_id||'E1').replace('E',''))||1;
+  document.getElementById('name').value=cfg.name||'';
+  for(const [id,val] of [['Lu',box.Lu],['Lr',box.Lr],['Lw',box.Lw],['cr',box.cr],
+    ['rows',arr.rows],['cols',arr.cols],['sp',arr.sp],['dia',arr.dia],
+    ['ang',arr.ang],['angn',arr.ang],['wang',box.ang],['wangn',box.ang]]){
+    const el=document.getElementById(id); if(el)el.value=Math.round(val);}
+  if(typeof populateStim==='function')populateStim();
+  draw();
+}
+function importCfg(){try{applyCfg(JSON.parse(document.getElementById('cfgout').value));}
+  catch(e){alert('JSON 파싱 실패: '+e.message);}}
+window.applyCfg=applyCfg;window.importCfg=importCfg;
+
 // ---- 자극전극 선택 · 중심정렬 ----
 function populateStim(){const N=Math.max(1,arr.rows*arr.cols),sel=document.getElementById('stim');
   sel.innerHTML=Array.from({length:N},(_,i)=>`<option value="${i+1}">E${i+1}</option>`).join('');
@@ -412,6 +438,7 @@ cv.addEventListener('pointercancel',()=>drag=null);
 
 new ResizeObserver(resize).observe(cv.parentElement);
 window.addEventListener('load',resize);resize();
+if(D.saved)applyCfg(D.saved);   // 확정 config 로 초기화(새로고침해도 유지)
 </script>
 '''
 
