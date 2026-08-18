@@ -148,15 +148,18 @@ def fig_orientation(uvw, xyz, Q, layer, mt, morph, ap_r, c, w, seed, M):
 
     # (b) mtype별 apical·r̂ 정렬
     ax = axes[1]
-    mts = [x for x, _ in collections.Counter(mt).most_common()]
+    counts = collections.Counter(mt)
+    mts = [x for x, _ in counts.most_common()]
     med = [np.median(ap_r[mt == m]) for m in mts]
     cols = ["#C44E52" if m == "SP_PC" else "#3B75AF" for m in mts]
     y = np.arange(len(mts))
     ax.barh(y, med, color=cols)
     ax.axvline(0, color="k", lw=0.8)
+    for i, m in enumerate(mts):
+        ax.text(med[i] + 0.02, i, f"{med[i]:+.3f}  ·  n={counts[m]:,}", va="center", fontsize=8)
     ax.set_yticks(y); ax.set_yticklabels(mts, fontsize=8); ax.invert_yaxis()
-    ax.set_xlim(-1, 1); ax.set_xlabel("apical·r̂ 중앙값  (+1=SR쪽 정렬)")
-    ax.set_title("(b) mtype별 정단축 층관통 정렬")
+    ax.set_xlim(-1, 1.15); ax.set_xlabel("apical·r̂ 중앙값  (+1=SR쪽 정렬)")
+    ax.set_title(f"(b) mtype별 정단축 층관통 정렬 · 전 {sum(counts.values()):,}세포")
 
     fig.suptitle("2-4  세포 방향(quaternion) 적용·검증 — 정단수상돌기 SO→SR/SLM 정렬", fontsize=13)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "2-4_orientation.png"), dpi=130)
