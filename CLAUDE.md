@@ -14,7 +14,8 @@
 - **Notion 보고서** — 결과보고서 페이지 갱신
   - 01 Ecker: 페이지 id `38f17cb5cdbd808db50bef1aebaa0fd2`
   - 02 Like-Slice: 페이지 id `38f17cb5cdbd80458cc8d899c34a01e9`
-  - 상위: "07_Research" ▸ "[과제]신개념선행연구사업"
+  - 05 Micro-slice: 페이지 id `3c017cb5cdbd819dbed2c996cd5dd197`
+  - 상위: "07_Research_Developments" ▸ "[과제]신개념선행연구사업"
 - **GitHub** — 아래 절차로 push
 
 ### Notion 작성 기준 (정확성 최우선)
