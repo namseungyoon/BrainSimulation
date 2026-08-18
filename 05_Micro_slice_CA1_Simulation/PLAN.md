@@ -70,7 +70,7 @@
 |---|---|---|---|---|
 | 0 데이터준비 | `data/` + `01_tissue/1_inspect` | 압축해제·SONATA/atlas 구조·세포수 확인 | V0(N=456,378·E:I 89:11·층4·mtype12) | ✅ |
 | 1 슬라이스 bbox | `01_tissue/2_bbox` | 마이크로 창 정의(층관통_v1 500×800×400µm)·전극배치·config 내보내기 | V1a(창·전극 확정) | ✅ |
-| 2 아틀라스 전처리 | `01_tissue/3_atlas_prep` | Romani 후처리 atlas 채택·정합 | — | ⬜ |
+| 2 아틀라스 전처리 | `01_tissue/3_atlas_prep` | Romani atlas 창 크롭(78×97×80) + 국소질의 lib(층·nd) | V2p(전극 층검증·대응그림) | ✅ |
 | 3 좌표·방향 벡터화 | `01_tissue/4_vectorize` | 좌표(l/t/r)+방사 방향장 | V1b 방사벡터 수직 | ⬜ |
 | 4 층 구분 | `01_tissue/5_layers` | SO/SP/SR/SLM 경계·두께 | V1c | ⬜ |
 | 4b 세포 조성 | `02_neurons/1_composition` | 층별 m/e-type·밀도·E:I | V2a 밀도·E:I | ⬜ |
