@@ -42,9 +42,16 @@ def emodel_dirs():
             for p in glob.glob(os.path.join(MODELS, "*_model_files"))}
 
 
+def _norm(s):
+    # 하이픈/언더스코어 표기 차이 무시 (nodes: a1_2 vs 폴더: a1-2)
+    return s.replace("-", "_")
+
+
 def match_dir(tpl, dirs):
+    t = _norm(tpl)
     for name, path in dirs.items():
-        if name.startswith(tpl) or tpl.startswith(name):
+        n = _norm(name)
+        if n.startswith(t) or t.startswith(n):
             return name, path
     return None, None
 
