@@ -88,12 +88,13 @@ def fig_layers(r_s, us, line_layers, lc, thick, c, w):
     cmap = ListedColormap(["#ffffff"] + [LC[Ln] for Ln in LAYER_ORDER])
     norm = BoundaryNorm(np.arange(-0.5, 5.5, 1), cmap.N)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 7), gridspec_kw={"width_ratios": [2, 1]})
+    fig, axes = plt.subplots(1, 2, figsize=(12, 8.5), gridspec_kw={"width_ratios": [1.3, 1]})
     ax = axes[0]
     ax.pcolormesh(us, r_s, grid, cmap=cmap, norm=norm, shading="auto")
     ax.axhline(c["r"] - w["radial"] / 2, color="k", ls="--", lw=1)
     ax.axhline(c["r"] + w["radial"] / 2, color="k", ls="--", lw=1)
-    ax.set_xlabel("종축 u (µm)"); ax.set_ylabel("층관통 r (µm, SP=0)")
+    ax.set_aspect("equal")  # 종축500 < 층관통800 실제 비율 반영(세로가 더 김)
+    ax.set_xlabel("종축 u (µm, 가로 500)"); ax.set_ylabel("층관통 r (µm, SP=0, 세로 800)")
     ax.set_title("창 방사축 층 (종축 라인별) · 점선=창 층관통 범위")
     ax.legend(handles=[Patch(facecolor=LC[Ln], label=Ln) for Ln in LAYER_ORDER],
               title="층", loc="upper right", fontsize=8)
