@@ -68,8 +68,8 @@
 
 | Romani단계 | 폴더 | 목표 | 검증(V) | 상태 |
 |---|---|---|---|---|
-| 0 데이터준비 | `data/` + `01_tissue/1_inspect` | 압축해제(완료)·SONATA/atlas 구조·세포수 확인 | V0 세포수·필드 | ⬜ |
-| 1 슬라이스 bbox | `01_tissue/2_bbox` | atlas에서 800×500×400µm 마이크로 창 정의 | V1a 층두께·경계 | ⬜ |
+| 0 데이터준비 | `data/` + `01_tissue/1_inspect` | 압축해제·SONATA/atlas 구조·세포수 확인 | V0(N=456,378·E:I 89:11·층4·mtype12) | ✅ |
+| 1 슬라이스 bbox | `01_tissue/2_bbox` | 마이크로 창 정의(층관통_v1 500×800×400µm)·전극배치·config 내보내기 | V1a(창·전극 확정) | ✅ |
 | 2 아틀라스 전처리 | `01_tissue/3_atlas_prep` | Romani 후처리 atlas 채택·정합 | — | ⬜ |
 | 3 좌표·방향 벡터화 | `01_tissue/4_vectorize` | 좌표(l/t/r)+방사 방향장 | V1b 방사벡터 수직 | ⬜ |
 | 4 층 구분 | `01_tissue/5_layers` | SO/SP/SR/SLM 경계·두께 | V1c | ⬜ |

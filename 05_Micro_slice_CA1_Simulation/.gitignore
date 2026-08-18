@@ -12,3 +12,5 @@ _*.pid
 */*/figures/_*.npy
 */*/figures/*.log
 */*/figures/.last_rc
+# 생성 HTML(세포 데이터 임베드, make_picker.py 로 재생성)
+**/window_picker.html

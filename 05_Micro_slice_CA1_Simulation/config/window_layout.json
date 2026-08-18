@@ -1,0 +1,32 @@
+{
+  "name": "층관통_v1",
+  "note": "micro-slice window+electrodes (local frame → physical xyz). Stage5가 읽음. 도구 01_tissue/2_bbox/window_picker.html 로 확정(2026-08-18).",
+  "frame_um": {
+    "seed": [2710.38, 505.96, 4628.28],
+    "long_dir": [-0.96646, -0.20194, -0.15866],
+    "radial_dir": [-0.1467, 0.9412, -0.30433],
+    "thick_dir": [0.21079, -0.27085, -0.93926]
+  },
+  "window_um": {
+    "long": 500,
+    "radial": 800,
+    "thick": 400,
+    "angle_deg": 0,
+    "center_local": {"u": -279, "r": 53, "w": 0},
+    "center_xyz": [2972.2, 612.2, 4656.4]
+  },
+  "electrodes": {
+    "rows": 3,
+    "cols": 1,
+    "spacing_um": 200,
+    "diameter_um": 10,
+    "angle_deg": 0,
+    "stim_id": "E3",
+    "center_local": {"u": -279, "r": 53},
+    "list": [
+      {"id": "E1", "role": "rec",  "u": -279, "r": -147, "layer": "SO", "xyz_um": [3001.6, 423.9, 4717.3]},
+      {"id": "E2", "role": "rec",  "u": -279, "r": 53,   "layer": "SP", "xyz_um": [2972.2, 612.2, 4656.4]},
+      {"id": "E3", "role": "stim", "u": -279, "r": 253,  "layer": "SR", "xyz_um": [2942.9, 800.4, 4595.6]}
+    ]
+  }
+}

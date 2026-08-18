@@ -14,7 +14,19 @@ layers_um:
   SR: null
   SLM: null
 
-# 창 배치 원점·회전 — TBD: Stage1(01_tissue/1_bbox)에서 atlas 좌표로 확정
+# 창 확정 (2026-08-18, 도구로 확정 → config/window_layout.json 이 원본)
 window:
-  center_xyz_um: null
-  orientation: null
+  name: 층관통_v1
+  size_um:                 # long=proximodistal(종축) · radial=층관통 · thick=두께
+    long: 500
+    radial: 800
+    thick: 400
+  angle_deg: 0
+  center_local_um: {u: -279, r: 53, w: 0}
+  center_xyz_um: [2972.2, 612.2, 4656.4]
+  frame:                   # 국소 프레임 (u,r,w → 물리 xyz). Stage5 재구성용.
+    seed_um: [2710.38, 505.96, 4628.28]
+    long_dir: [-0.96646, -0.20194, -0.15866]
+    radial_dir: [-0.1467, 0.9412, -0.30433]
+    thick_dir: [0.21079, -0.27085, -0.93926]
+  source: config/window_layout.json

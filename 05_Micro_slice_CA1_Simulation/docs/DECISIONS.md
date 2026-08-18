@@ -45,6 +45,15 @@
 - **추가**: E8-HFS(100 Hz × 1s → LTP; Bliss&Lømo 1973, Bliss&Collingridge 1993) · E8-LFS(1~3 Hz × 7~15min → LTD; Dudek&Bear 1992, Mulkey&Malenka 1992).
 - **이점**: 마이크로 조직이라 장시간 LFS(7~15분) 시뮬 현실적. **측정 = 정규화 fEPSP slope**(절대 아님). **주의**: Graupner 파라미터 정량 검증 필요.
 
+## 2026-08-18
+
+### D9. 창·전극 배치 확정 (Stage 2 bbox) — `층관통_v1`
+- **도구**: `01_tissue/2_bbox/window_picker.html`(인터랙티브 배치기, Artifact)로 확정. 원본 config = `config/window_layout.json`.
+- **창**: 종축(proximodistal) 500 × 층관통 800 × 두께 400 µm, 각도 0°. 중심 물리 [2972.2, 612.2, 4656.4]µm. slice400 프레임(seed+단위벡터)으로 3D 복원.
+- **전극**: **3×1 층관통 깊이 프로파일**(간격 200µm, 직경 10µm). **E1(SO)·E2(SP) 기록 · E3(SR) 자극** → SR 자극 → 층별 fEPSP/CSD.
+- **근거**: 전극축을 슬라이스 긴 방향에 두어 기여반경(~200µm) 확보(D2 연장). 층관통 800으로 SO→SP→SR 전 층 관통.
+- **⚠️**: UI 세포수는 표본(7,000/17,647) 추정 — 정확값은 Stage5 전세포 배치에서. 반영: `config/microslice.yaml`(window)·`config/mea.yaml`(layout).
+
 ---
 
 ## 미결 (진행 시 결정)

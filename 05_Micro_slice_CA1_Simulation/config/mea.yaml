@@ -5,11 +5,19 @@ pitch_um: 200        # 확정 — 전극 간격
 diameter_um: 10      # 확정 — 전극 직경
 n_electrodes: 3      # 확정 — 2~3개 (800um 축)
 
-# 배치 (E4b/experiments 에서 확정)
+# 전극 배치 확정 (2026-08-18, 도구 → config/window_layout.json)
 layout:
-  arrangement: null  #   예: line / grid
-  angle_deg: null
-  margin_um: 200     #   조직 가장자리 여유 (기능적 기여 반경 ~200um 근거)
+  arrangement: "3x1"   #   rows x cols. 층관통 세로 = 깊이 프로파일(SO→SP→SR)
+  angle_deg: 0
+  spacing_um: 200
+  stim_id: E3          #   E3(SR) 자극 · E1(SO)/E2(SP) 기록
+  center_local_um: {u: -279, r: 53}
+  margin_um: 200       #   조직 가장자리 여유 (기능적 기여 반경 ~200um 근거)
+  positions:
+    - {id: E1, role: rec,  layer: SO, xyz_um: [3001.6, 423.9, 4717.3]}
+    - {id: E2, role: rec,  layer: SP, xyz_um: [2972.2, 612.2, 4656.4]}
+    - {id: E3, role: stim, layer: SR, xyz_um: [2942.9, 800.4, 4595.6]}
+  source: config/window_layout.json
 
 # 세포외 순방향 매질 상수 (Ness 2015 MoI 기본값) — lib/mea_forward 사용
 medium:
