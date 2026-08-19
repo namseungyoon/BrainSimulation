@@ -61,6 +61,13 @@ env/      런처·빌드(추적)               scratch/   일회성(gitignore)
 .venv\Scripts\python.exe
 ```
 
+NEURON 을 쓰는 스크립트는 **런처를 dot-source 한 뒤** 실행한다(안 하면 환경변수가 사라진다):
+
+```powershell
+. .\env\activate.ps1
+& $Py04 01_env\3_neuron\1-3_verify_neuron.py
+```
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 .venv\Scripts\python.exe 01_env\1_probe\1-1_plot_env_probe.py
@@ -73,8 +80,9 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 |---|---|
 | **1-1** 환경 진단 | ✅ **14항목 중 5항목만 존재** — 재료는 있고 실행 도구가 통째로 없었다 |
 | **1-2** Python | ✅ python.org 3.11.9 + venv + numpy/scipy/matplotlib/pyyaml (**10/10 통과**) |
-| **1-3** NEURON | ⬜ 다음 |
-| 1-4 mod 빌드 · 1-5 검증 | ⬜ |
+| **1-3** NEURON | ✅ 8.2.7 + `env/activate.ps1` + `lib/nrnenv.py` (**8/8 통과**) — 수동 구획 RC 응답이 해석해와 dV 오차 0.00 % · tau 오차 0.50 % |
+| **1-4** mod 빌드 | ⬜ 다음 |
+| 1-5 메커니즘 검증 | ⬜ |
 | 2 뉴런 · 3 시냅스·전달 · 4 구동·리듬 · 5 가소성 엔진 · 6 실험 · 7 보완 모델 | ⬜ |
 
 conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지

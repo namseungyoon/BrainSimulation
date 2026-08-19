@@ -1,0 +1,32 @@
+{
+  "stim": [
+    20.0,
+    200.0,
+    0.05
+  ],
+  "e_pas": -70.0,
+  "area_um2": 1256.6370614359173,
+  "R_in_MOhm": 265.25823848649225,
+  "dv_theory_mV": 13.262911924324614,
+  "dv_sim_mV": 13.262911924324143,
+  "tau_theory_ms": 3.3333333333333335,
+  "tau_sim_ms": 3.349999999999209,
+  "n_points": 12001,
+  "dt": 0.025,
+  "cvode": 0,
+  "info": {
+    "neuronhome": "C:\\Users\\USER\\nrn",
+    "nrnversion": "NEURON -- VERSION 8.2.7+ HEAD (34cf696+) 2025-05-21",
+    "python_exe": "D:\\PROJECT\\Project_2025_2026_HIPPO\\03_Research_Development\\02_BrainSimulator\\04_Synaptic_plasticity_Simulation\\.venv\\Scripts\\python.exe",
+    "nrnivmodl": "C:\\Users\\USER\\nrn\\bin\\nrnivmodl.bat",
+    "nrnivmodl_exists": true,
+    "mingw_dir": "C:\\Users\\USER\\nrn\\mingw\\usr\\bin",
+    "mingw_exists": true,
+    "dt": 0.025,
+    "celsius": 34.0
+  },
+  "dv_rel_err": 3.549254983573583e-14,
+  "tau_rel_err": 0.0049999999997627055,
+  "checks_passed": 8,
+  "checks_total": 8
+}
