@@ -1,0 +1,24 @@
+# 뉴런 쌍 설정 — 단일 출처. 스크립트 하드코딩 금지.
+# 2-1(선별)에서 확정. 근거: figures 02_neurons/1_survey/2-1_*.png
+#
+# ⚠️ 13종이 템플릿 이름을 CA1_PC_cAC_sig 로 공유하지만 hoc 안의 생체물리 파라미터는
+#    서로 다르다(BluePyOpt 개별 최적화). 2-2 에서 두 세포를 동시 로드할 때
+#    템플릿 이름을 번들별로 바꿔 로드해야 각 세포가 자기 파라미터를 갖는다.
+
+pair:
+  # pre = 자극을 주는 뉴런, post = 기록을 하는 뉴런. 둘 다 CA1 추체세포 완전형태.
+  pre_bundle:  CA1_pyr_cACpyr_oh140807_A0_idF_20190305115459_model_files
+  post_bundle: CA1_pyr_cACpyr_oh140807_A0_idC_20190305103627_model_files
+  pre_tag:  oh140807_A0_idF
+  post_tag: oh140807_A0_idC
+
+  # 선별 기준(2-1): 정단 최대 경로거리 >= 500 um (원위 SLM 까지 닿음) &
+  #                정단 총 길이가 중앙값 근처(극단값 회피 -> 대표성).
+  selection:
+    criterion: "apical max path-dist >= 500 um AND apical length near median"
+    pre_apical_len_mm:  6.5
+    pre_apical_maxdist_um: 724
+    post_apical_len_mm: 6.6
+    post_apical_maxdist_um: 766
+
+models_root: ../Models     # 저장소 루트(02_BrainSimulator) 기준 상대경로

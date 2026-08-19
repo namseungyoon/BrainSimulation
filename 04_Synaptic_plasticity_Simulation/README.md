@@ -82,8 +82,9 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 | **1-2** Python | ✅ python.org 3.11.9 + venv + numpy/scipy/matplotlib/pyyaml (**10/10 통과**) |
 | **1-3** NEURON | ✅ 8.2.7 + `env/activate.ps1` + `lib/nrnenv.py` (**8/8 통과**) — 수동 구획 RC 응답이 해석해와 dV 오차 0.00 % · tau 오차 0.50 % |
 | **1-4** mod 빌드 | ✅ 04 전용 dll 0.66 MB · 23개 메커니즘 전부 등록·생성 (**23/23**) |
-| **1-5** 메커니즘 검증 | ⬜ 다음 |
-| 2 뉴런 · 3 시냅스·전달 · 4 구동·리듬 · 5 가소성 엔진 · 6 실험 · 7 보완 모델 | ⬜ |
+| **1-5** 메커니즘 검증 | ⏭ 생략 — 1-4가 등록+생성을 이미 검증(23/23), 별도 단계 불필요 |
+| **2-1** 뉴런 선별 | ✅ CA1 추체 13종 형태 렌더·지표 비교 → pre=oh140807_A0_idF · post=oh140807_A0_idC |
+| 2-2~2-7 · 3 시냅스·전달 · 4 구동·리듬 · 5 가소성 엔진 · 6 실험 · 7 보완 모델 | ⬜ |
 
 conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지
 확신할 수 없어 **질문 자체가 성립하지 않는 경로**를 택했다 ([DECISIONS.md](docs/DECISIONS.md) D7).

@@ -33,7 +33,7 @@
 | **1-3** | `01_env/3_neuron` | `env/activate.ps1` + `1-3_verify_neuron.py` | `1-3_neuron_verify.png` · `1-3_neuron_verify.json` | ✅ |
 | **1-4** | `01_env/4_build` | `env/build_mechanisms.py` + `1-4_verify_build.py` | `1-4_mech_inventory.png` · `1-4_mech_inventory.json` | ✅ |
 | **1-5** | `01_env/5_verify` | `1-5_verify_mechanisms.py` | `1-5_mech_verify.png` | ⬜ |
-| **2-1** | `02_neurons/1_survey` | `2-1_survey_bundles.py` | `2-1_bundle_survey.png` | ⬜ |
+| **2-1** | `02_neurons/1_survey` | `2-1_survey_bundles.py` | `2-1_morphology_grid.png` · `2-1_metrics.png` · `2-1_survey.json` | ✅ |
 | **2-2** | `02_neurons/2_load` | `2-2_load_cell.py` | `2-2_cell_loaded.png` | ⬜ |
 | **2-3** | `02_neurons/3_morphology` | `2-3_morphology.py` | `2-3_morphology.png` | ⬜ |
 | **2-4** | `02_neurons/4_ephys` | `2-4_ephys_battery.py` | `2-4_ephys_battery.png` | ⬜ |
@@ -95,6 +95,29 @@
 ## ★ 산출물 규약 (모든 N-M 공통 · 예외 없음)
 
 **하위 단계 하나하나가 반드시 직관적으로 확인 가능한 산출물을 낸다.** 산출물 없는 단계는 완료가 아니다.
+
+### ★★ 표가 아니라 모형을 그린다
+
+**판정표만 있는 그림은 산출물로 인정하지 않는다.** 표는 수치를 확정하는 보조수단일 뿐이고,
+산출물의 본체는 **실제 모형·실제 파형**이어야 한다. 글자만 늘어놓은 그림은 처음 보는 사람이
+무엇을 봤는지 알 수 없다.
+
+| 단계 | 반드시 그려야 할 것 |
+|---|---|
+| **2-3** 형태 | **실제 수상돌기 나무를 그린다** — soma·basal·apical 을 색으로 구분, 축척 막대 포함 |
+| **2-4** 전기생리 | f-I 곡선 + 실제 막전위 파형(계단별 중첩) |
+| **2-5** 공명 | ZAP 입력 파형 + 막전위 응답 + `\|Z(f)\|` 곡선 |
+| **2-6** 세포 쌍 | **pre·post 두 세포 형태를 나란히 배치해 그린다** |
+| **2-7** 거리 지도 | 나무를 **경로거리로 색칠**하고 SR 대역을 강조 |
+| **3-2** 배치 | **나무 위에 시냅스 위치를 마커로 찍는다** — 이것이 "실제 시냅스가 생성된 위치" |
+| **3-3** 배선 | pre 세포 → 지연 → post 수상돌기 시냅스까지의 **모형 도해** + 실제 EPSP 파형 |
+| **3-5~3-9** | 파형·분포·거리의존 곡선 (표 아님) |
+| **4-x** 구동 | theta·gamma 파형과 burst 정렬을 **시간축 위에 그린다** |
+| **5-x** 엔진 | 칼슘 궤적·효능 궤적·STDP 창 곡선 |
+| **6-x** 실험 | 위상별/조건별 효능 변화 곡선·히트맵 |
+
+형태 렌더링은 `lib/morphology.py` 가 담당한다(2-3 에서 작성). 3D 좌표를 2D 로 투영해
+선분으로 그리고, 직경을 선폭에 반영하고, 시냅스·기록점을 마커로 올린다.
 
 | 요구 | 내용 |
 |---|---|
