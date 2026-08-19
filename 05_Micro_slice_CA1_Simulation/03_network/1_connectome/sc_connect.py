@@ -18,6 +18,7 @@ Nat Commun) · Wybo 2020(eLife)의 두 조건에 맞춤:
 실행: python 03_network/1_connectome/sc_connect.py
 """
 import os
+import sys
 import json
 import logging
 
@@ -44,7 +45,9 @@ os.makedirs(FIG, exist_ok=True)
 SR_R = (25.0, 450.0)      # 정단 SR
 SO_R = (-400.0, -65.0)    # 기저 SO
 CONV_PC, CONV_INT = 20878, 12714
-N_PC, N_INT = 200, 122    # PC당 배치수(그룹화), 억제뉴런 배치수
+# PC당 배치수(그룹화) — CLI로 조절: --npc N (구동 여유시 늘려 정밀도↑, 그룹화인자↓)
+N_PC = int(sys.argv[sys.argv.index("--npc") + 1]) if "--npc" in sys.argv else 200
+N_INT = int(round(N_PC * CONV_INT / CONV_PC))   # 수렴도 비례 자동 (200→122)
 
 
 def dend_points(path):
