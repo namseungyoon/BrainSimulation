@@ -14,3 +14,6 @@ _*.pid
 */*/figures/.last_rc
 # 생성 HTML(세포 데이터 임베드, make_picker.py 로 재생성)
 **/window_picker.html
+
+# 논문 PDF (저작권/라이선스 — 로컬만)
+99_references/
