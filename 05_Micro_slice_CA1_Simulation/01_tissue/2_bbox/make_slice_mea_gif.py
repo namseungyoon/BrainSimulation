@@ -7,7 +7,7 @@
 (전극이 조직 속이 아니라 표면에 있음을 확인 — 실제 MEA 형태.)
 
 재료: config/window_layout.json · data/derived/atlas_crop.npz
-실행: python 01_tissue/2_bbox/make_slice_mea_gif.py  →  figures/confirmed_slice_mea_3d.gif
+실행: python 01_tissue/2_bbox/make_slice_mea_gif.py  →  figures/1-2_confirmed_slice_mea_3d.gif
 """
 import os
 import json
@@ -90,7 +90,7 @@ def main():
         return []
 
     anim = FuncAnimation(fig, update, frames=36, interval=110, blit=False)
-    out = os.path.join(FIG, "confirmed_slice_mea_3d.gif")
+    out = os.path.join(FIG, "1-2_confirmed_slice_mea_3d.gif")
     anim.save(out, writer=PillowWriter(fps=12))
     plt.close(fig)
     print(f"[GIF] {out}  ({os.path.getsize(out)/1e6:.1f} MB)")

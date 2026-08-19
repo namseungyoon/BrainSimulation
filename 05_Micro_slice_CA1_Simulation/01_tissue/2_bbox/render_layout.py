@@ -92,7 +92,7 @@ def main():
             ax.set_title(f'확정 배치 「{cfg["name"]}」 — slice400 전체 속 창 위치', fontsize=12)
         ax.legend(title="층", loc="upper right")
         fig.tight_layout()
-        out = os.path.join(FIG, "confirmed_detail.png" if zoom else "confirmed_overview.png")
+        out = os.path.join(FIG, "1-2_confirmed_detail.png" if zoom else "1-2_confirmed_overview.png")
         fig.savefig(out, dpi=140); plt.close(fig); return out
 
     o1 = render(False); o2 = render(True)

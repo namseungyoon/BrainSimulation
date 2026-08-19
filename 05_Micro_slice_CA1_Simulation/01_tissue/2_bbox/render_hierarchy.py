@@ -7,7 +7,7 @@
   (2) slice400(국소 종축×층관통) — 층별 색 + 창(사각형)
   (3) 층관통_v1 창 확대 — 층 + 전극(자극/기록)
 
-실행: python 01_tissue/2_bbox/render_hierarchy.py  →  figures/confirmed_hierarchy.png
+실행: python 01_tissue/2_bbox/render_hierarchy.py  →  figures/1-2_confirmed_hierarchy.png
 """
 import os
 import glob
@@ -120,7 +120,7 @@ def main():
     ax.set_title("③ 층관통_v1 확대 — 전극(자극 E3/SR·기록 E2·E1)")
     fig.suptitle(f'크롭 계층  전체 CA1 → slice400 → 층관통_v1  ({cfg["name"]})', fontsize=14)
     fig.tight_layout()
-    out = os.path.join(FIG, "confirmed_hierarchy.png")
+    out = os.path.join(FIG, "1-2_confirmed_hierarchy.png")
     fig.savefig(out, dpi=130); plt.close(fig)
     print(f"[계층 그림] {out}")
 
