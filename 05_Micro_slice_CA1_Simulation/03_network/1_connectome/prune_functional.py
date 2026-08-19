@@ -126,17 +126,22 @@ def stages_graph(pre0, post0, mt, Pre, Post, Ns):
     pcpc = [pcpc_pairs(pre0, post0), pcpc_pairs(s1["pre_gid"], s1["post_gid"]), pcpc_pairs(Pre, Post)]
     labels = ["가지치기 전\n(touch)", "1단계 후\n(구조·bouton)", "2단계 후\n(기능·Bezaire)"]
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5.5))
-    for ax, data, ttl, col in zip(
-            axes, [pairs, syns, pcpc],
-            ["연결쌍 수", "총 시냅스 수", "PC→PC 연결쌍(국소 희박화)"],
-            ["#4C72B0", "#DD8452", "#C44E52"]):
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5.8))
+    # (data, 제목, 색, apposition막대 인덱스(단위 다름 표시))
+    panels = [(pairs, "연결쌍 수", "#4C72B0", None),
+              (syns, "시냅스 수  (첫 막대=apposition 접촉후보·서브샘플, 시냅스 아님)", "#DD8452", 0),
+              (pcpc, "PC→PC 연결쌍 (국소 희박화)", "#C44E52", None)]
+    for ax, (data, ttl, col, appidx) in zip(axes, panels):
         bars = ax.bar(labels, data, color=col, alpha=0.85)
-        ax.set_title(ttl); ax.set_yscale("log")
-        for bx, v in zip(bars, data):
-            ax.text(bx.get_x() + bx.get_width()/2, v, f"{int(v):,}", ha="center", va="bottom", fontsize=9)
-        ax.set_ylim(0.5, max(data) * 3)
-    fig.suptitle("3-1(b) 내부 커넥텀 pruning — 가지치기 전 → 1단계(구조) → 2단계(기능) 변화 (log축)", fontsize=13)
+        if appidx is not None:   # apposition 막대: 단위 다름 → 회색 빗금
+            bars[appidx].set_facecolor("#b0b0b0"); bars[appidx].set_hatch("//"); bars[appidx].set_edgecolor("#666")
+        ax.set_title(ttl, fontsize=10.5); ax.set_yscale("log")
+        for k, (bx, v) in enumerate(zip(bars, data)):
+            note = "\n(접촉후보)" if appidx is not None and k == appidx else ""
+            ax.text(bx.get_x() + bx.get_width()/2, v, f"{int(v):,}{note}", ha="center", va="bottom", fontsize=8.5)
+        ax.set_ylim(0.5, max(data) * 3.5)
+    fig.suptitle("3-1(b) 내부 커넥텀 pruning — 가지치기 전 → 1단계(구조) → 2단계(기능) (log축)\n"
+                 "※ 시냅스 패널 첫 막대만 apposition(접촉후보·서브샘플)로 단위가 다름 — 시냅스는 1·2단계 값", fontsize=12)
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_prune_stages.png"), dpi=130)
     plt.close(fig)
 
