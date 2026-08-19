@@ -123,7 +123,7 @@ def main():
             if len(hit):
                 sel = rng.choice(hit, min(int(insyn[p]), len(hit)), replace=len(hit) < int(insyn[p]))
                 for s in sel:
-                    syns.append([int(round(tdl[s, 0])), int(round(tdl[s, 1])), c])
+                    syns.append([int(round(tdl[s, 0])), int(round(tdl[s, 1])), c, mt[p]])
     data = {"cells": cells, "syns": syns, "tsoma": [int(round(dloc[0, 0])), int(round(dloc[0, 1]))],
             "n_pre": len(ins), "n_syn": len(syns)}
     open(OUT, "w", encoding="utf-8").write(HTML.replace("__DATA__", json.dumps(data)))
@@ -146,20 +146,27 @@ for(const c of D.cells)for(const p of c.d)for(let i=0;i<p.length;i+=2){if(p[i]<x
 S=0.85*Math.min(cv.width/(x1-x0),cv.height/(y1-y0));ox=cv.width/2-S*(x0+x1)/2;oy=cv.height/2+S*(y0+y1)/2;draw();}
 function TX(x){return ox+S*x}function TY(y){return oy-S*y}
 function stroke(polys){cx.beginPath();for(const p of polys){cx.moveTo(TX(p[0]),TY(p[1]));for(let i=2;i<p.length;i+=2)cx.lineTo(TX(p[i]),TY(p[i+1]));}cx.stroke();}
+let hidden=new Set();
+function vis(m){return m==='TARGET'||!hidden.has(m);}
 function draw(){cx.clearRect(0,0,cv.width,cv.height);cx.lineCap='round';cx.lineJoin='round';
-for(const c of D.cells){cx.strokeStyle=c.ac;cx.lineWidth=Math.max(.25,S*0.35);cx.globalAlpha=.30;stroke(c.a);}
-for(const c of D.cells){cx.strokeStyle=c.dc;cx.lineWidth=Math.max(.6,S*1.2);cx.globalAlpha=.95;stroke(c.d);}
-cx.globalAlpha=1;for(const s of D.syns)star(TX(s[0]),TY(s[1]),Math.max(3,S*2.2),s[2]);
+for(const c of D.cells){if(!vis(c.mt))continue;cx.strokeStyle=c.ac;cx.lineWidth=Math.max(.25,S*0.35);cx.globalAlpha=.30;stroke(c.a);}
+for(const c of D.cells){if(!vis(c.mt))continue;cx.strokeStyle=c.dc;cx.lineWidth=Math.max(.6,S*1.2);cx.globalAlpha=.95;stroke(c.d);}
+cx.globalAlpha=1;for(const s of D.syns){if(!vis(s[3]))continue;star(TX(s[0]),TY(s[1]),Math.max(3,S*2.2),s[2]);}
 cx.fillStyle='#000';cx.beginPath();cx.arc(TX(D.tsoma[0]),TY(D.tsoma[1]),Math.max(4,S*3),0,7);cx.fill();}
 function star(x,y,r,col){cx.beginPath();for(let i=0;i<10;i++){let a=Math.PI/5*i-Math.PI/2,rr=i%2?r*.45:r;cx[i?'lineTo':'moveTo'](x+rr*Math.cos(a),y+rr*Math.sin(a));}cx.closePath();cx.fillStyle=col;cx.fill();cx.strokeStyle='#000';cx.lineWidth=.6;cx.stroke();}
 cv.onwheel=e=>{e.preventDefault();let f=e.deltaY<0?1.12:1/1.12;ox=e.clientX-(e.clientX-ox)*f;oy=e.clientY-(e.clientY-oy)*f;S*=f;draw();};
 let drag=false,px,py;cv.onmousedown=e=>{drag=true;px=e.clientX;py=e.clientY;cv.style.cursor='grabbing';};
 onmouseup=()=>{drag=false;cv.style.cursor='grab';};onmousemove=e=>{if(drag){ox+=e.clientX-px;oy+=e.clientY-py;px=e.clientX;py=e.clientY;draw();}};
 cv.ondblclick=fit;onresize=fit;
-document.getElementById('info').textContent=`전시냅스 ${D.n_pre}개 · 시냅스 ${D.n_syn}개 · 수상돌기=진함 / 축삭=연함 / ★=시냅스`;
+document.getElementById('info').textContent=`전시냅스 세포 ${D.n_pre}개 · 시냅스 ${D.n_syn}개 · 수상돌기=진함 / 축삭=연함 / ★=시냅스`;
 const cm={SP_PC:'#C44E52',SP_Ivy:'#8172B3',SP_PVBC:'#4C72B0',SP_CCKBC:'#55A868',SO_OLM:'#CCB974',SP_BS:'#DD8452',SO_Tri:'#937860',SR_SCA:'#DA8BC3',SO_BS:'#8C8C8C',SLM_PPA:'#64B5CD',SP_AA:'#E377C2',SO_BP:'#7F7F7F'};
-let seen=new Set(D.cells.map(c=>c.mt)),lh='<b>종류</b><br>';for(const k in cm)if(seen.has(k))lh+=`<span style="color:${cm[k]}">■</span> ${k}<br>`;
-document.getElementById('leg').innerHTML=lh+'<span style="color:#000">●</span> 대상 추체';
+let ccnt={},scnt={};for(const c of D.cells)if(c.mt!=='TARGET')ccnt[c.mt]=(ccnt[c.mt]||0)+1;for(const s of D.syns)scnt[s[3]]=(scnt[s[3]]||0)+1;
+let lh='<b>종류 (체크=표시)</b><br><label style="display:block"><input type=checkbox id=allck checked> <b>전체</b></label><hr style="margin:3px 0">';
+for(const k in cm)if(ccnt[k])lh+=`<label style="display:block;cursor:pointer"><input type=checkbox checked data-mt="${k}"><span style="color:${cm[k]}">■</span> ${k} <span style="color:#888">(${ccnt[k]}세포·${scnt[k]||0}시냅스)</span></label>`;
+lh+='<hr style="margin:3px 0"><span style="color:#000">●</span> 대상 추체';
+document.getElementById('leg').innerHTML=lh;
+document.querySelectorAll('#leg input[data-mt]').forEach(cb=>cb.onchange=()=>{cb.checked?hidden.delete(cb.dataset.mt):hidden.add(cb.dataset.mt);draw();});
+document.getElementById('allck').onchange=e=>{document.querySelectorAll('#leg input[data-mt]').forEach(cb=>{cb.checked=e.target.checked;cb.checked?hidden.delete(cb.dataset.mt):hidden.add(cb.dataset.mt);});draw();};
 fit();
 </script></body></html>"""
 
