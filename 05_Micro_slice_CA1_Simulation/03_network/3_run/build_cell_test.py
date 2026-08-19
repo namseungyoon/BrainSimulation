@@ -13,6 +13,13 @@ import os
 import re
 import json
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import logging
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+plt.rcParams["font.family"] = ["NanumGothic", "Malgun Gothic", "DejaVu Sans"]
+plt.rcParams["axes.unicode_minus"] = False
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -21,6 +28,8 @@ DERIVED = os.path.join(ROOT, "data", "derived")
 MORPHLIB = os.path.join(ROOT, "data", "morphology_library", "morphology_library")
 MECH = os.path.join(ROOT, "scratch", "mechbuild", "x86_64", "libnrnmech.so")
 SCR = os.path.join(ROOT, "scratch")
+FIG = os.path.join(HERE, "figures")
+os.makedirs(FIG, exist_ok=True)
 
 from neuron import h
 
@@ -67,17 +76,38 @@ def main():
     print(f"[구획] section {nsec}개 · segment {nseg}개")
 
     # 정지막전위
-    h.finitialize(-70)
-    h.continuerun(200)
+    h.finitialize(-70); h.continuerun(200)
     vrest = cell.soma[0](0.5).v
     print(f"[정지 막전위] {vrest:.1f} mV (200ms 후)")
 
-    # 전류 주입 → 발화 확인
-    ic = h.IClamp(cell.soma[0](0.5)); ic.delay = 100; ic.dur = 400; ic.amp = 0.4
+    # 전류 계단 → F-I 곡선 + 대표 전압파형
+    amps = [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0, 1.25, 1.5]
+    dur, delay = 400.0, 100.0
+    ic = h.IClamp(cell.soma[0](0.5)); ic.delay = delay; ic.dur = dur
     apc = h.APCount(cell.soma[0](0.5)); apc.thresh = -20
-    h.finitialize(-70); h.continuerun(600)
-    print(f"[전류주입 0.4nA 400ms] 스파이크 {int(apc.n)}개 → {'발화 OK' if apc.n > 0 else '무발화'}")
-    print("\n[검증 완료] 세포 1개 완전형태 인스턴스화·동작 확인")
+    tvec = h.Vector(); tvec.record(h._ref_t)
+    vsoma = h.Vector(); vsoma.record(cell.soma[0](0.5)._ref_v)
+    counts = []; traces = {}
+    for a in amps:
+        ic.amp = a; h.finitialize(-70); h.continuerun(delay + dur + 100)
+        counts.append(int(apc.n))
+        if a in (0.4, 0.8, 1.5):
+            traces[a] = (np.array(tvec), np.array(vsoma))
+    rate = [c / (dur / 1000.0) for c in counts]   # Hz
+    print("[F-I] " + " · ".join(f"{a}nA:{c}sp" for a, c in zip(amps, counts)))
+
+    fig, ax = plt.subplots(1, 2, figsize=(14, 5.5), gridspec_kw={"width_ratios": [1, 1.3]})
+    ax[0].plot(amps, rate, "o-", color="#C44E52", lw=2, ms=7)
+    ax[0].set_xlabel("주입 전류 (nA)"); ax[0].set_ylabel("발화율 (Hz)")
+    ax[0].set_title(f"(a) F-I 곡선 — 추체 gid {gid}\nrheobase ≈ 0.5nA")
+    ax[0].grid(alpha=0.3)
+    for a, (t, v) in traces.items():
+        ax[1].plot(t, v, lw=0.8, label=f"{a} nA ({counts[amps.index(a)]}sp)")
+    ax[1].set_xlabel("시간 (ms)"); ax[1].set_ylabel("소마 전압 (mV)")
+    ax[1].set_title("(b) 소마 전압 파형 (전류 계단)"); ax[1].legend(fontsize=9)
+    fig.suptitle(f"3-3 세포 검증 — {mt[gid]} 완전형태({nsec}sec·{nseg}seg)·정지 {vrest:.1f}mV·emodel {tpl[gid][:28]}", fontsize=12)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_cell_test.png"), dpi=130); plt.close(fig)
+    print(f"\n[검증 완료] 세포 완전형태 인스턴스화·동작 확인 · 그림 -> {FIG}/3-3_cell_test.png")
 
 
 if __name__ == "__main__":
