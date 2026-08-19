@@ -1,4 +1,7 @@
 {
+    "_note":  "FROZEN 1-1 baseline: the state this machine was in BEFORE any install (1-2/1-3). Never overwrite. Current state goes to _env_probe_latest.json.",
+    "_measured_at":  "2026-08-19",
+    "_measured_by":  "env/probe_env.ps1",
     "python_on_path":  "STUB C:\\Users\\USER\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
     "python_version":  null,
     "conda":  null,

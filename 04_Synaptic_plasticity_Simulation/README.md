@@ -55,17 +55,28 @@ env/      런처·빌드(추적)               scratch/   일회성(gitignore)
 
 ## 실행
 
+**04 인터프리터는 이것 하나다** (다른 트랙의 `ca1sim` 과 무관 — conda 미사용):
+
+```
+.venv\Scripts\python.exe
+```
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
+.venv\Scripts\python.exe 01_env\1_probe\1-1_plot_env_probe.py
+.venv\Scripts\python.exe 01_env\2_python\1-2_verify_python.py
 ```
 
 ## 상태
 
-🔄 **1-1 완료** (2026-08-19) — 이 머신 환경 진단. **14항목 중 6항목만 존재.**
-Python·conda·NEURON·컴파일된 mod 가 **전부 없다** → 1-2/1-3 이 전체 블로커.
-자세한 결과와 설치 절차: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
-
 | 단계 | 상태 |
 |---|---|
-| 1 환경 | 🔄 1-1 ✅ · 1-2~1-5 ⬜ |
+| **1-1** 환경 진단 | ✅ **14항목 중 5항목만 존재** — 재료는 있고 실행 도구가 통째로 없었다 |
+| **1-2** Python | ✅ python.org 3.11.9 + venv + numpy/scipy/matplotlib/pyyaml (**10/10 통과**) |
+| **1-3** NEURON | ⬜ 다음 |
+| 1-4 mod 빌드 · 1-5 검증 | ⬜ |
 | 2 뉴런 · 3 시냅스·전달 · 4 구동·리듬 · 5 가소성 엔진 · 6 실험 · 7 보완 모델 | ⬜ |
+
+conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지
+확신할 수 없어 **질문 자체가 성립하지 않는 경로**를 택했다 ([DECISIONS.md](docs/DECISIONS.md) D7).
+자세한 설치 기록: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)

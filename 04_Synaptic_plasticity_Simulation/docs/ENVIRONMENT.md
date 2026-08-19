@@ -25,25 +25,83 @@
 | `write_access` | ✅ | 쓰기 가능 |
 | `free_space_GB` | ✅ | 1830.6 GB |
 
-**요약: 14항목 중 6항목 존재.** 재료(mod 소스·세포 번들)는 다 있고 **실행 도구가 통째로 없다.**
+**요약: 14항목 중 5항목 존재.** 재료(mod 소스·세포 번들)는 다 있고 **실행 도구가 통째로 없다.**
 
 ### 판정
 
 - **1-2(Python)·1-3(NEURON)이 트랙 전체의 블로커다.** 둘 다 설치 없이는 2단계 이후가 불가능하다.
-- `python_on_path` 가 `[O]` 로 찍히지만 **스텁이다.** 진단 스크립트는 파일 크기 1KB 미만이면
-  `STUB` 접두어를 붙이도록 되어 있다. 이걸 파이썬으로 착각하면 1-2에서 헤맨다.
+- `python_on_path` 는 파일이 존재하지만 **스텁이라 존재로 세지 않는다**(판정 `!`).
+  진단 스크립트가 크기 1KB 미만이면 `STUB` 접두어를 붙인다. 이걸 파이썬으로 착각하면 1-2에서 헤맨다.
+  ⚠️ 최초 구현은 스텁을 `O` 로 세어 **6/14** 로 보고했다. 그림 스크립트는 스텁을 제외해 **5/14** 를 냈고,
+  숫자가 둘로 갈렸다. 스텁은 쓸 수 없으므로 **5/14 가 맞고**, 진단 스크립트를 그에 맞춰 고쳤다.
 - 저장소 자산(mod 23개·추체 13종)은 **확보되어 있으므로** 설치만 끝나면 바로 1-4 빌드로 갈 수 있다.
 
-## 1-2 Python — 예정 절차
+### ★ 동결 기준선과 현재 상태는 다른 파일이다
 
-⬜ **미실행.** 아래는 계획이며, 실행 후 이 절에 **실제로 한 것**으로 교체한다.
+`env/probe_env.ps1` 은 산출을 둘로 나눈다.
 
-1. Miniconda(Windows x86_64) 설치 → `C:\Users\USER\miniconda3`
-2. `conda env create -f ..\environment.yml` → env 이름 `ca1sim` (python 3.10.20)
-3. 검증: `python -V` · `import numpy, scipy, matplotlib`
+| 파일 | 무엇 | 추적 |
+|---|---|---|
+| `figures/1-1_env_probe.json` | **동결 기준선** — 설치 전 상태. 한 번만 쓰고 **절대 덮어쓰지 않는다** | O |
+| `figures/_env_probe_latest.json` | **현재 상태** — 언제든 재실행 | X (gitignore) |
 
-⚠️ `environment.yml` 은 **win-64 빌드 문자열이 고정**되어 있어 그대로는 실패할 수 있다.
-실패 시 빌드 문자열을 떼고 재시도하고, **그 사실을 여기 기록**한다.
+동결하지 않으면 1-1 그림이 조용히 "나중 머신"을 설명하게 된다. 실제로 1-2 직후 재실행했을 때
+그림이 설치된 파이썬을 못 보고 "없음"으로 그리는 일이 벌어졌다(진단기가 PATH만 봤고,
+우리는 `PrependPath=0` 으로 설치해 PATH를 안 건드렸기 때문). 진단기는 이제 설치 경로와
+04 venv 를 직접 확인한다.
+
+## 1-2 Python — ✅ 완료 (2026-08-19)
+
+**conda 를 쓰지 않는다.** 근거는 [DECISIONS.md](DECISIONS.md) D7 (사내 정책상 Anaconda 무료 사용 불가).
+
+### 실제로 한 것
+
+```powershell
+# 1) 내려받기 (HTTPS, python.org 직접)
+#    python-3.11.9-amd64.exe  25 MB
+#    sha256 5EE42C4EEE1E6B4464BB23722F90B45303F79442DF63083F05322F1785F5FDDE
+# 2) 사용자 단위 무인 설치 — 관리자 권한 불필요, 시스템 PATH 미변경
+python-3.11.9-amd64.exe /quiet InstallAllUsers=0 TargetDir=C:\Users\USER\Python311 `
+    PrependPath=0 Include_test=0 Include_launcher=0 AssociateFiles=0 Shortcuts=0 `
+    Include_doc=0 Include_tcltk=0
+# 3) 04 전용 venv
+C:\Users\USER\Python311\python.exe -m venv <트랙루트>\.venv
+# 4) 패키지
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install numpy scipy matplotlib pyyaml
+```
+
+### ★ 04 인터프리터 단일 출처
+
+```
+<트랙루트>\.venv\Scripts\python.exe
+```
+
+**이 경로만 쓴다.** 다른 트랙의 `ca1sim` 은 04와 무관하다. `.venv/` 는 gitignore 대상이다.
+
+### 검증 결과 — `01_env/2_python/1-2_verify_python.py` (10/10 통과)
+
+| 항목 | 값 |
+|---|---|
+| Python | 3.11.9 · 64bit |
+| venv 안에서 실행 | 예 |
+| numpy | 2.4.6 |
+| scipy | 1.17.1 |
+| matplotlib | 3.11.1 (백엔드 **Agg**) |
+| pyyaml | 6.0.3 |
+| 한글 폰트 | Malgun Gothic 존재 |
+| tkinter | **없음(의도)** |
+
+산출: `01_env/2_python/figures/1-2_python_env.png` · `1-2_python_env.json`
+
+### 설치 옵션을 그렇게 준 이유
+
+| 옵션 | 이유 |
+|---|---|
+| `PrependPath=0` | 시스템 PATH 를 건드리지 않는다. 다른 도구와 충돌하지 않는다. **대신 진단기가 PATH만 보면 새 파이썬을 못 찾으므로** 설치 경로를 직접 확인하도록 고쳤다 |
+| `InstallAllUsers=0` | 관리자 권한 불필요 |
+| `Include_tcltk=0` | tkinter 미설치 → 창을 띄울 수 없다. 어차피 규약이 `Agg` 고정이라 무해하고, 설치가 가벼워진다 |
+| `Include_launcher=0` | 시스템 전역 `py` 런처를 만들지 않는다 |
 
 ## 1-3 NEURON — 예정 절차
 

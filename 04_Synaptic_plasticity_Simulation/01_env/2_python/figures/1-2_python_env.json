@@ -1,0 +1,16 @@
+{
+  "python_version": "3.11.9",
+  "python_exe": "D:\\PROJECT\\Project_2025_2026_HIPPO\\03_Research_Development\\02_BrainSimulator\\04_Synaptic_plasticity_Simulation\\.venv\\Scripts\\python.exe",
+  "architecture": "64bit",
+  "in_venv": true,
+  "base_prefix": "C:\\Users\\USER\\Python311",
+  "packages": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.1",
+    "pyyaml": "6.0.3"
+  },
+  "mpl_backend": "Agg",
+  "font_malgun": true,
+  "tkinter": false
+}

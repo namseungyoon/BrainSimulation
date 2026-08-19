@@ -28,8 +28,8 @@
 
 | N-M | 하위 폴더 | 스크립트 | 주요 그림 | 상태 |
 |---|---|---|---|---|
-| **1-1** | `01_env/1_probe` | `env/probe_env.ps1` ※ | `1-1_env_probe.json` ※※ | ✅ |
-| **1-2** | `01_env/2_python` | (설치 절차 → `docs/ENVIRONMENT.md`) | — | ⬜ |
+| **1-1** | `01_env/1_probe` | `env/probe_env.ps1` ※ + `1-1_plot_env_probe.py` | `1-1_env_probe.png` · `1-1_env_probe.json` | ✅ |
+| **1-2** | `01_env/2_python` | `1-2_verify_python.py` | `1-2_python_env.png` · `1-2_python_env.json` | ✅ |
 | **1-3** | `01_env/3_neuron` | `env/activate.ps1` | `1-3_neuron_version.png` | ⬜ |
 | **1-4** | `01_env/4_build` | `env/build_mechanisms.py` | `1-4_mech_inventory.png` | ⬜ |
 | **1-5** | `01_env/5_verify` | `1-5_verify_mechanisms.py` | `1-5_mech_verify.png` | ⬜ |
@@ -85,9 +85,28 @@
 ※ **1-1 만 PowerShell 이다.** 파이썬이 없는 상태를 진단하는 도구가 파이썬이면 순환이므로,
 주 도구를 `env/probe_env.ps1` 로 두었다. 1-2 이후 파이썬 판을 추가해 재실행 가능하게 한다.
 
-※※ **1-1 만 PNG 가 없다.** matplotlib 이 파이썬을 요구하는데, 그 파이썬이 없다는 것을 확인하는 단계라
-그림을 만들 수 없다. 산출물은 **밑줄 없는 `1-1_env_probe.json`(추적)** 과
-[ENVIRONMENT.md](ENVIRONMENT.md) 의 판정표다. 1-2 완료 후 같은 JSON 으로 PNG 를 생성해 채운다.
+※※ ~~1-1 만 PNG 가 없다~~ → **해소(2026-08-19).** 1-2 로 파이썬이 생긴 직후
+`1-1_plot_env_probe.py` 로 소급 생성했다. 이제 **모든 단계가 예외 없이 그림을 낸다.**
+
+**1-1 산출은 동결된다.** `1-1_env_probe.json` 은 **설치 전 상태**이고 재실행해도 덮어쓰지 않는다.
+현재 상태는 `_env_probe_latest.json`(gitignore)로 따로 나간다. 동결하지 않으면 1-1 그림이
+조용히 "나중 머신"을 설명하게 된다 — 실제로 1-2 직후 그 사고가 났고, 그래서 분리했다.
+
+## ★ 산출물 규약 (모든 N-M 공통 · 예외 없음)
+
+**하위 단계 하나하나가 반드시 직관적으로 확인 가능한 산출물을 낸다.** 산출물 없는 단계는 완료가 아니다.
+
+| 요구 | 내용 |
+|---|---|
+| **그림·그래프** | `N-M_<slug>.png` — 눈으로 바로 판정 가능해야 한다. 여러 장이면 번호 같고 slug만 다름 |
+| **표** | 핵심 수치는 표로. Notion 에는 **네이티브 표**로 넣는다(파이프 표 → `<table>` 렌더) |
+| **git** | 코드 + 결과 PNG 추적. 커밋 `04 N-M: 설명` |
+| **Notion** | 같은 흐름에서 갱신. 절 번호가 **N-M 과 완전 일치**. 페이지 `3c117cb5cdbd8091af80cba6a08ec5ee` |
+| **정확성** | 캡션·표의 모든 수치는 **소스코드/실행 로그와 대조**해 확정 (기억 의존 금지) |
+
+그림 작성 규칙: matplotlib `Agg` · 한글 폰트 `Malgun Gothic` · `axes.unicode_minus=False`.
+`ĝ`·유니코드 마이너스는 결자가 되므로 `g_hat`·ASCII `-`·`~` 를 쓴다.
+그림 부제에는 재현에 필요한 조건(엔진·동결·구동모드·시드 등)을 **인쇄**한다.
 
 ## 규약 요약
 

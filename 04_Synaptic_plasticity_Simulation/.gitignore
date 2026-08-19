@@ -1,8 +1,14 @@
 # 04 트랙 로컬 gitignore. 루트 .gitignore 규칙을 상속받고 여기에 보강한다.
 # ⚠️ git 은 인라인 주석을 지원하지 않는다. 주석은 반드시 줄 맨 앞에.
 
-# 일회성 작업 공간
+# 일회성 작업 공간 (설치본 다운로드 등)
 scratch/
+
+# 04 전용 파이썬 가상환경 (docs/ENVIRONMENT.md 1-2)
+.venv/
+
+# 진단기의 현재상태 산출. 1-1_env_probe.json(동결 기준선)은 반대로 추적한다.
+*/*/figures/_env_probe_latest.json
 
 # 메커니즘 빌드 산출물 — manifest 로 모아 빌드하는 staging 과 컴파일 결과
 mechanisms/_build/
