@@ -1,0 +1,16 @@
+{
+    "python_on_path":  "STUB C:\\Users\\USER\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
+    "python_version":  null,
+    "conda":  null,
+    "conda_dirs":  null,
+    "NEURONHOME_env":  null,
+    "neuron_install":  null,
+    "nrnivmodl":  null,
+    "dll_local_04":  null,
+    "dll_shared":  null,
+    "mod_sources":  "23 .mod files",
+    "pyr_bundles":  "13 pyramidal bundles",
+    "git":  "git version 2.55.0.windows.4",
+    "write_access":  "writable",
+    "free_space_GB":  1830.6
+}

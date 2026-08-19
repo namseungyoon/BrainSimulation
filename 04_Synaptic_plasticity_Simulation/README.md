@@ -1,0 +1,71 @@
+# 04_Synaptic_plasticity_Simulation
+
+**뉴런 2개짜리 시냅스 가소성 시험대(bench).** 회로 모델도 조직 모델도 아니다 — **자극을 주는 뉴런(pre)** 과
+**기록을 하는 뉴런(post)** 한 쌍 위에서 시냅스 가소성 모델을 이식·비교·검증하는 실험대다.
+
+## 목표
+
+1. 생물학적 근거로부터 시냅스 가소성이 **어떻게 변화하는지** 확인
+2. **모델을 바꿨을 때 무엇이 달라지는지** 차이를 밝힘
+3. 기존 모델이 **무엇을 설명하지 못하는지(결핍)** 확인 → [docs/GAPS.md](docs/GAPS.md)
+4. **그 결핍을 보완하는 가소성 모델을 구축** ← 최종 산출물 (7단계)
+
+**초기 실험**: theta-gamma 위상에 따른 burst 자극에서 가소성이 어떻게 변하는가 (6-1).
+
+## 원칙
+
+- **완전 독립 트랙.** 01·02·05 트랙과 `papers/` 재현 트랙에 의존하지 않는다.
+- **기존 구현은 없는 것으로 간주.** 외부 자산은 검증 대상 입력이지 완료된 작업이 아니다.
+- **파이프라인 단계 번호가 유일한 축.** 폴더·스크립트·그림·Notion 절 번호가 전부 일치한다.
+- 한 단계 = 하나의 구성요소(또는 활동), **그 구성요소의 검증은 그 단계 안에** 둔다.
+
+## 구조
+
+```
+config/   파라미터 단일 출처(YAML)      lib/       번호 없는 import 모듈 (유일한 재사용 통로)
+docs/     설계·결정·문헌·결핍·회귀       mechanisms/ 04 전용 mod 소스 + 로컬 dll
+env/      런처·빌드(추적)               scratch/   일회성(gitignore)
+
+01_env/         1 probe  2 python  3 neuron  4 build  5 verify
+02_neurons/     1 survey 2 load  3 morphology  4 ephys  5 resonance  6 pair  7 distance
+03_synapse/     1 params 2 placement 3 wiring 4 record 5 uepsp 6 stochastic 7 calibrate 8 distance 9 bap
+04_drive/       1 modes  2 natural_theta  3 imposed_theta  4 gamma  5 phase_align  6 budget
+05_engines/     1 ref 2 det 3 gb_a 4 gb_b 5 gb_c 6 stdp 7 glusyn 8 registry 9 stp_verify 10 calibrate 11 freeze
+06_experiments/ 1 theta_phase 2 theta_gamma 3 stdp_single 4 stdp_burst 5 tbs 6 hfs 7 lfs 8 location 9 gap_analysis
+07_newmodel/    1 gaps 2 design 3 ref 4 mod 5 verify 6 compare
+```
+
+## 번호 규약
+
+`단계 N` · `하위 M` → **「N-M」** 하나로 전부 묶인다.
+
+| 대상 | 예 |
+|---|---|
+| 하위 폴더 | `04_drive/2_natural_theta/` |
+| 스크립트 | `04_drive/2_natural_theta/4-2_natural_theta.py` |
+| 그림 | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` (번호 같고 slug만 다름) |
+| 중간 데이터 | `figures/_4-2_theta.npz` (밑줄 = gitignore) |
+| Notion 절 | `## 4-2 자연 theta 발화 판정` |
+| 커밋 | `04 4-2: 내재 공명 f_R 측정` |
+
+알파벳 갈래(`4-2a`)는 쓰지 않는다. 지원 폴더는 번호가 없다(파이프라인 단계가 아니고,
+파이썬이 숫자로 시작하는 모듈을 import 못 한다). **번호 스크립트는 서로 import 하지 않는다** — 재사용 코드는 전부 `lib/`.
+
+색인은 [docs/PIPELINE.md](docs/PIPELINE.md), 전체 계획은 [PLAN.md](PLAN.md).
+
+## 실행
+
+```powershell
+powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
+```
+
+## 상태
+
+🔄 **1-1 완료** (2026-08-19) — 이 머신 환경 진단. **14항목 중 6항목만 존재.**
+Python·conda·NEURON·컴파일된 mod 가 **전부 없다** → 1-2/1-3 이 전체 블로커.
+자세한 결과와 설치 절차: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
+
+| 단계 | 상태 |
+|---|---|
+| 1 환경 | 🔄 1-1 ✅ · 1-2~1-5 ⬜ |
+| 2 뉴런 · 3 시냅스·전달 · 4 구동·리듬 · 5 가소성 엔진 · 6 실험 · 7 보완 모델 | ⬜ |
