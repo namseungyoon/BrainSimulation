@@ -2,6 +2,8 @@
 
 출처: HippocampusHub **Connection Physiology** (Kohus et al. 2016 pair recording + 문헌 기반, Romani 2024 파이프라인). 22개 pathway 규칙 = 내부 recurrent 연결의 **위상(누가→누구) + 단기가소성(STP)**.
 
+> ✅ **완전한 전+후시냅스 파라미터(gsyn·tdecay·NMDA/AMPA비 포함, rule 22까지)는 `config/synapse_rules.json`에 확정 저장됨** (3-2에서 확보). 아래 표는 STP(전시냅스)만 요약.
+
 ## 단기가소성 파라미터 (U=방출확률, D=depression ms, F=facilitation ms, NRRP=방출부위수)
 
 | # | From | To | type | U | D | F | NRRP | Hill |
@@ -27,7 +29,7 @@
 | 19 | SP_Ivy | SP_PC | I3 | 0.32±0.14 | 144±80 | 62±31 | 1 | 1.94 |
 | 20 | SP_PVBC | SP_AA | I2 | 0.24±0.15 | 1730±530 | 3.5±1.5 | 1 | 1.94 |
 | 21 | SP_CCKBC, SR_SCA, SLM_PPA | (same set) | I1 | 0.11±0.03 | 115±100 | (…) | 1 | 1.94 |
-| 22 | (나머지 — 재확인 필요) | | | | | | | |
+| 22 | SP_PVBC | SP_PVBC | I2 | 0.26±0.05 | 930±360 | 1.6±0.6 | 9 | 1.94 |
 
 ## Schaffer(외부, 3-1(a)) STP — 참조
 
