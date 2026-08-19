@@ -31,7 +31,7 @@
 | **1-1** | `01_env/1_probe` | `env/probe_env.ps1` ※ + `1-1_plot_env_probe.py` | `1-1_env_probe.png` · `1-1_env_probe.json` | ✅ |
 | **1-2** | `01_env/2_python` | `1-2_verify_python.py` | `1-2_python_env.png` · `1-2_python_env.json` | ✅ |
 | **1-3** | `01_env/3_neuron` | `env/activate.ps1` + `1-3_verify_neuron.py` | `1-3_neuron_verify.png` · `1-3_neuron_verify.json` | ✅ |
-| **1-4** | `01_env/4_build` | `env/build_mechanisms.py` | `1-4_mech_inventory.png` | ⬜ |
+| **1-4** | `01_env/4_build` | `env/build_mechanisms.py` + `1-4_verify_build.py` | `1-4_mech_inventory.png` · `1-4_mech_inventory.json` | ✅ |
 | **1-5** | `01_env/5_verify` | `1-5_verify_mechanisms.py` | `1-5_mech_verify.png` | ⬜ |
 | **2-1** | `02_neurons/1_survey` | `2-1_survey_bundles.py` | `2-1_bundle_survey.png` | ⬜ |
 | **2-2** | `02_neurons/2_load` | `2-2_load_cell.py` | `2-2_cell_loaded.png` | ⬜ |

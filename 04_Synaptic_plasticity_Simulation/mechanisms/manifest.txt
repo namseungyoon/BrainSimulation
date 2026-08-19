@@ -1,0 +1,66 @@
+# 1-4 메커니즘 빌드 목록 — 04 전용 nrnmech.dll 에 넣을 외부 .mod
+#
+# env/build_mechanisms.py 가 이 목록을 읽어 gitignore된 mechanisms/_build/ 로 모으고,
+# mechanisms/ 안의 04 자체 .mod 와 함께 nrnivmodl 을 한 번 돌린다.
+# => 저장소에 mod 소스를 복제하지 않고, dll 을 하나만 로드해 이름 충돌을 피하고,
+#    shared dll 을 재빌드하지 않아 01·05 트랙에 영향이 없다. (docs/DECISIONS.md D5)
+#
+# 경로는 저장소 루트(02_BrainSimulator) 기준 상대경로. 빈 줄과 '#' 주석은 무시.
+# ⚠️ 같은 SUFFIX/POINT_PROCESS 이름이 두 번 들어가면 nrnivmodl 이 실패한다.
+
+# ---------------------------------------------------------------------------
+# 이온 채널 — 추체세포 템플릿이 실제로 insert 하는 12종
+# (한 번들의 hoc 을 grep 해 확인: cacum cagk cal can cat hd kad kap kca kdr kmb nax
+#  + 내장 pas. 출처는 대부분 Migliore 계열 CA1 채널)
+# ---------------------------------------------------------------------------
+shared/mechanisms/cacum.mod
+shared/mechanisms/cagk.mod
+shared/mechanisms/cal.mod
+shared/mechanisms/can.mod
+shared/mechanisms/cat.mod
+shared/mechanisms/hd.mod
+shared/mechanisms/kad.mod
+shared/mechanisms/kap.mod
+shared/mechanisms/kca.mod
+shared/mechanisms/kdr.mod
+shared/mechanisms/kmb.mod
+shared/mechanisms/nax.mod
+
+# ---------------------------------------------------------------------------
+# 이온 채널 — 추체세포가 쓰지 않는 3종.
+# 04는 PC->PC 쌍만 다루므로 지금은 필요 없다. 그래도 넣는 이유:
+#   (1) 빌드 비용이 사실상 0이고
+#   (2) 나중에 억제뉴런을 붙일 때 dll 을 다시 만들지 않아도 된다.
+# 빼고 싶으면 이 세 줄만 주석 처리하면 된다.
+# ---------------------------------------------------------------------------
+shared/mechanisms/kdb.mod
+shared/mechanisms/kdrb.mod
+shared/mechanisms/na3.mod
+
+# ---------------------------------------------------------------------------
+# 시냅스 — 5단계 가소성 엔진의 실체
+#   Det*        결정론 TM 단기가소성        -> 엔진 det (기준선)
+#   Prob*_EMS   확률 다소포 방출(Random123) -> 확률 방출 비교
+#   GBPlasticitySyn        Graupner-Brunel 장기가소성        -> 엔진 A
+#   GBPlasticityStpSyn     A + Tsodyks-Markram               -> 엔진 B
+#   GBPlasticityStpProbSyn B + 확률 다소포 방출               -> 엔진 C
+# ⚠️ 이 mod 들은 cvode 비호환이다. lib/nrnenv.finit() 이 고정 dt 를 강제한다.
+# ---------------------------------------------------------------------------
+shared/mechanisms/DetAMPANMDA.mod
+shared/mechanisms/DetGABAAB.mod
+shared/mechanisms/ProbAMPANMDA_EMS.mod
+shared/mechanisms/ProbGABAAB_EMS.mod
+shared/mechanisms/GBPlasticitySyn.mod
+shared/mechanisms/GBPlasticityStpSyn.mod
+shared/mechanisms/GBPlasticityStpProbSyn.mod
+
+# ---------------------------------------------------------------------------
+# 구동 유틸 — 4단계에서 정확한 스파이크 시각을 재생할 때 쓴다
+# ---------------------------------------------------------------------------
+shared/mechanisms/VecStim.mod
+
+# ---------------------------------------------------------------------------
+# 04 자체 작성 mod 는 여기 적지 않는다. mechanisms/*.mod 는 자동으로 포함된다.
+#   PairSTDPSyn.mod    (5-6 에서 작성)
+#   GluSynapseCa.mod   (5-7 에서 작성)
+# ---------------------------------------------------------------------------
