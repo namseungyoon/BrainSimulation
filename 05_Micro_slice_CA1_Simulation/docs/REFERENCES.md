@@ -5,6 +5,7 @@
 ## 1. 모델·데이터 기반
 - **Romani et al. 2024**, *PLoS Biology* — 전체 CA1 모델·아틀라스·커넥텀 **파이프라인의 원본**. 05는 이 파이프라인을 마이크로슬라이스에 적용. DOI [10.1371/journal.pbio.3002861](https://doi.org/10.1371/journal.pbio.3002861)
 - **Romani, A. 2024**, *Harvard Dataverse* "Rat CA1 model" — 회로(nodes)·atlas·morphology_library·단일세포모델 **데이터 출처**. DOI [10.7910/DVN/TN3DUI](https://doi.org/10.7910/DVN/TN3DUI)
+- **Reimann et al. 2015**, *Front. Comput. Neurosci.* 9:120 — **touch+prune 커넥텀 알고리즘 원본**. apposition 검출 → 연결타입당 3파라미터(bouton밀도·연결확률·시냅스수/연결)로 pruning. 3-1(b) 방법론의 직접 근거. DOI [10.3389/fncom.2015.00120](https://doi.org/10.3389/fncom.2015.00120) · PMID 26500529
 - **Bezaire & Soltesz 2013**, *Hippocampus* 23:751–785 — CA1 **정량 연결체**(세포수·interneuron→PC 수렴도). 3-1(b) pruning 목표치(연결확률·시냅스수/연결)의 근거. DOI [10.1002/hipo.22141](https://doi.org/10.1002/hipo.22141) · PMID 23674373
 - **Kohus et al. 2016** — pair recording. Hub Connection Physiology(STP 22 rules)가 인용한 **연결 생리 출처**. *(정확 서지 확인요 — Hub 인용 기준)*
 - **HippocampusHub** (EBRAINS/Blue Brain Project) — Schaffer collateral 수렴도·STP, 연결 anatomy/physiology, 단일세포 모델 다운로드. https://www.hippocampushub.eu
