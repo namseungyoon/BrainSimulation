@@ -7,7 +7,7 @@
 (Hub Connection Physiology 22 + SC 3, 전+후시냅스, 검증됨).
   - 흥분(E) → ProbAMPANMDA_EMS · 억제(I) → ProbGABAAB_EMS(GABA_B off)
   - 매칭: pre_mtype→post_mtype 로 규칙 선택 (SC는 pre=SC)
-결과: data/derived/synapse_params.npz (시냅스별 rule·mech·gsyn) + 그림 3-2_synapse_params.png
+결과: data/derived/synapse_params.npz (시냅스별 rule·mech·gsyn) + 그림 3-4_synapse_params.png
 
 재료: sc_synapses.npz · synapses_internal.npz · window_cells.npz · config/synapse_rules.json
 실행: python 03_network/2_synapses/assign_synapses.py
@@ -112,9 +112,9 @@ def main():
         r = rid2r.get(rid, {})
         fr = "/".join(r.get("from", [])); to = "/".join(r.get("to", []))
         print(f"   rule{rid:>2} {fr}->{to} ({r.get('type','')}) gsyn {r.get('gsyn_nS')}nS : {n:,}")
-    print(f"\n[3-2] 저장 -> data/derived/synapse_params.npz")
+    print(f"\n[3-4] 저장 -> data/derived/synapse_params.npz")
     fig_params(int_rule, imech, igsyn, rid2r, len(sc_rule_full))
-    print(f"[3-2] 그림 -> {FIG}/3-2_synapse_params.png")
+    print(f"[3-4] 그림 -> {FIG}/3-4_synapse_params.png")
 
 
 def fig_params(int_rule, imech, igsyn, rid2r, n_sc):
@@ -143,7 +143,7 @@ def fig_params(int_rule, imech, igsyn, rid2r, n_sc):
     ax[2].set_xlabel("rule id"); ax[2].set_ylabel("gsyn (nS)"); ax[2].set_title("(c) 규칙별 최대 전도도 gsyn")
     ax[2].tick_params(axis="x", labelsize=7)
     fig.suptitle("3-2 시냅스 biophysics — STP(U/D/F/NRRP)+수용체+gsyn 배정 (Hub Connection Physiology)", fontsize=13)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-2_synapse_params.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-4_synapse_params.png"), dpi=130)
     plt.close(fig)
 
 

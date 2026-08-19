@@ -113,7 +113,7 @@ def main():
     for a, b, v in sorted(flat, key=lambda x: -x[2])[:10]:
         print(f"   {a:>9} -> {b:<9} {v:,}")
     fig_matrix(mat)
-    print(f"[3-1b] 저장 -> data/derived/appositions.npz · 그림 -> {FIG}/3-1b_touch_matrix.png")
+    print(f"[3-3] 저장 -> data/derived/appositions.npz · 그림 -> {FIG}/3-3_touch_matrix.png")
 
 
 def fig_matrix(mat):
@@ -131,7 +131,7 @@ def fig_matrix(mat):
     fig.colorbar(im, label="log10(연결쌍 수 +1)")
     ax.set_title(f"3-1(b) touch detection — mtype×mtype 연결쌍(후보, pruning 전)\n"
                  f"축삭 stride {AXON_STRIDE}·수상돌기 stride {DEND_STRIDE}·R {RADIUS}µm")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_touch_matrix.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_touch_matrix.png"), dpi=130)
     plt.close(fig)
 
 

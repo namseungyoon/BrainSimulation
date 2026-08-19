@@ -6,7 +6,7 @@
 마우스 휠 확대 / 드래그 이동이 되는 자체완결 HTML을 만든다. 흰 배경.
   - 종류=색 · 수상돌기=진한톤(연속) · 축삭=연한톤 · 시냅스=★
   - 형태는 **연속 폴리라인**(점 1회 저장)으로 컴팩트하게.
-결과: scratch/3-1b_wiring.html
+결과: scratch/3-3_wiring.html
 
 실행: python 03_network/1_connectome/make_wiring_html.py
 """
@@ -23,7 +23,7 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 DERIVED = os.path.join(ROOT, "data", "derived")
 LIB = os.path.join(ROOT, "data", "morphology_library", "morphology_library")
 CFG = os.path.join(ROOT, "config", "window_layout.json")
-OUT = os.path.join(ROOT, "scratch", "3-1b_wiring.html")
+OUT = os.path.join(ROOT, "scratch", "3-3_wiring.html")
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 DEND_STRIDE, AXON_STRIDE = 2, 10   # 폴리라인이라 점 줄여도 연속(끊김X) · 16MB 대비
 CMAP = {"SP_PC": "#C44E52", "SP_Ivy": "#8172B3", "SP_PVBC": "#4C72B0", "SP_CCKBC": "#55A868",
@@ -127,7 +127,7 @@ def main():
     data = {"cells": cells, "syns": syns, "tsoma": [int(round(dloc[0, 0])), int(round(dloc[0, 1]))],
             "n_pre": len(ins), "n_syn": len(syns)}
     open(OUT, "w", encoding="utf-8").write(HTML.replace("__DATA__", json.dumps(data)))
-    print(f"[3-1b] HTML ({len(ins)} 전시냅스 · {len(syns)} 시냅스) -> {OUT}")
+    print(f"[3-3] HTML ({len(ins)} 전시냅스 · {len(syns)} 시냅스) -> {OUT}")
     print(f"       파일크기 {os.path.getsize(OUT)/1e6:.1f} MB")
 
 

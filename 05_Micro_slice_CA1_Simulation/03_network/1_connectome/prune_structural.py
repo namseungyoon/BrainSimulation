@@ -7,7 +7,7 @@ Reimann 2015 touch+prune의 **구조적 pruning**: 각 축삭이 만들 수 있�
   - 축삭당 bouton 예산 = 전체 축삭 길이 × bouton 밀도(0.2260/µm, Hub Connection Anatomy)
   - apposition을 이 예산에 맞춰 분배(쌍별 apposition 수 비례) → 시냅스 수 확정
   - 다음 2단계(기능적, 연결확률·시냅스수/연결 Bezaire&Soltesz)로 추가 pruning 예정
-결과: data/derived/synapses_internal_s1.npz + 그림 3-1b_prune_s1.png
+결과: data/derived/synapses_internal_s1.npz + 그림 3-3_prune_s1.png
 
 재료: data/derived/appositions.npz · window_cells.npz · morphology_library
 실행: python 03_network/1_connectome/prune_structural.py
@@ -84,7 +84,7 @@ def main():
     print(f"[참고] post=PC 연결쌍 {pc_in:,} · PC 1개당 평균 입력쌍 {pc_in/max(is_pc.sum(),1):.0f}")
 
     fig_matrix(Pre, Post, Ns, mt)
-    print(f"[3-1b] 저장 -> data/derived/synapses_internal_s1.npz · 그림 -> {FIG}/3-1b_prune_s1.png")
+    print(f"[3-3] 저장 -> data/derived/synapses_internal_s1.npz · 그림 -> {FIG}/3-3_prune_s1.png")
 
 
 def fig_matrix(Pre, Post, Ns, mt):
@@ -106,7 +106,7 @@ def fig_matrix(Pre, Post, Ns, mt):
     fig.colorbar(im, label="log10(연결쌍 +1)")
     ax.set_title(f"3-1(b) pruning 1단계(구조적) — mtype×mtype 연결쌍\n"
                  f"bouton 밀도 {BOUTON_DENSITY}/µm · 2단계(기능적) 예정")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_prune_s1.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_prune_s1.png"), dpi=130)
     plt.close(fig)
 
 

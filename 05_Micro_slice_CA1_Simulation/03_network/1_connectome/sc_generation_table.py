@@ -4,7 +4,7 @@
 
 Hub 수렴도(convergence)로 우리 창 5,610세포에 생성될 Schaffer 시냅스 수를 계산.
 전 생물학적 수렴도는 계산상 과대 → 축소(스케일) 필요를 함께 표시.
-결과: figures/3-1a_sc_generation.png  (+ 콘솔 수치)
+결과: figures/3-1_sc_generation.png  (+ 콘솔 수치)
 
 실행: python 03_network/1_connectome/sc_generation_table.py
 """
@@ -70,9 +70,9 @@ def main():
             ha="center", va="top", fontsize=10.5, transform=ax.transAxes,
             color="#B71C1C", fontweight="bold")
     fig.tight_layout()
-    out = os.path.join(FIG, "3-1a_sc_generation.png")
+    out = os.path.join(FIG, "3-1_sc_generation.png")
     fig.savefig(out, dpi=140); plt.close(fig)
-    print(f"[3-1a] 저장 -> {out}")
+    print(f"[3-1] 저장 -> {out}")
 
 
 if __name__ == "__main__":

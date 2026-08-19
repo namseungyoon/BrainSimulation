@@ -6,7 +6,7 @@
   - 뉴런 종류 = 같은 색
   - 수상돌기 = 그 색의 진한 톤 / 축삭 = 연한 톤
   - 시냅스 = '*' 마커 (실제 접촉 위치)
-가독성 위해 유형별 대표 세포(--all 로 전체). 결과: figures/3-1b_wiring_full.png
+가독성 위해 유형별 대표 세포(--all 로 전체). 결과: figures/3-3_wiring_full.png
 
 실행: python 03_network/1_connectome/wiring_full.py [--all]
 """
@@ -130,9 +130,9 @@ def main():
     handles += [plt.Line2D([], [], marker="*", ls="", mfc="gray", mec="black", ms=13, label="시냅스"),
                 plt.Line2D([], [], color="0.5", lw=3, label="수상돌기=진함 / 축삭=연함")]
     ax.legend(handles=handles, loc="upper right", fontsize=8, title="완전체 색 규칙")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_wiring_full.png"), dpi=135)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_wiring_full.png"), dpi=135)
     plt.close(fig)
-    print(f"[3-1b] 완전체 그림 ({ttl}, 세포 {len(chosen)+1}개) -> {FIG}/3-1b_wiring_full.png")
+    print(f"[3-3] 완전체 그림 ({ttl}, 세포 {len(chosen)+1}개) -> {FIG}/3-3_wiring_full.png")
 
 
 if __name__ == "__main__":

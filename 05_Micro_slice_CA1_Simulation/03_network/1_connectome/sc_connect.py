@@ -12,7 +12,7 @@ Nat Commun) · Wybo 2020(eLife)의 두 조건에 맞춤:
   - 대상: SP_PC 200 · 억제뉴런(SO_OLM 제외) 122(수렴도 비례) · SO_OLM 0
   - 판정: 국소 r로 SR(25~450)·SO(-400~-65), SP·SLM tuft·축삭 제외
   - 총 전도도 = 시냅스수 × n_represented ≈ 생물학적 수렴도(20,878/PC) 보존
-결과: data/derived/sc_synapses.npz + 그림 3-1a_sc_synapses.png
+결과: data/derived/sc_synapses.npz + 그림 3-1_sc_synapses.png
 
 재료: data/derived/window_cells.npz · config/window_layout.json · data/morphology_library
 실행: python 03_network/1_connectome/sc_connect.py
@@ -123,9 +123,9 @@ def main():
     print(f"[그룹화] n_represented ≈ {WF.mean():.1f} (시냅스 1개가 대표하는 생물학적 시냅스 수)")
     print(f"         → 3-2 전도도 = n_represented×g_single · 3-3 구동 = n_represented개 독립이벤트")
     print(f"[E3 거리] 중앙 {np.median(distE3):.0f}µm · 200µm 이내 {np.sum(distE3<200):,}개")
-    print(f"\n[3-1a] 저장 -> data/derived/sc_synapses.npz")
+    print(f"\n[3-1] 저장 -> data/derived/sc_synapses.npz")
     fig_syn(UVW, LAYER, distE3, cfg, e3, seed, Mrows, len(POST))
-    print(f"[3-1a] 그림 -> {FIG}/3-1a_sc_synapses.png")
+    print(f"[3-1] 그림 -> {FIG}/3-1_sc_synapses.png")
 
 
 def fig_syn(UVW, LAYER, distE3, cfg, e3, seed, Mrows, n):
@@ -149,7 +149,7 @@ def fig_syn(UVW, LAYER, distE3, cfg, e3, seed, Mrows, n):
         a.set_aspect("equal"); a.set_xlabel(xl); a.set_ylabel(yl); a.set_title(ttl)
     ax[0].legend(loc="upper right", fontsize=9, markerscale=4)
     fig.suptitle(f"3-1(a)  Schaffer 시냅스 배치 — {n:,}개 (표본 {len(s):,} 표시) · SR+SO · E3", fontsize=13)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1a_sc_synapses.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1_sc_synapses.png"), dpi=130)
     plt.close(fig)
 
 

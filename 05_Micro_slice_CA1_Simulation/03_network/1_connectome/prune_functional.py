@@ -7,7 +7,7 @@ Bezaire & Soltesz 2013 수렴도 목표치에 맞춰 apposition을 최종 시냅
   - 억제(INT→post): 수렴도 그대로(국소 성립), 가용 apposition으로 cap
   - 흥분(PC→post): 창 PC비율 f=N_win_PC/311,500 로 국소 스케일(재귀흥분 희박)
   - 각 pre유형: n_connection = target_synapses / (syn/connection), apposition 가중 선택
-결과: data/derived/synapses_internal.npz(최종) + 3단계 비교그래프 3-1b_prune_stages.png
+결과: data/derived/synapses_internal.npz(최종) + 3단계 비교그래프 3-3_prune_stages.png
 
 재료: appositions.npz · synapses_internal_s1.npz · window_cells.npz
 실행: python 03_network/1_connectome/prune_functional.py
@@ -110,8 +110,8 @@ def main():
 
     stages_graph(pre, post, mt, Pre, Post, Ns)
     matrix_final(Pre, Post, mt)
-    print(f"[3-1b] 저장 -> data/derived/synapses_internal.npz")
-    print(f"[3-1b] 그림 -> {FIG}/3-1b_prune_stages.png · 3-1b_matrix_final.png")
+    print(f"[3-3] 저장 -> data/derived/synapses_internal.npz")
+    print(f"[3-3] 그림 -> {FIG}/3-3_prune_stages.png · 3-3_matrix_final.png")
 
 
 def stages_graph(pre0, post0, mt, Pre, Post, Ns):
@@ -142,7 +142,7 @@ def stages_graph(pre0, post0, mt, Pre, Post, Ns):
         ax.set_ylim(0.5, max(data) * 3.5)
     fig.suptitle("3-1(b) 내부 커넥텀 pruning — 가지치기 전 → 1단계(구조) → 2단계(기능) (log축)\n"
                  "※ 시냅스 패널 첫 막대만 apposition(접촉후보·서브샘플)로 단위가 다름 — 시냅스는 1·2단계 값", fontsize=12)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_prune_stages.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_prune_stages.png"), dpi=130)
     plt.close(fig)
 
 
@@ -164,7 +164,7 @@ def matrix_final(Pre, Post, mt):
                         color="white" if lm[i, j] < lm.max()*0.6 else "black")
     fig.colorbar(im, label="log10(연결쌍 +1)")
     ax.set_title("3-1(b) 최종 내부 커넥텀 (2단계 pruning 후) — mtype×mtype")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_matrix_final.png"), dpi=130)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_matrix_final.png"), dpi=130)
     plt.close(fig)
 
 

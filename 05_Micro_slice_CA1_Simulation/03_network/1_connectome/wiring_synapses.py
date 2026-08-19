@@ -5,7 +5,7 @@
 세포 하나(E3 근처 추체)에 연결된 내부 시냅스를 **실제 수상돌기 위치**에 점으로
 찍는다. 대상 세포의 수상돌기 KDTree에 각 전시냅스 세포의 축삭을 질의해 접촉점을
 찾고, 연결당 시냅스 수만큼 배치. 전시냅스 종류별 색.
-결과: figures/3-1b_wiring_synapses.png
+결과: figures/3-3_wiring_synapses.png
 
 재료: synapses_internal.npz · window_cells.npz · morphology_library · config
 실행: python 03_network/1_connectome/wiring_synapses.py
@@ -103,10 +103,10 @@ def main():
     handles = [Patch(color=CMAP[m], label=f"{m} ({cnt[m]}쌍)") for m in sorted(cnt, key=lambda x: -cnt[x])]
     handles += [plt.Line2D([], [], marker="*", ls="", mfc="black", mec="black", ms=13, label="대상 추체 소마")]
     ax.legend(handles=handles, loc="upper right", fontsize=8, title=f"전시냅스 유형 · 시냅스 {len(syn_u)}개")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_wiring_synapses.png"), dpi=135)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_wiring_synapses.png"), dpi=135)
     plt.close(fig)
-    print(f"[3-1b] 추체 gid={tgt} · 내부 시냅스 위치 {len(syn_u)}개 배치")
-    print(f"[3-1b] 그림 -> {FIG}/3-1b_wiring_synapses.png")
+    print(f"[3-3] 추체 gid={tgt} · 내부 시냅스 위치 {len(syn_u)}개 배치")
+    print(f"[3-3] 그림 -> {FIG}/3-3_wiring_synapses.png")
 
 
 if __name__ == "__main__":

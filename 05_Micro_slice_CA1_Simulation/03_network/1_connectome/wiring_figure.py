@@ -4,7 +4,7 @@
 
 E3 근처 추체세포 1개를 골라, 실제 형태(수상돌기)와 그 세포에 연결된 전시냅스
 세포들(내부 커넥텀 결과)을 소마+연결선으로 그린다. 억제뉴런 종류별 색·연결선.
-결과: figures/3-1b_wiring.png
+결과: figures/3-3_wiring.png
 
 재료: synapses_internal.npz · window_cells.npz · morphology_library · config
 실행: python 03_network/1_connectome/wiring_figure.py
@@ -80,11 +80,11 @@ def main():
                sorted(cnt, key=lambda x: -cnt[x])]
     handles += [plt.Line2D([], [], marker="*", ls="", mfc="black", mec="black", ms=14, label="대상 추체")]
     ax.legend(handles=handles, loc="upper right", fontsize=8, title=f"전시냅스 유형(쌍수) · 총 {inmask.sum()}")
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-1b_wiring.png"), dpi=135)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, "3-3_wiring.png"), dpi=135)
     plt.close(fig)
-    print(f"[3-1b] 대상 추체 gid={tgt} (E3 근처) · 내부 입력쌍 {inmask.sum()} · 시냅스 {insyn.sum()}")
+    print(f"[3-3] 대상 추체 gid={tgt} (E3 근처) · 내부 입력쌍 {inmask.sum()} · 시냅스 {insyn.sum()}")
     print("[입력 유형]", dict(cnt))
-    print(f"[3-1b] 그림 -> {FIG}/3-1b_wiring.png")
+    print(f"[3-3] 그림 -> {FIG}/3-3_wiring.png")
 
 
 if __name__ == "__main__":
