@@ -90,10 +90,12 @@ def main():
     plots.setup()
     with open(os.path.join(ROOT, "config", "cells.yaml"), "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)["pair"]
+    pre, _ = cells.load_cell(os.path.join(REPO, "Models", cfg["pre_bundle"]), "pre")
     post, _ = cells.load_cell(os.path.join(REPO, "Models", cfg["post_bundle"]), "post")
 
     print("=== 3-2 시냅스 생성 + 가지치기 ===")
     m, c, R = post_points_and_transform(post)
+    m_pre, _, _ = post_points_and_transform(pre)   # 같은 방식으로 pre 점구름 정렬
     cands = candidates(post)
     kept, rm_band, rm_excess = prune(cands)
     print(f"  touch 후보 {len(cands)} -> 유지 {len(kept)} (SR밖 {len(rm_band)} · 과잉 {len(rm_excess)} 제거)")
@@ -114,27 +116,59 @@ def main():
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.5, 6.6),
                                    gridspec_kw={"width_ratios": [1, 1.15]})
 
-    # A: 실제 형태 위 시냅스 위치
-    mo.render(axA, m, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+    # A: pre + post 를 함께 · post 형태 위 시냅스 위치
     xyd = m["xyz"][np.isin(m["type"], (mo.SOMA, mo.BASAL, mo.APICAL))][:, :2]
     hx = np.percentile(np.abs(xyd[:, 0]), 99.8) * 1.2
-    axA.set_xlim(-hx, hx)
-    axA.set_ylim(np.percentile(xyd[:, 1], 0.3) - 30, np.percentile(xyd[:, 1], 99.8) + 40)
+    # pre 를 왼쪽으로 offset (도해: pre 자극세포 → post 시냅스). D8: 상대 위치는 결과 무관.
+    pre_xyd = m_pre["xyz"][np.isin(m_pre["type"], (mo.SOMA, mo.BASAL, mo.APICAL))][:, :2]
+    pre_hx = np.percentile(np.abs(pre_xyd[:, 0]), 99.8) * 1.2
+    offset = hx + pre_hx + 90
+    m_pre_shift = dict(m_pre); m_pre_shift["xyz"] = m_pre["xyz"].copy()
+    m_pre_shift["xyz"][:, 0] -= offset
+
+    mo.render(axA, m_pre_shift, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+    mo.render(axA, m, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+
+    ylo = min(np.percentile(xyd[:, 1], 0.3), np.percentile(pre_xyd[:, 1], 0.3)) - 30
+    yhi = max(np.percentile(xyd[:, 1], 99.8), np.percentile(pre_xyd[:, 1], 99.8)) + 70
+    axA.set_xlim(-offset - pre_hx - 30, hx + 30)
+    axA.set_ylim(ylo, yhi)
     axA.set_aspect("equal", adjustable="box"); axA.set_xticks([]); axA.set_yticks([]); axA.grid(False)
     for s in axA.spines.values():
         s.set_color("#dddddd")
-    axA.axhspan(SR_MIN, SR_MAX, color="#ffb300", alpha=0.13, zorder=0)
-    axA.text(hx*0.98, (SR_MIN+SR_MAX)/2, "SR 대역\n100~300um", fontsize=8.5,
-             color="#b26a00", va="center", ha="right")
-    if len(bp): axA.scatter(bp[:, 0], bp[:, 1], s=60, marker="x", color="#9e9e9e", lw=1.8, zorder=5)
-    if len(ep): axA.scatter(ep[:, 0], ep[:, 1], s=60, marker="x", color="#9e9e9e", lw=1.8, zorder=5)
-    if len(kp): axA.scatter(kp[:, 0], kp[:, 1], s=240, marker="*", color="#7b1fa2",
+    # SR 대역은 post 쪽만
+    axA.fill_between([-hx, hx], SR_MIN, SR_MAX, color="#ffb300", alpha=0.13, zorder=0)
+    axA.text(hx, (SR_MIN+SR_MAX)/2, " SR", fontsize=8.5, color="#b26a00", va="center", ha="left")
+
+    if len(bp): axA.scatter(bp[:, 0], bp[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
+    if len(ep): axA.scatter(ep[:, 0], ep[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
+    if len(kp): axA.scatter(kp[:, 0], kp[:, 1], s=230, marker="*", color="#7b1fa2",
                             edgecolor="white", lw=1.3, zorder=6)
-    axA.set_title(f"A. 실제 시냅스 위치 (post {cfg['post_tag']})", fontsize=10.5, loc="left")
-    axA.scatter([], [], s=200, marker="*", color="#7b1fa2", label=f"유지 {len(kept)}")
-    axA.scatter([], [], s=60, marker="x", color="#9e9e9e", label=f"제거 {len(rm_band)+len(rm_excess)}")
-    axA.legend(loc="lower left", fontsize=8.5)
-    mo.scalebar(axA, 200, "200 um")
+
+    # pre 소마 → 유지 시냅스 연결(도해)
+    pre_soma = m_pre_shift["xyz"][m_pre_shift["type"] == mo.SOMA].mean(axis=0)
+    if len(kp):
+        tgt = kp.mean(axis=0)
+        axA.annotate("", xy=(tgt[0], tgt[1]), xytext=(pre_soma[0], pre_soma[1]),
+                     arrowprops=dict(arrowstyle="-|>", color="#7b1fa2", lw=1.8,
+                                     linestyle=(0, (5, 3)), shrinkA=6, shrinkB=12), zorder=4)
+        axA.text((pre_soma[0]+tgt[0])/2, (pre_soma[1]+tgt[1])/2 + 35,
+                 "NetCon+지연", fontsize=8.5, color="#7b1fa2", ha="center", va="bottom",
+                 fontweight="bold", bbox=dict(fc="white", ec="#7b1fa2", alpha=0.9,
+                                              boxstyle="round,pad=0.3"))
+
+    # 세포 라벨 (제목과 겹치지 않게 살짝 아래)
+    post_soma = m["xyz"][m["type"] == mo.SOMA].mean(axis=0)
+    axA.text(pre_soma[0], yhi - 45, f"pre (자극)\n{cfg['pre_tag']}", fontsize=8.5, ha="center",
+             va="top", color="#212121", fontweight="bold")
+    axA.text(post_soma[0], yhi - 45, f"post (기록)\n{cfg['post_tag']}", fontsize=8.5, ha="center",
+             va="top", color="#212121", fontweight="bold")
+
+    axA.set_title("A. pre → post 시냅스 배치 (실제 형태·위치)", fontsize=10.5, loc="left", pad=18)
+    axA.scatter([], [], s=200, marker="*", color="#7b1fa2", label=f"유지 시냅스 {len(kept)}")
+    axA.scatter([], [], s=55, marker="x", color="#9e9e9e", label=f"가지치기 제거 {len(rm_band)+len(rm_excess)}")
+    axA.legend(loc="lower left", fontsize=8, framealpha=0.9)
+    mo.scalebar(axA, 200, "200 um", loc=(0.72, 0.03))
 
     # B: 경로거리 분포 (후보 vs 유지)
     all_d = [d for _, d in cands]
