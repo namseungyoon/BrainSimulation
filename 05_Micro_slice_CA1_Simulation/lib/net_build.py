@@ -43,7 +43,8 @@ class NetBuilder:
         tname = re.search(r"begintemplate\s+(\w+)", txt).group(1)
         uniq = f"{tname}_{len(self._tpl_cache)}"
         txt = re.sub(r"\b" + tname + r"\b", uniq, txt)
-        tmp = os.path.join(SCR, f"emodel_tpl_{len(self._tpl_cache)}.hoc")
+        # MPI: 랭크(프로세스)별로 임시 hoc 파일 분리 — 동시 write 충돌 방지
+        tmp = os.path.join(SCR, f"emodel_tpl_p{os.getpid()}_{len(self._tpl_cache)}.hoc")
         open(tmp, "w").write(txt)
         self.h.load_file(tmp.replace("\\", "/"))
         self._tpl_cache[emodel] = uniq
