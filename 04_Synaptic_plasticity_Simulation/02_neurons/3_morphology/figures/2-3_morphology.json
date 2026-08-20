@@ -1,0 +1,33 @@
+{
+  "sr_band": [
+    100.0,
+    300.0
+  ],
+  "bin_um": 25.0,
+  "pre": {
+    "tag": "oh140807_A0_idF",
+    "apical_len": 6461.8,
+    "basal_len": 3631.4,
+    "apical_sections": 112,
+    "basal_sections": 62,
+    "sr_apical_len": 3167.0,
+    "sr_fraction": 0.49
+  },
+  "post": {
+    "tag": "oh140807_A0_idC",
+    "apical_len": 6630.5,
+    "basal_len": 1822.1,
+    "apical_sections": 133,
+    "basal_sections": 24,
+    "sr_apical_len": 4304.8,
+    "sr_fraction": 0.649
+  },
+  "checks": {
+    "pre 정단 최대거리 > 500um": true,
+    "post 정단 최대거리 > 500um": true,
+    "pre SR대역 정단막 > 0": true,
+    "post SR대역 정단막 > 0": true
+  },
+  "checks_passed": 4,
+  "checks_total": 4
+}
