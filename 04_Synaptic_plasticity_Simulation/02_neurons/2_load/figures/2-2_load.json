@@ -1,0 +1,46 @@
+{
+  "pre": {
+    "tag": "oh140807_A0_idF",
+    "template": "CA1_PC_cAC_sig__pre",
+    "n_sections": 177,
+    "n_segments": 531,
+    "total_length_um": 10177.5,
+    "domains": {
+      "soma": 1,
+      "apic": 112,
+      "dend": 62,
+      "axon": 2,
+      "myelin": 0,
+      "기타": 0
+    },
+    "axon_sections": 2,
+    "axon_len_um": 60.0
+  },
+  "post": {
+    "tag": "oh140807_A0_idC",
+    "template": "CA1_PC_cAC_sig__post",
+    "n_sections": 160,
+    "n_segments": 440,
+    "total_length_um": 8541.4,
+    "domains": {
+      "soma": 1,
+      "apic": 133,
+      "dend": 24,
+      "axon": 2,
+      "myelin": 0,
+      "기타": 0
+    },
+    "axon_sections": 2,
+    "axon_len_um": 60.0
+  },
+  "independent_templates": true,
+  "checks": {
+    "pre 로드": true,
+    "post 로드": true,
+    "독립 템플릿": true,
+    "pre 축삭 스텁화": true,
+    "post 축삭 스텁화": true
+  },
+  "checks_passed": 5,
+  "checks_total": 5
+}

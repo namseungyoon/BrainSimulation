@@ -57,6 +57,33 @@ CELSIUS = 34.0
 V_INIT = -70.0
 
 
+# --- 04 전용 메커니즘 dll -----------------------------------------------
+# env/build_mechanisms.py 가 만든 dll. 세포·시냅스를 만들기 전에 반드시 로드해야
+# 채널(kdr, nax ...)과 시냅스 POINT_PROCESS 가 h 에 붙는다. (1-4 산출물)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MECH_DLL = os.path.join(_ROOT, "mechanisms", "nrnmech.dll")
+_mech_loaded = False
+
+
+def load_mechanisms(dll_path=None):
+    """04 전용 nrnmech.dll 을 1회 로드한다. 이미 로드됐으면 건너뛴다.
+
+    판별은 대표 채널(kdr) 존재로 한다. dll 이 없으면 1-4 를 먼저 돌리라고 안내한다.
+    """
+    global _mech_loaded
+    if _mech_loaded or hasattr(h, "kdr"):
+        _mech_loaded = True
+        return True
+    p = dll_path or MECH_DLL
+    if not os.path.exists(p):
+        _fail(f"04 메커니즘 dll 이 없다: {p}\n  먼저: & $Py04 env\\build_mechanisms.py")
+    ok = h.nrn_load_dll(p.replace("\\", "/"))
+    if not (ok and hasattr(h, "kdr")):
+        _fail(f"dll 로드 실패 또는 채널 미등록: {p}")
+    _mech_loaded = True
+    return True
+
+
 def version():
     return str(h.nrnversion())
 
