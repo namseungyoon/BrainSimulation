@@ -1,25 +1,52 @@
 {
+  "pre": "oh140807_A0_idF",
   "post": "oh140807_A0_idC",
   "sr_band": [
     100.0,
     300.0
   ],
-  "candidates": 12,
+  "touch_um": 12.0,
+  "overlap_frac": 0.45,
+  "v_cond_um_per_us": 0.5,
+  "syn_delay_ms": 0.5,
+  "sr_apical_segs": 95,
+  "touch_candidates": 10,
   "kept": 5,
-  "removed_band": 4,
-  "removed_excess": 3,
-  "kept_dist_um": [
-    116.6,
-    144.7,
-    178.1,
-    223.9,
-    269.8
-  ],
-  "kept_sections": [
-    "apic[19]",
-    "apic[25]",
-    "apic[21]",
-    "apic[111]",
-    "apic[116]"
+  "synapses": [
+    {
+      "path_um": 114.0,
+      "touch_um": 44.6,
+      "dist3d_um": 128.6,
+      "delay_ms": 0.76,
+      "section": "apic[5]"
+    },
+    {
+      "path_um": 140.6,
+      "touch_um": 24.7,
+      "dist3d_um": 94.9,
+      "delay_ms": 0.69,
+      "section": "apic[2]"
+    },
+    {
+      "path_um": 178.1,
+      "touch_um": 37.7,
+      "dist3d_um": 143.9,
+      "delay_ms": 0.79,
+      "section": "apic[21]"
+    },
+    {
+      "path_um": 206.2,
+      "touch_um": 38.4,
+      "dist3d_um": 174.0,
+      "delay_ms": 0.85,
+      "section": "apic[26]"
+    },
+    {
+      "path_um": 281.3,
+      "touch_um": 38.2,
+      "dist3d_um": 209.0,
+      "delay_ms": 0.92,
+      "section": "apic[42]"
+    }
   ]
 }

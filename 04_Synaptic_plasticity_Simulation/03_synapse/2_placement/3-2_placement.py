@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-"""3-2 시냅스 생성 + 가지치기 — post 정단수상돌기 위 실제 위치에
+"""3-2 시냅스 생성 + 가지치기 — 두 세포를 인접 배치하고 접촉점에 시냅스
 
 단계   : 3-2 (파이프라인 3단계 시냅스 / 하위 2 placement)
-방법   : post 정단수상돌기 전역에 접촉 후보(touch 유사)를 만들고, SR 대역 밖·과잉 접촉을
-         솎아(prune) 현실적 개수만 남긴다. 남은 시냅스와 제거된 후보를 **실제 형태 위 위치**에 찍는다.
+방법   : pre·post 를 3D 로 인접 배치(수상돌기 필드가 SR 대역에서 겹치게)하고,
+         post 정단수상돌기(SR 대역)가 pre 구조와 **접촉(apposition)** 하는 지점을 찾는다(touch).
+         과잉 접촉을 솎아(prune) 현실적 개수만 남긴다. 각 시냅스의 전도지연은 pre 소마->시냅스
+         3D 거리 / 전도속도 로 계산한다 -- 임의값이 아니라 배치 기하에서 나온다.
+★사실  : NEURON 은 전달 자체는 접촉해도 NetCon 으로 계산한다(모든 상세 시뮬레이터 공통).
+         이 단계가 물리적으로 정하는 것은 (1) 시냅스 위치 (2) 전도지연 이다.
+         축삭은 스텁/원본 모두 ~87um 라 접촉 구조로 쓸 수 없어, 인접은 두 수상돌기 필드로 잡는다.
 결과   : figures/3-2_syn_sites.png · figures/3-2_placement.json
 
 실행:
@@ -32,16 +37,18 @@ from lib import morphology as mo             # noqa: E402
 from lib.nrnenv import h                     # noqa: E402
 
 SR_MIN, SR_MAX = 100.0, 300.0
-N_CANDIDATE = 12
-N_KEEP = 5
-SEED = 20260820
+TOUCH_UM = 12.0          # apposition 반경(투영 2D). 이 안에 pre 구조가 있으면 접촉으로 본다
+OVERLAP_FRAC = 0.45      # 두 수상돌기 필드를 얼마나 겹칠지 (SR 대역 인접)
+N_KEEP = 5               # 가지치기 후 남길 접촉 수
+V_COND = 0.5             # 전도속도 um/us = 0.5 m/s (CA3 SC 무수초 근사)
+SYN_DELAY = 0.5          # 시냅스 지연 ms (전도지연에 더함)
 
 
-def post_points_and_transform(post):
-    """post 3D 점구름 + 정렬 변환. 시냅스도 같은 변환으로 옮기려고 변환을 돌려준다."""
+def points_and_transform(cell):
+    """세포 3D 점구름(형태) + 정렬 변환. 세그먼트 좌표도 같은 변환으로 옮기려고 변환 반환."""
     h.define_shape()
     xyz, typ, par = [], [], []
-    for s in post.all:
+    for s in cell.all:
         base = s.name().split(".")[-1].split("[")[0]
         tt = {"soma": mo.SOMA, "apic": mo.APICAL, "dend": mo.BASAL,
               "axon": mo.AXON, "myelin": mo.AXON}.get(base, mo.BASAL)
@@ -56,34 +63,20 @@ def post_points_and_transform(post):
     return m, c, R
 
 
-def seg_xyz(seg):
-    """세그먼트가 속한 구획의 3D 중점 좌표."""
-    sec = seg.sec
-    i = sec.n3d() // 2
-    return np.array([sec.x3d(i), sec.y3d(i), sec.z3d(i)])
-
-
-def candidates(post):
-    """정단 전역에서 경로거리 균등하게 N_CANDIDATE 개 후보 seg."""
+def apical_sr_segs(post, c, R):
+    """post 정단수상돌기 중 SR 대역(경로거리 100~300) 세그먼트 + 정렬좌표 중점."""
     h.distance(0, post.soma[0](0.5))
-    apics = [s for s in post.all if ".apic" in s.name()]
-    segs = [(s(0.5), h.distance(s(0.5))) for s in apics]
-    segs.sort(key=lambda z: z[1])
-    if len(segs) <= N_CANDIDATE:
-        return segs
-    idx = np.linspace(0, len(segs) - 1, N_CANDIDATE).astype(int)
-    return [segs[i] for i in idx]
-
-
-def prune(cands):
-    in_sr = [(s, d) for s, d in cands if SR_MIN <= d <= SR_MAX]
-    rm_band = [(s, d) for s, d in cands if not (SR_MIN <= d <= SR_MAX)]
-    if len(in_sr) <= N_KEEP:
-        return in_sr, rm_band, []
-    idx = set(np.linspace(0, len(in_sr) - 1, N_KEEP).astype(int).tolist())
-    kept = [in_sr[i] for i in range(len(in_sr)) if i in idx]
-    rm_excess = [in_sr[i] for i in range(len(in_sr)) if i not in idx]
-    return kept, rm_band, rm_excess
+    out = []
+    for s in post.all:
+        if ".apic" not in s.name():
+            continue
+        d = h.distance(s(0.5))
+        if not (SR_MIN <= d <= SR_MAX):
+            continue
+        i = s.n3d() // 2
+        p = mo.apply_transform(np.array([s.x3d(i), s.y3d(i), s.z3d(i)]), c, R)
+        out.append((s(0.5), d, p))           # (seg, 경로거리, 정렬3D좌표)
+    return out
 
 
 def main():
@@ -93,107 +86,122 @@ def main():
     pre, _ = cells.load_cell(os.path.join(REPO, "Models", cfg["pre_bundle"]), "pre")
     post, _ = cells.load_cell(os.path.join(REPO, "Models", cfg["post_bundle"]), "post")
 
-    print("=== 3-2 시냅스 생성 + 가지치기 ===")
-    m, c, R = post_points_and_transform(post)
-    m_pre, _, _ = post_points_and_transform(pre)   # 같은 방식으로 pre 점구름 정렬
-    cands = candidates(post)
-    kept, rm_band, rm_excess = prune(cands)
-    print(f"  touch 후보 {len(cands)} -> 유지 {len(kept)} (SR밖 {len(rm_band)} · 과잉 {len(rm_excess)} 제거)")
-    print(f"  유지 시냅스 경로거리: {[round(d) for _, d in kept]} um")
+    print("=== 3-2 인접 배치 + 접촉 시냅스 + 가지치기 ===")
+    m_post, cP, RP = points_and_transform(post)
+    m_pre, _, _ = points_and_transform(pre)
 
-    # 시냅스 3D 좌표를 형태와 같은 변환으로
-    def proj(items):
-        if not items:
-            return np.empty((0, 2)), []
-        p = np.array([seg_xyz(s) for s, d in items])
-        p2 = mo.apply_transform(p, c, R)[:, :2]
-        return p2, [d for _, d in items]
-    kp, kd = proj(kept)
-    bp, _ = proj(rm_band)
-    ep, _ = proj(rm_excess)
+    # 두 세포를 인접 배치: pre 를 왼쪽으로 옮기되 수상돌기 필드가 SR 대역에서 겹치게.
+    post_dxy = m_post["xyz"][np.isin(m_post["type"], (mo.SOMA, mo.BASAL, mo.APICAL))]
+    pre_dxy = m_pre["xyz"][np.isin(m_pre["type"], (mo.SOMA, mo.BASAL, mo.APICAL))]
+    post_xmin = post_dxy[:, 0].min()
+    pre_xmax = pre_dxy[:, 0].max()
+    # pre 를 왼쪽으로 옮겨 pre 오른쪽 필드가 post 왼쪽 필드를 OVERLAP_FRAC 만큼 겹치게.
+    # shift 가 작을수록 더 많이 겹친다. (pre_xmax - post_xmin) 은 '딱 맞닿는' 이동량.
+    shift = (pre_xmax - post_xmin) * (1.0 - OVERLAP_FRAC)
+    m_pre["xyz"][:, 0] -= shift
+    pre_pts = m_pre["xyz"]                    # 접촉 탐지용 pre 전체 점
+    pre_soma3d = m_pre["xyz"][m_pre["type"] == mo.SOMA].mean(axis=0)
 
+    # 접촉 탐지: 각 post SR 정단 세그먼트에서 가장 가까운 pre 점까지의 2D 투영 거리.
+    # (z 무시한 투영 apposition — 벤치 도해용. 3D 정밀 접촉은 조직 스케일 몫)
+    sr_segs = apical_sr_segs(post, cP, RP)
+    scored = []
+    for seg, d, p in sr_segs:
+        mind = float(np.hypot(pre_pts[:, 0] - p[0], pre_pts[:, 1] - p[1]).min())
+        scored.append(dict(seg=seg, path=d, pos=p, touch=mind))
+    n_touch = sum(1 for s in scored if s["touch"] <= TOUCH_UM)
+    print(f"  SR 정단 세그먼트 {len(sr_segs)}개 · 접촉(<{TOUCH_UM:.0f}um) {n_touch}개")
+
+    cands = [s for s in scored if s["touch"] <= TOUCH_UM]
+    if len(cands) < N_KEEP:
+        # 접촉이 부족하면 가장 가까운(apposition 최소) 지점을 채워 N_KEEP 확보
+        scored.sort(key=lambda z: z["touch"])
+        cands = scored[:max(N_KEEP * 2, len(cands))]
+        print(f"  접촉 부족 -> 가장 가까운 지점으로 후보 {len(cands)}개 채움 "
+              f"(최소 접촉거리 {scored[0]['touch']:.1f}um)")
+
+    # 가지치기: 경로거리 균등하게 N_KEEP 개 유지
+    cands.sort(key=lambda z: z["path"])
+    if len(cands) <= N_KEEP:
+        kept = cands; pruned = []
+    else:
+        idx = set(np.linspace(0, len(cands) - 1, N_KEEP).astype(int).tolist())
+        kept = [cands[i] for i in range(len(cands)) if i in idx]
+        pruned = [cands[i] for i in range(len(cands)) if i not in idx]
+
+    # 각 시냅스 전도지연 = pre 소마->시냅스 3D 거리 / 전도속도 + 시냅스지연
+    for k in kept:
+        dist3d = float(np.linalg.norm(k["pos"] - pre_soma3d))
+        k["dist3d"] = dist3d
+        k["delay"] = dist3d / (V_COND * 1000.0) + SYN_DELAY   # um / (um/ms) ; V_COND um/us*1000=um/ms
+    print(f"  유지 {len(kept)}개 · 접촉거리 {[round(k['touch'],1) for k in kept]} um")
+    print(f"  전도지연 {[round(k['delay'],2) for k in kept]} ms (pre소마->시냅스 거리 기반)")
+
+    # ---- 그림 ----
     import matplotlib.pyplot as plt
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.5, 6.6),
-                                   gridspec_kw={"width_ratios": [1, 1.15]})
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12.0, 6.8),
+                                   gridspec_kw={"width_ratios": [1.25, 1]})
 
-    # A: pre + post 를 함께 · post 형태 위 시냅스 위치
-    xyd = m["xyz"][np.isin(m["type"], (mo.SOMA, mo.BASAL, mo.APICAL))][:, :2]
-    hx = np.percentile(np.abs(xyd[:, 0]), 99.8) * 1.2
-    # pre 를 왼쪽으로 offset (도해: pre 자극세포 → post 시냅스). D8: 상대 위치는 결과 무관.
-    pre_xyd = m_pre["xyz"][np.isin(m_pre["type"], (mo.SOMA, mo.BASAL, mo.APICAL))][:, :2]
-    pre_hx = np.percentile(np.abs(pre_xyd[:, 0]), 99.8) * 1.2
-    offset = hx + pre_hx + 90
-    m_pre_shift = dict(m_pre); m_pre_shift["xyz"] = m_pre["xyz"].copy()
-    m_pre_shift["xyz"][:, 0] -= offset
-
-    mo.render(axA, m_pre_shift, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
-    mo.render(axA, m, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
-
-    ylo = min(np.percentile(xyd[:, 1], 0.3), np.percentile(pre_xyd[:, 1], 0.3)) - 30
-    yhi = max(np.percentile(xyd[:, 1], 99.8), np.percentile(pre_xyd[:, 1], 99.8)) + 70
-    axA.set_xlim(-offset - pre_hx - 30, hx + 30)
-    axA.set_ylim(ylo, yhi)
+    mo.render(axA, m_pre, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+    mo.render(axA, m_post, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+    allx = np.concatenate([m_pre["xyz"][:, 0], m_post["xyz"][:, 0]])
+    ally = np.concatenate([m_pre["xyz"][:, 1], m_post["xyz"][:, 1]])
+    axA.set_xlim(allx.min() - 40, allx.max() + 40)
+    axA.set_ylim(np.percentile(ally, 0.3) - 30, np.percentile(ally, 99.8) + 60)
     axA.set_aspect("equal", adjustable="box"); axA.set_xticks([]); axA.set_yticks([]); axA.grid(False)
     for s in axA.spines.values():
         s.set_color("#dddddd")
-    # SR 대역은 post 쪽만
-    axA.fill_between([-hx, hx], SR_MIN, SR_MAX, color="#ffb300", alpha=0.13, zorder=0)
-    axA.text(hx, (SR_MIN+SR_MAX)/2, " SR", fontsize=8.5, color="#b26a00", va="center", ha="left")
-
-    if len(bp): axA.scatter(bp[:, 0], bp[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
-    if len(ep): axA.scatter(ep[:, 0], ep[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
-    if len(kp): axA.scatter(kp[:, 0], kp[:, 1], s=230, marker="*", color="#7b1fa2",
-                            edgecolor="white", lw=1.3, zorder=6)
-
-    # pre 소마 → 유지 시냅스 연결(도해)
-    pre_soma = m_pre_shift["xyz"][m_pre_shift["type"] == mo.SOMA].mean(axis=0)
-    if len(kp):
-        tgt = kp.mean(axis=0)
-        axA.annotate("", xy=(tgt[0], tgt[1]), xytext=(pre_soma[0], pre_soma[1]),
-                     arrowprops=dict(arrowstyle="-|>", color="#7b1fa2", lw=1.8,
-                                     linestyle=(0, (5, 3)), shrinkA=6, shrinkB=12), zorder=4)
-        axA.text((pre_soma[0]+tgt[0])/2, (pre_soma[1]+tgt[1])/2 + 35,
-                 "NetCon+지연", fontsize=8.5, color="#7b1fa2", ha="center", va="bottom",
-                 fontweight="bold", bbox=dict(fc="white", ec="#7b1fa2", alpha=0.9,
-                                              boxstyle="round,pad=0.3"))
-
-    # 세포 라벨 (제목과 겹치지 않게 살짝 아래)
-    post_soma = m["xyz"][m["type"] == mo.SOMA].mean(axis=0)
-    axA.text(pre_soma[0], yhi - 45, f"pre (자극)\n{cfg['pre_tag']}", fontsize=8.5, ha="center",
-             va="top", color="#212121", fontweight="bold")
-    axA.text(post_soma[0], yhi - 45, f"post (기록)\n{cfg['post_tag']}", fontsize=8.5, ha="center",
-             va="top", color="#212121", fontweight="bold")
-
-    axA.set_title("A. pre → post 시냅스 배치 (실제 형태·위치)", fontsize=10.5, loc="left", pad=18)
-    axA.scatter([], [], s=200, marker="*", color="#7b1fa2", label=f"유지 시냅스 {len(kept)}")
-    axA.scatter([], [], s=55, marker="x", color="#9e9e9e", label=f"가지치기 제거 {len(rm_band)+len(rm_excess)}")
+    # SR 대역 (post 기준, 전체 폭)
+    axA.axhspan(SR_MIN, SR_MAX, color="#ffb300", alpha=0.10, zorder=0)
+    axA.text(allx.max()+35, (SR_MIN+SR_MAX)/2, "SR", fontsize=9, color="#b26a00",
+             va="center", ha="right")
+    if pruned:
+        pp = np.array([k["pos"][:2] for k in pruned])
+        axA.scatter(pp[:, 0], pp[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
+    if kept:
+        kp = np.array([k["pos"][:2] for k in kept])
+        axA.scatter(kp[:, 0], kp[:, 1], s=250, marker="*", color="#7b1fa2",
+                    edgecolor="white", lw=1.3, zorder=6)
+    axA.set_title("A. 두 세포 인접 배치 + 접촉점 시냅스 (touch)", fontsize=10.5, loc="left")
+    axA.text(pre_soma3d[0], np.percentile(m_pre["xyz"][:, 1], 99.8)+40, f"pre (자극)",
+             fontsize=9, ha="center", color="#212121", fontweight="bold")
+    post_soma3d = m_post["xyz"][m_post["type"] == mo.SOMA].mean(axis=0)
+    axA.text(post_soma3d[0], np.percentile(m_post["xyz"][:, 1], 99.8)+40, f"post (기록)",
+             fontsize=9, ha="center", color="#212121", fontweight="bold")
+    axA.scatter([], [], s=220, marker="*", color="#7b1fa2", label=f"유지 시냅스 {len(kept)}")
+    axA.scatter([], [], s=55, marker="x", color="#9e9e9e", label=f"가지치기 제거 {len(pruned)}")
     axA.legend(loc="lower left", fontsize=8, framealpha=0.9)
     mo.scalebar(axA, 200, "200 um", loc=(0.72, 0.03))
 
-    # B: 경로거리 분포 (후보 vs 유지)
-    all_d = [d for _, d in cands]
-    axB.hist(all_d, bins=np.arange(0, max(all_d)+50, 50), color="#e0e0e0",
-             edgecolor="#bbb", label=f"touch 후보 {len(cands)}")
-    axB.hist(kd, bins=np.arange(0, max(all_d)+50, 50), color="#7b1fa2",
-             alpha=0.85, label=f"가지치기 후 {len(kept)}")
-    axB.axvspan(SR_MIN, SR_MAX, color="#ffb300", alpha=0.16, zorder=0)
-    axB.set_xlabel("소마 경로거리 (um)"); axB.set_ylabel("시냅스 수")
-    axB.set_title("B. 가지치기 — SR 대역 밖·과잉 제거", fontsize=10.5, loc="left")
-    axB.legend(fontsize=9)
-    axB.text(SR_MIN+5, axB.get_ylim()[1]*0.9, "SR 대역", fontsize=8.5, color="#b26a00", va="top")
+    # B: 시냅스별 접촉거리 & 전도지연 (표 대신 막대)
+    ypos = np.arange(len(kept))
+    labels = [f"{round(k['path'])}um" for k in kept]
+    delays = [k["delay"] for k in kept]
+    axB.barh(ypos, delays, color="#7b1fa2", alpha=0.85)
+    axB.set_yticks(ypos); axB.set_yticklabels(labels, fontsize=9)
+    axB.invert_yaxis()
+    axB.set_xlabel("전도지연 (ms) = 거리/속도 + 시냅스지연")
+    axB.set_ylabel("시냅스 (post 소마 경로거리)")
+    axB.set_title("B. 접촉 기하에서 계산한 전도지연", fontsize=10.5, loc="left")
+    for i, k in enumerate(kept):
+        axB.text(delays[i] + 0.02, i, f"{delays[i]:.2f} ms  (거리 {k['dist3d']:.0f}um)",
+                 va="center", fontsize=8, color="#4a148c")
+    axB.set_xlim(0, max(delays) * 1.45)
 
-    fig.suptitle(f"3-2  두 뉴런 연결의 시냅스 생성 + 가지치기 (touch {len(cands)} -> 유지 {len(kept)})",
+    fig.suptitle(f"3-2  두 뉴런 인접 배치 · 접촉 시냅스 · 가지치기 (유지 {len(kept)})",
                  fontsize=12.5, y=0.98)
-    fig.subplots_adjust(top=0.88, bottom=0.12, wspace=0.15)
-    plots.stamp(fig, f"3-2 | SR 대역 {SR_MIN:.0f}~{SR_MAX:.0f}um · N_keep={N_KEEP} · 실제 seg 3D 위치")
+    fig.subplots_adjust(top=0.88, bottom=0.12, wspace=0.18)
+    plots.stamp(fig, f"3-2 | 접촉<{TOUCH_UM:.0f}um · 전도속도 {V_COND}um/us · 지연=거리기반 · SR {SR_MIN:.0f}~{SR_MAX:.0f}um")
     outdir = plots.figdir(__file__)
     plots.save(fig, outdir, "3-2_syn_sites.png")
 
-    out = dict(post=cfg["post_tag"], sr_band=[SR_MIN, SR_MAX],
-               candidates=len(cands), kept=len(kept),
-               removed_band=len(rm_band), removed_excess=len(rm_excess),
-               kept_dist_um=[round(d, 1) for _, d in kept],
-               kept_sections=[s.sec.name().split(".")[-1] for s, d in kept])
+    out = dict(pre=cfg["pre_tag"], post=cfg["post_tag"], sr_band=[SR_MIN, SR_MAX],
+               touch_um=TOUCH_UM, overlap_frac=OVERLAP_FRAC,
+               v_cond_um_per_us=V_COND, syn_delay_ms=SYN_DELAY,
+               sr_apical_segs=len(sr_segs), touch_candidates=len(cands), kept=len(kept),
+               synapses=[dict(path_um=round(k["path"], 1), touch_um=round(k["touch"], 1),
+                              dist3d_um=round(k["dist3d"], 1), delay_ms=round(k["delay"], 2),
+                              section=k["seg"].sec.name().split(".")[-1]) for k in kept])
     jpath = os.path.join(outdir, "3-2_placement.json")
     with open(jpath, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
