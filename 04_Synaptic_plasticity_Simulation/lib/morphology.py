@@ -77,6 +77,28 @@ def _rot_to_y(d):
     return np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
 
 
+def align_transform(m, mode="apical"):
+    """정렬 변환 (c, R) 을 돌려준다.  p' = (p - c) @ R.T  (소마 원점·정단 상방)
+
+    시냅스 등 형태 위의 다른 점을 **같은 변환**으로 옮길 때 쓴다. align() 이 내부에서 호출한다.
+    """
+    c = soma_center(m)
+    R = np.eye(3)
+    if mode == "apical":
+        sel = m["type"] == APICAL
+        if sel.any():
+            d = (m["xyz"][sel] - c).mean(axis=0)
+            R = _rot_to_y(d)
+    return c, R
+
+
+def apply_transform(pts, c, R):
+    """(N,3) 또는 (3,) 점을 정렬 변환으로 옮긴다."""
+    p = np.atleast_2d(np.asarray(pts, dtype=float))
+    out = (p - c) @ R.T
+    return out[0] if np.ndim(pts) == 1 else out
+
+
 def align(m, mode="apical"):
     """소마를 원점으로 옮기고, 정단수상돌기 방향을 +y 로 회전한다.
 
@@ -84,14 +106,8 @@ def align(m, mode="apical"):
     정단 트렁크를 위로 세우는 것은 CA1 추체세포의 표준 도시 방향이다.
     """
     out = dict(m)
-    c = soma_center(m)
-    xyz = m["xyz"] - c
-    if mode == "apical":
-        sel = m["type"] == APICAL
-        if sel.any():
-            d = xyz[sel].mean(axis=0)
-            xyz = xyz @ _rot_to_y(d).T
-    out["xyz"] = xyz
+    c, R = align_transform(m, mode=mode)
+    out["xyz"] = apply_transform(m["xyz"], c, R)
     return out
 
 

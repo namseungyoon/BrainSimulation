@@ -38,10 +38,10 @@
 | **2-3** | `02_neurons/3_morphology` | `2-3_morphology.py` | `2-3_morphology.png` · `2-3_morphology.json` | ✅ |
 | **2-4** | `02_neurons/4_ephys` | `2-4_ephys_battery.py` | `2-4_ephys_battery.png` | ⬜ |
 | **2-5** | `02_neurons/5_resonance` | `2-5_zap_resonance.py` | `2-5_zap_impedance.png` | ⬜ |
-| **2-6** | `02_neurons/6_pair` | `2-6_two_cells.py` | `2-6_two_cells.png` | ⬜ |
+| **2-6** | `02_neurons/6_pair` | `2-6_two_cells.py` | `2-6_two_cells.png` · `2-6_pair.json` | ✅ |
 | **2-7** | `02_neurons/7_distance` | `2-7_distance_map.py` | `2-7_distance_map.png` | ⬜ |
 | **3-1** | `03_synapse/1_params` | `3-1_param_table.py` | `3-1_param_table.png` | ⬜ |
-| **3-2** | `03_synapse/2_placement` | `3-2_placement.py` | `3-2_syn_sites.png` | ⬜ |
+| **3-2** | `03_synapse/2_placement` | `3-2_placement.py` | `3-2_syn_sites.png` · `3-2_placement.json` | ✅ |
 | **3-3** | `03_synapse/3_wiring` | `3-3_wiring.py` | `3-3_wiring_diagram.png` | ⬜ |
 | **3-4** | `03_synapse/4_record` | `3-4_record.py` | `3-4_record_check.png` | ⬜ |
 | **3-5** | `03_synapse/5_uepsp` | `3-5_uepsp.py` | `3-5_uepsp_trace.png` · `3-5_uepsp_stats.png` | ⬜ |
