@@ -219,9 +219,11 @@ def main():
     ]
     labels = ["pre 정단수상돌기", "pre 기저수상돌기", "post 정단수상돌기", "post 기저수상돌기",
               "축삭(스텁)", f"유지 시냅스 {len(syn)}", f"가지치기 제거 {len(prune_i)}"]
-    axA.legend(handles, labels, loc="lower left", fontsize=7.6, framealpha=0.92,
-               ncol=1, handlelength=1.4)
-    mo.scalebar(axA, 200, "200 um", loc=(0.72, 0.03))
+    # 범례를 축 아래 바깥으로 빼서 뉴런과 겹치지 않게. 가로로 눕혀 공간 절약.
+    axA.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02),
+               fontsize=8, framealpha=0.95, ncol=3, handlelength=1.4,
+               columnspacing=1.2, borderaxespad=0.3)
+    mo.scalebar(axA, 200, "200 um", loc=(0.72, 0.05))
 
     ypos = np.arange(len(syn))
     delays = [s["delay"] for s in syn]
@@ -238,7 +240,7 @@ def main():
 
     fig2.suptitle(f"3-2  방사축 정렬·회전 배치 (θ*={theta:.0f}도) → 접촉 시냅스 {len(syn)}개",
                   fontsize=12.5, y=0.98)
-    fig2.subplots_adjust(top=0.88, bottom=0.12, wspace=0.18)
+    fig2.subplots_adjust(top=0.88, bottom=0.20, wspace=0.18)
     plots.stamp(fig2, f"3-2 | θ*={theta:.0f}도 · L={SOMA_LATERAL_L:.0f}um · 전도속도 {V_COND}um/us · SR {SR_MIN:.0f}~{SR_MAX:.0f}um")
     plots.save(fig2, outdir, "3-2_syn_sites.png")
 
