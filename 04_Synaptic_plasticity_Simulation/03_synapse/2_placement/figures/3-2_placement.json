@@ -5,48 +5,50 @@
     100.0,
     300.0
   ],
-  "touch_um": 12.0,
-  "overlap_frac": 0.45,
+  "soma_lateral_L_um": 120.0,
+  "touch_r_um": 10.0,
+  "angle_step_deg": 10,
+  "best_angle_deg": 160.0,
+  "best_touch_count": 5,
+  "best_mean_mindist_um": 42.7,
   "v_cond_um_per_us": 0.5,
   "syn_delay_ms": 0.5,
-  "sr_apical_segs": 95,
-  "touch_candidates": 10,
   "kept": 5,
   "synapses": [
     {
-      "path_um": 114.0,
-      "touch_um": 44.6,
-      "dist3d_um": 128.6,
-      "delay_ms": 0.76,
-      "section": "apic[5]"
-    },
-    {
-      "path_um": 140.6,
-      "touch_um": 24.7,
-      "dist3d_um": 94.9,
-      "delay_ms": 0.69,
-      "section": "apic[2]"
-    },
-    {
       "path_um": 178.1,
-      "touch_um": 37.7,
-      "dist3d_um": 143.9,
-      "delay_ms": 0.79,
+      "touch_um": 7.4,
+      "dist3d_um": 109.8,
+      "delay_ms": 0.72,
       "section": "apic[21]"
     },
     {
-      "path_um": 206.2,
-      "touch_um": 38.4,
-      "dist3d_um": 174.0,
-      "delay_ms": 0.85,
-      "section": "apic[26]"
+      "path_um": 206.6,
+      "touch_um": 8.5,
+      "dist3d_um": 144.3,
+      "delay_ms": 0.79,
+      "section": "apic[109]"
     },
     {
-      "path_um": 281.3,
-      "touch_um": 38.2,
-      "dist3d_um": 209.0,
-      "delay_ms": 0.92,
-      "section": "apic[42]"
+      "path_um": 218.6,
+      "touch_um": 18.1,
+      "dist3d_um": 173.2,
+      "delay_ms": 0.85,
+      "section": "apic[36]"
+    },
+    {
+      "path_um": 225.1,
+      "touch_um": 16.5,
+      "dist3d_um": 178.9,
+      "delay_ms": 0.86,
+      "section": "apic[37]"
+    },
+    {
+      "path_um": 239.2,
+      "touch_um": 9.2,
+      "dist3d_um": 147.7,
+      "delay_ms": 0.8,
+      "section": "apic[29]"
     }
   ]
 }
