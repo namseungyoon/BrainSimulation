@@ -17,8 +17,8 @@ classes:
     e_rev_mV:    {v: -8.5,  src: paper, ref: "Moradi & Ascoli 2020 유효 역전위(§2.6). mod 기본 0 을 덮어씀"}
     tau_r_AMPA:  {v: 0.2,   src: paper, ref: "Ecker2020 Table3 (E 계열)"}
     tau_d_AMPA:  {v: 3.0,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2) tau_d"}
-    tau_r_NMDA:  {v: 9.0,   src: paper, ref: "Andrasfalvy & Magee 2001 (CA1 특이). ⚠️미결#6 아래 note"}
-    tau_d_NMDA:  {v: 61.0,  src: paper, ref: "Andrasfalvy & Magee 2001. ⚠️Ecker PC->PC 는 148.5 — 미결#6"}
+    tau_r_NMDA:  {v: 3.9,   src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"}
+    tau_d_NMDA:  {v: 148.5, src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"}
     NMDA_ratio:  {v: 1.22,  src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA:AMPA"}
     mg_mM:       {v: 1.0,   src: mod,   ref: "생리 세포외 Mg2+"}
     # 단기가소성(TM) — Ecker2020 Table3 실측값 (억압형: Fac < Dep)
@@ -28,11 +28,14 @@ classes:
     Nrrp:        {v: 2,     src: paper, ref: "Ecker2020 Table3 PC->PC(E2) 방출자리 수"}
 
 notes:
-  - "★ 미결#6 (NMDA 동역학): Ecker2020 은 우리 연결(PC->PC)의 NMDA 를 tau_r=3.9 / tau_d=148.5 ms
-     (§2.3, Q10 보정)로 명시한다. 현재 값 9.0/61.0 은 Andrasfalvy&Magee 2001(CA1 특이) 이고
-     GB mod 검증본과 일치한다. 우리 연결의 논문값은 3.9/148.5 이므로 그쪽이 근거상 우세하지만,
-     채택하면 NMDA 칼슘 총량이 크게 늘어 3-3~3-6 재실행 + 가소성 문턱 재검증이 필요하다.
-     -> 3-7(g 재보정) 착수 전에 결정한다. 미결로 남긴 채 6단계로 넘어가지 않는다."
+  - "★ D11 (NMDA 동역학 확정): tau_r/tau_d = 3.9 / 148.5 ms (Ecker2020 §2.3, PC->PC, Q10 보정).
+     우리 h.celsius = 34.0 이 Ecker 시뮬 온도와 같아 보정값을 그대로 쓴다.
+     이전 값 9.0/61.0 은 출처가 'Andrasfalvy & Magee 2001' 로 적혀 있었으나 그 논문
+     (PMID 11717348)은 제목이 'Distance-dependent increase in AMPA receptor number...' 이고
+     Schaffer collateral 경로의 AMPA 수용체 개수를 다룬다. NMDA 시상수의 출처가 아니며
+     우리 연결(PC->PC)도 아니다 -> 잘못된 인용이었다(Sayer1990 과 같은 SC 오염).
+     ⚠️ 파생: NMDA 감쇠가 61 -> 148.5ms 로 약 2.4배 길어져 NMDA 전하량이 크게 늘어난다.
+     5단계 칼슘 기반 가소성 문턱은 이 값 위에서 잡아야 한다(5-1 에서 반영)."
   - "칼슘 지연 D(13.7 vs 18.8ms)·이중안정 파라미터는 전달이 아니라 가소성 소관 -> 5-1 에서 확정."
   - "e_rev=-8.5 는 GB mod 기본 e=0 을 덮어써야 한다. 시냅스 생성 시 syn.e=-8.5 명시."
   - "촉진형 대조가 필요해지면 Ecker Table3 의 실측 촉진 클래스(PC->SOM+ E1: Use 0.09/Dep 138/Fac 670)를
