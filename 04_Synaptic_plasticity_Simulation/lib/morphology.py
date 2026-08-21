@@ -157,20 +157,41 @@ def metrics(m):
     return out
 
 
+def _lighten(hexc, f):
+    """hex 색을 흰색 쪽으로 f(0~1) 만큼 섞어 옅게."""
+    import matplotlib.colors as mc
+    r, g, b = mc.to_rgb(hexc)
+    return (r + (1 - r) * f, g + (1 - g) * f, b + (1 - b) * f)
+
+
 def render(ax, m, types=(SOMA, BASAL, APICAL, AXON), plane="xy",
            lw_scale=0.55, lw_max=3.0, alpha_axon=0.35, rasterized=True,
-           autoscale=True):
+           autoscale=True, color=None, soma_color=None):
     """2D 투영 렌더링. 선폭은 반지름에 비례. 축삭은 옅게 그린다(replace_axon 때문).
+
+    color: None 이면 도메인별 기본색(정단 빨강/기저 파랑). 색 문자열을 주면 세포 전체를
+           그 단색(명암만 도메인별로)으로 그린다 -- 두 세포를 색으로 구분할 때 쓴다.
+    soma_color: 소마 색 별도 지정(기본은 color 또는 도메인색).
 
     ⚠️ `autoscale=False` 로 두고 호출자가 xlim/ylim 을 정할 때는
        `ax.set_aspect("equal", adjustable="box")` 를 쓸 것.
        기본값인 `adjustable="datalim"` 은 aspect 를 맞추려고 **데이터 한계를 늘려서**
-       호출자가 설정한 xlim/ylim 을 조용히 덮어쓴다
-       ("Ignoring fixed x limits ..." 경고의 원인).
+       호출자가 설정한 xlim/ylim 을 조용히 덮어쓴다.
     """
     from matplotlib.collections import LineCollection
     ai = {"x": 0, "y": 1, "z": 2}
     i0, i1 = ai[plane[0]], ai[plane[1]]
+
+    def col_for(t):
+        if color is None:
+            return TYPE_COLOR[t]
+        if t == SOMA:
+            return soma_color or color
+        if t == AXON:
+            return color
+        # 단색 모드: 정단은 진하게, 기저는 옅게 해서 도메인은 구분되게
+        return color if t == APICAL else _lighten(color, 0.45)
+
     # 굵은 것을 먼저 → 얇은 가지가 위에 보이도록. 축삭은 맨 아래.
     order = [t for t in (AXON, BASAL, APICAL, SOMA) if t in types]
     for t in order:
@@ -179,7 +200,7 @@ def render(ax, m, types=(SOMA, BASAL, APICAL, AXON), plane="xy",
             continue
         pts = segs[:, :, [i0, i1]]
         lw = np.clip(rad * 2 * lw_scale, 0.25, lw_max)
-        lc = LineCollection(pts, linewidths=lw, colors=TYPE_COLOR[t],
+        lc = LineCollection(pts, linewidths=lw, colors=col_for(t),
                             alpha=alpha_axon if t == AXON else 0.95,
                             capstyle="round", rasterized=rasterized)
         ax.add_collection(lc)

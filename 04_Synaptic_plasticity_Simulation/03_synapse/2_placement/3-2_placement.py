@@ -174,10 +174,13 @@ def main():
     plots.save(fig1, outdir, "3-2_rotation.png")
 
     # ---- 그림 2: θ* 배치 + 접촉 시냅스 ----
-    fig2, (axA, axB) = plt.subplots(1, 2, figsize=(12.0, 6.8),
-                                    gridspec_kw={"width_ratios": [1.25, 1]})
-    mo.render(axA, m_pre, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
-    mo.render(axA, m_post, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False)
+    fig2, (axA, axB) = plt.subplots(1, 2, figsize=(12.6, 6.8),
+                                    gridspec_kw={"width_ratios": [1.3, 1]})
+    PRE_C, POST_C = "#2e7d32", "#d84315"     # pre=초록, post=주황 (세포 구분)
+    mo.render(axA, m_pre, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False,
+              color=PRE_C, soma_color="#1b5e20")
+    mo.render(axA, m_post, types=(mo.SOMA, mo.BASAL, mo.APICAL, mo.AXON), autoscale=False,
+              color=POST_C, soma_color="#bf360c")
     allx = np.concatenate([m_pre["xyz"][:, 0], m_post["xyz"][:, 0]])
     ally = np.concatenate([m_pre["xyz"][:, 1], m_post["xyz"][:, 1]])
     axA.set_xlim(allx.min() - 40, allx.max() + 40)
@@ -195,14 +198,29 @@ def main():
     axA.scatter(kp[:, 0], kp[:, 1], s=250, marker="*", color="#7b1fa2",
                 edgecolor="white", lw=1.3, zorder=6)
     axA.text(pre_soma3d[0], np.percentile(m_pre["xyz"][:, 1], 99.8) + 40, "pre (자극)",
-             fontsize=9, ha="center", color="#212121", fontweight="bold")
+             fontsize=9.5, ha="center", color=PRE_C, fontweight="bold")
     post_soma3d = m_post["xyz"][m_post["type"] == mo.SOMA].mean(axis=0)
     axA.text(post_soma3d[0], np.percentile(m_post["xyz"][:, 1], 99.8) + 40, "post (기록)",
-             fontsize=9, ha="center", color="#212121", fontweight="bold")
+             fontsize=9.5, ha="center", color=POST_C, fontweight="bold")
     axA.set_title(f"A. θ*={theta:.0f}도 배치 + 접촉 시냅스 (touch)", fontsize=10.5, loc="left")
-    axA.scatter([], [], s=220, marker="*", color="#7b1fa2", label=f"유지 {len(syn)}")
-    axA.scatter([], [], s=55, marker="x", color="#9e9e9e", label=f"제거 {len(prune_i)}")
-    axA.legend(loc="lower left", fontsize=8, framealpha=0.9)
+
+    # 범례: 세포 구분(pre/post) + 도메인(정단/기저/축삭) + 시냅스
+    import matplotlib.lines as mlines
+    def hline(c, lw=2.6):
+        return mlines.Line2D([], [], color=c, lw=lw)
+    handles = [
+        hline(PRE_C),                                   # pre 정단
+        hline(mo._lighten(PRE_C, 0.45)),                # pre 기저
+        hline(POST_C),                                  # post 정단
+        hline(mo._lighten(POST_C, 0.45)),               # post 기저
+        hline(mo.TYPE_COLOR[mo.AXON]),                  # 축삭(공통)
+        mlines.Line2D([], [], color="#7b1fa2", marker="*", lw=0, markersize=13),
+        mlines.Line2D([], [], color="#9e9e9e", marker="x", lw=0, markersize=8),
+    ]
+    labels = ["pre 정단수상돌기", "pre 기저수상돌기", "post 정단수상돌기", "post 기저수상돌기",
+              "축삭(스텁)", f"유지 시냅스 {len(syn)}", f"가지치기 제거 {len(prune_i)}"]
+    axA.legend(handles, labels, loc="lower left", fontsize=7.6, framealpha=0.92,
+               ncol=1, handlelength=1.4)
     mo.scalebar(axA, 200, "200 um", loc=(0.72, 0.03))
 
     ypos = np.arange(len(syn))
