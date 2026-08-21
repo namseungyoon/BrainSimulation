@@ -1,0 +1,14 @@
+{
+  "cls": "SC->PC",
+  "n_syn": 5,
+  "amp_mV": 1.3301,
+  "latency_ms": 1.78,
+  "rise_ms": 1.725,
+  "halfwidth_ms": 11.075,
+  "decay_ms": 9.85,
+  "lit_amp_range": [
+    0.1,
+    1.0
+  ],
+  "amp_in_lit": false
+}
