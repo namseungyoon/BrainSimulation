@@ -92,7 +92,7 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 | **2-7** 거리 지도 | ✅ 수상돌기 경로거리 색칠 · 정단 최대 780µm · 고정 시냅스 5/5 SR 대역 안 → **2단계 완료** |
 | **3-2** 시냅스 생성+가지치기 | ✅ 방사축 정렬+회전(θ*=160°)으로 인접 → 접촉 시냅스 5개 · **기하 고정**(config/geometry.yaml) |
 | **3-3** 배선 | ✅ pre 1발 → 시냅스 5개 전도도(0.59nS) → post EPSP 1.36mV (3/3) |
-| 2-7 · 3-1·3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |
+| 3-1·3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |
 
 conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지
 확신할 수 없어 **질문 자체가 성립하지 않는 경로**를 택했다 ([DECISIONS.md](docs/DECISIONS.md) D7).
