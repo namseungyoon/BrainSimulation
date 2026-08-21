@@ -28,14 +28,14 @@ def step_response(cell, amp_nA, delay=100.0, dur=500.0, tail=150.0, rec_dt=0.1):
 
 
 def fi_curve(cell, amps):
-    """계단전류 진폭 목록 → (amps, 발화율 Hz, 파형 dict)."""
+    """계단전류 진폭 목록 → (amps, 발화율 Hz, 파형 dict).
+    traces[a] = (t, v, sp_all) — 전체 스파이크 시각(재사용용)."""
     rates, traces = [], {}
     for a in amps:
         t, v, sp = step_response(cell, a)
-        # 계단 구간(100~600ms) 내 스파이크 → Hz
         during = sp[(sp >= 100.0) & (sp <= 600.0)]
         rates.append(len(during) / 0.5)
-        traces[a] = (t, v, during)
+        traces[a] = (t, v, sp)
     return np.array(amps), np.array(rates), traces
 
 
@@ -52,6 +52,41 @@ def input_resistance(cell, amp_nA=-0.05):
     sag = abs((v_min - v_ss) / (v_min - vrest)) if (v_min - vrest) != 0 else 0.0
     return dict(vrest_mV=float(vrest), Rin_MOhm=float(Rin), sag_ratio=float(sag),
                 v_min_mV=float(v_min), v_ss_mV=float(v_ss), trace=(t, v))
+
+
+def ap_features_from_trace(t, v, sp):
+    """이미 얻은 (t,v,sp) 에서 첫 활동전위의 진폭·반치폭·역치. sp 없으면 None."""
+    if sp is None or len(sp) == 0:
+        return None
+    vrest = v[t < 100.0].mean()
+    t0 = sp[0]
+    w = (t >= t0 - 3.0) & (t <= t0 + 5.0)
+    tv, vv = t[w], v[w]
+    if len(vv) < 3:
+        return None
+    vpeak = vv.max()
+    amp = vpeak - vrest
+    half = (vrest + vpeak) / 2.0
+    above = vv >= half
+    if above.any():
+        idx = np.where(above)[0]
+        width = float(tv[idx[-1]] - tv[idx[0]])
+    else:
+        width = float("nan")
+    dvdt = np.gradient(vv, tv)
+    thi = np.where(dvdt > 20.0)[0]
+    vthr = float(vv[thi[0]]) if len(thi) else float("nan")
+    return dict(ap_amplitude_mV=float(amp), ap_halfwidth_ms=width,
+                ap_threshold_mV=vthr, vpeak_mV=float(vpeak))
+
+
+def adaptation_from_spikes(sp):
+    """스파이크 시각열에서 발화 적응 지수. 계단 구간 3발 미만이면 None."""
+    during = sp[(sp >= 100.0) & (sp <= 600.0)] if sp is not None else np.array([])
+    if len(during) < 3:
+        return None
+    isi = np.diff(during)
+    return float(isi[-1] / isi[0] - 1.0)
 
 
 def ap_features(cell, amp_nA):

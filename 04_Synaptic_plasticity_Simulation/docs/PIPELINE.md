@@ -36,7 +36,7 @@
 | **2-1** | `02_neurons/1_survey` | `2-1_survey_bundles.py` | `2-1_morphology_grid.png` · `2-1_metrics.png` · `2-1_survey.json` | ✅ |
 | **2-2** | `02_neurons/2_load` | `2-2_load_cell.py` | `2-2_cell_loaded.png` · `2-2_load.json` | ✅ |
 | **2-3** | `02_neurons/3_morphology` | `2-3_morphology.py` | `2-3_morphology.png` · `2-3_morphology.json` | ✅ |
-| **2-4** | `02_neurons/4_ephys` | `2-4_ephys_battery.py` | `2-4_ephys_battery.png` | ⬜ |
+| **2-4** | `02_neurons/4_ephys` | `2-4_ephys_battery.py` | `2-4_ephys_battery.png` · `2-4_ephys.json` | ✅ |
 | **2-5** | `02_neurons/5_resonance` | `2-5_zap_resonance.py` | `2-5_zap_impedance.png` | ⬜ |
 | **2-6** | `02_neurons/6_pair` | `2-6_two_cells.py` | `2-6_two_cells.png` · `2-6_pair.json` | ✅ |
 | **2-7** | `02_neurons/7_distance` | `2-7_distance_map.py` | `2-7_distance_map.png` | ⬜ |

@@ -1,0 +1,88 @@
+{
+  "pre": {
+    "tag": "oh140807_A0_idF",
+    "Rin_MOhm": 42.3,
+    "vrest_mV": -69.89,
+    "sag_ratio": 0.212,
+    "rheobase_nA": 0.25,
+    "ap_amplitude_mV": 95.5,
+    "ap_halfwidth_ms": 1.33,
+    "ap_threshold_mV": -46.4,
+    "adaptation_index": 0.779,
+    "fi_amps": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.5
+    ],
+    "fi_rates_hz": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0,
+      2.0,
+      4.0,
+      8.0,
+      14.0
+    ],
+    "in_range": {
+      "Rin (MOhm)": false,
+      "Vrest (mV)": true,
+      "sag ratio": true,
+      "rheobase (nA)": true,
+      "AP 진폭 (mV)": true,
+      "AP 반치폭 (ms)": true,
+      "AP 역치 (mV)": true,
+      "발화적응": false
+    }
+  },
+  "post": {
+    "tag": "oh140807_A0_idC",
+    "Rin_MOhm": 27.9,
+    "vrest_mV": -69.49,
+    "sag_ratio": 0.219,
+    "rheobase_nA": 0.4,
+    "ap_amplitude_mV": 97.0,
+    "ap_halfwidth_ms": 1.33,
+    "ap_threshold_mV": -44.5,
+    "adaptation_index": 2.874,
+    "fi_amps": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.5
+    ],
+    "fi_rates_hz": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0,
+      8.0
+    ],
+    "in_range": {
+      "Rin (MOhm)": false,
+      "Vrest (mV)": true,
+      "sag ratio": true,
+      "rheobase (nA)": false,
+      "AP 진폭 (mV)": true,
+      "AP 반치폭 (ms)": true,
+      "AP 역치 (mV)": true,
+      "발화적응": false
+    }
+  }
+}
