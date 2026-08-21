@@ -15,13 +15,17 @@ def _spike_times(t, v, thresh=-10.0):
     return t[1:][up]
 
 
-def step_response(cell, amp_nA, delay=100.0, dur=500.0, tail=150.0, rec_dt=0.1):
+# 단일세포 실험 기본 dt. EMS 시냅스가 없어 dt=0.1 로 충분(검증: dt0.025와 파형 동일, 4배 빠름).
+CELL_DT = 0.1
+
+
+def step_response(cell, amp_nA, delay=100.0, dur=500.0, tail=150.0, rec_dt=0.1, dt=CELL_DT):
     """소마에 계단전류 1회. (t, v, spike_times) 반환."""
     ic = h.IClamp(cell.soma[0](0.5))
     ic.delay, ic.dur, ic.amp = delay, dur, amp_nA
     t = h.Vector().record(h._ref_t)
     v = h.Vector().record(cell.soma[0](0.5)._ref_v)
-    nrnenv.finit(v_init=-70.0)
+    nrnenv.finit(v_init=-70.0, dt=dt)
     h.continuerun(delay + dur + tail)
     t = np.array(t); v = np.array(v)
     return t, v, _spike_times(t, v)
@@ -115,6 +119,84 @@ def ap_features(cell, amp_nA):
     vthr = float(vv[thi[0]]) if len(thi) else float("nan")
     return dict(ap_amplitude_mV=float(amp), ap_halfwidth_ms=width,
                 ap_threshold_mV=vthr, vpeak_mV=float(vpeak))
+
+
+def zap_response(cell, f0=0.5, f1=20.0, amp_nA=0.05, dur_ms=20000.0,
+                 hold_nA=0.0, rec_dt=0.5, block_ih=False, v_init=-70.0,
+                 seg=None, dt=CELL_DT):
+    """ZAP(chirp) 전류 — 주파수가 f0→f1 로 선형 상승하는 정현파를 주입.
+
+    공명 측정 표준 프로토콜. 반환: (t, v, i_inj) — 소마(또는 seg) 막전위 응답.
+    block_ih=True 면 모든 구획의 Ih(ghdbar_hd)를 0 으로 (기전 귀속 대조).
+    dur_ms 길게(20s) 주어 저주파(theta) 분해능 확보.
+    """
+    import numpy as _np
+    site = seg if seg is not None else cell.soma[0](0.5)
+
+    if block_ih:
+        for s in cell.all:
+            if h.ismembrane("hd", sec=s):
+                for sg in s:
+                    sg.hd.ghdbar = 0.0
+
+    # ZAP 파형을 Vector.play 로 IClamp.amp 에 흘려넣는다 (연속 전류).
+    # 파형은 시뮬 dt 격자로 만들고, play 간격도 같은 dt. (dt=0.1: 파형 동일·4배 빠름)
+    n = int(dur_ms / dt) + 1
+    t = _np.arange(n) * dt
+    # 순간위상: 주파수가 선형 상승 → phase = 2π (f0 t + (f1-f0)/(2T) t^2)
+    T = dur_ms / 1000.0
+    tt = t / 1000.0                          # s
+    inst = f0 * tt + (f1 - f0) / (2 * T) * tt ** 2
+    wave = amp_nA * _np.sin(2 * _np.pi * inst) + hold_nA
+
+    ic = h.IClamp(site)
+    ic.delay = 0.0; ic.dur = dur_ms
+    iv = h.Vector(wave)
+    iv.play(ic._ref_amp, dt)
+
+    vrec = h.Vector().record(site._ref_v, rec_dt)
+    trec = h.Vector().record(h._ref_t, rec_dt)
+    nrnenv.finit(v_init=v_init, dt=dt)
+    h.continuerun(dur_ms)
+    # play 벡터를 확실히 떼어 다음 런과 간섭 방지
+    iv.play_remove()
+    return _np.array(trec), _np.array(vrec), (t, wave, f0, f1, T)
+
+
+def impedance_profile(t_ms, v, iwave, nbin=60):
+    """ZAP 응답에서 주파수별 임피던스 |Z(f)| = |V(f)/I(f)| 프로파일.
+
+    입력전류 파형(iwave)과 막전위 응답을 같은 시간격자로 맞춰 FFT. 순시주파수가 시간에
+    선형이므로 시간축을 곧 주파수축으로 읽어, 주파수 구간별 (전압진폭/전류진폭) 을 낸다.
+    반환: (freqs, Zmag, f_res, Q)
+    """
+    import numpy as _np
+    tt, wave, f0, f1, T = iwave
+    # 막전위를 전류 격자에 보간
+    v_on_i = _np.interp(tt, t_ms, v)
+    v_ac = v_on_i - v_on_i.mean()
+    i_ac = wave - wave.mean()
+    inst_f = f0 + (f1 - f0) * (tt / 1000.0) / T   # 시간→순시주파수
+    edges = _np.linspace(f0, f1, nbin + 1)
+    fc = 0.5 * (edges[:-1] + edges[1:])
+    Z = _np.full(nbin, _np.nan)
+    for k in range(nbin):
+        m = (inst_f >= edges[k]) & (inst_f < edges[k + 1])
+        if m.sum() < 5:
+            continue
+        vamp = _np.sqrt(2) * _np.std(v_ac[m])    # RMS→진폭
+        iamp = _np.sqrt(2) * _np.std(i_ac[m])
+        if iamp > 0:
+            Z[k] = vamp / iamp                   # mV/nA = MOhm
+    good = ~_np.isnan(Z)
+    fc_g, Z_g = fc[good], Z[good]
+    if len(Z_g) == 0:
+        return fc, Z, _np.nan, _np.nan
+    ipk = int(_np.argmax(Z_g))
+    f_res = float(fc_g[ipk])
+    # Q = 공명 강도 = 피크 / 저주파(첫 구간) 값
+    Q = float(Z_g[ipk] / Z_g[0]) if Z_g[0] > 0 else _np.nan
+    return fc, Z, f_res, Q
 
 
 def adaptation_index(cell, amp_nA):

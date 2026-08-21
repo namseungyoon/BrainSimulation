@@ -89,7 +89,12 @@ def version():
 
 
 def finit(v_init=None, dt=None, celsius=None):
-    """고정 dt 초기화. cvode 를 명시적으로 끈다."""
+    """고정 dt 초기화. cvode 를 명시적으로 끈다.
+
+    dt 기본은 0.025(EMS 시냅스가 있는 경우 필수). **시냅스가 없는 단일세포 실험(2-4·2-5)** 은
+    dt=0.1 로 불러도 파형이 동일하고 ~4배 빠르다(검증: dt 0.025 vs 0.1 v범위 일치).
+    ⚠️ cvode 는 ZAP 처럼 매 스텝 자극이 바뀌는 경우 오히려 5배 느리므로 쓰지 않는다.
+    """
     h.celsius = CELSIUS if celsius is None else celsius
     h.cvode_active(0)                       # ★ 고정 dt 강제
     h.dt = DT if dt is None else dt

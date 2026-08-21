@@ -1,0 +1,24 @@
+{
+  "cell": "oh140807_A0_idC",
+  "theta_band": [
+    4.0,
+    8.0
+  ],
+  "zap": {
+    "f0": 0.5,
+    "f1": 20.0,
+    "dur_s": 10.0,
+    "amp_nA": 0.03
+  },
+  "normal": {
+    "f_res_hz": 11.39,
+    "Q": 1.283
+  },
+  "ih_blocked": {
+    "f_res_hz": 0.66,
+    "Q": 1.0
+  },
+  "ih_Q_drop": 0.283,
+  "verdict": "불가",
+  "verdict_reason": "봉우리가 theta 밖(11.4Hz) 또는 없음(Q=1.28)"
+}
