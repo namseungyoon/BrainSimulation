@@ -1,0 +1,25 @@
+{
+  "pre": "oh140807_A0_idF",
+  "post": "oh140807_A0_idC",
+  "n_syn": 2,
+  "pre_spikes": 1,
+  "g_peaks_nS": [
+    0.599,
+    0.6
+  ],
+  "delays_ms": [
+    0.76,
+    0.74
+  ],
+  "epsp_mv": 0.5236,
+  "g_nS": 0.6,
+  "cls": "PC->PC",
+  "settle_ms": 250.0,
+  "checks": {
+    "pre 1발 발화": true,
+    "시냅스 2개 전도도 발생": true,
+    "post EPSP > 0": true
+  },
+  "checks_passed": 3,
+  "checks_total": 3
+}

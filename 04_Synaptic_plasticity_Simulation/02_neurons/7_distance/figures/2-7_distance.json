@@ -1,22 +1,19 @@
 {
   "post": "oh140807_A0_idC",
-  "sr_band": [
-    100.0,
-    300.0
-  ],
   "apical_max_dist_um": 780.4,
   "syn_path_um": [
-    178.1,
-    206.6,
-    218.6,
-    225.1,
-    239.2
+    144.3,
+    171.7
   ],
-  "syn_in_sr": [
-    true,
-    true,
-    true,
-    true,
-    true
+  "target_zones": {
+    "basal": true,
+    "apical_proximal_um": [
+      50.0,
+      150.0
+    ]
+  },
+  "syn_domain": [
+    "basal",
+    "basal"
   ]
 }

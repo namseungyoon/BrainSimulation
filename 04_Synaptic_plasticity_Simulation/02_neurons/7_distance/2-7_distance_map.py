@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""2-7 거리 지도 — post 수상돌기를 소마 경로거리로 색칠 + SR 대역·고정 시냅스 표시
+"""2-7 거리 지도 — post 수상돌기를 소마 경로거리로 색칠 + PC->PC 표적 구역·고정 시냅스 표시
 
 단계   : 2-7 (파이프라인 2단계 뉴런 / 하위 7 distance)
 쉬운 설명: 시냅스가 소마에서 얼마나 '멀리'(전선 길이 기준) 있는지가 신호 감쇠와 가소성에
           영향을 준다. post 세포의 모든 가지를 소마로부터의 경로거리로 색칠해, 3-2 에서
           고정한 시냅스 5개가 어느 거리대에 있는지 한눈에 보인다.
 방법   : h.distance() 로 각 세그먼트의 소마 경로거리를 재고, 형태 위에 컬러맵으로 그린다.
-          SR 대역(정단 100~300µm)과 고정 시냅스(★) 를 겹쳐 표시.
+          PC->PC 표적 구역(기저수상돌기 + 정단 근위 50~150µm, D10)과 고정 시냅스(★) 를 겹쳐 표시.
 결과   : figures/2-7_distance_map.png · figures/2-7_distance.json
 실행   : . .\\env\\activate.ps1 ; & $Py04 02_neurons\\7_distance\\2-7_distance_map.py
 """
@@ -62,7 +62,9 @@ def main():
     print("=== 2-7 거리 지도 ===")
     b = Bench()
     geo = b.geo
-    sr = geo["sr_band_um"]
+    tz = geo["target_zones"]
+    ap = tz["apical_proximal_um"]      # 정단 근위 (Crepel 1997)
+    use_basal = bool(tz.get("basal"))  # 기저수상돌기 (Deuchars & Thomson 1996)
     m, c, R = build_colored(b.post)
 
     # 축삭 제외하고 수상돌기만 색칠
@@ -97,9 +99,9 @@ def main():
     for s in ax.spines.values():
         s.set_color("#dddddd")
 
-    # SR 대역 표시
-    ax.axhspan(sr[0], sr[1], color="#ff6f00", alpha=0.08, zorder=0)
-    ax.text(hx, (sr[0]+sr[1])/2, " SR 대역\n 100~300um", fontsize=8.5, color="#b26a00",
+    # PC->PC 표적 구역 표시 (D10)
+    ax.axhspan(ap[0], ap[1], color="#ff6f00", alpha=0.10, zorder=0)
+    ax.text(hx, (ap[0]+ap[1])/2, f" 정단 근위\n {ap[0]:.0f}~{ap[1]:.0f}um", fontsize=8.5, color="#b26a00",
             va="center", ha="right")
 
     # 고정 시냅스 5개 위치(★) + 경로거리 라벨
@@ -122,19 +124,20 @@ def main():
     ax.legend(loc="lower left", fontsize=8.5)
     mo.scalebar(ax, 200, "200 um", loc=(0.68, 0.02))
 
-    plots.stamp(fig, f"2-7 | h.distance 경로거리 · SR {sr[0]:.0f}~{sr[1]:.0f}um · 시냅스 {[round(d) for d in syn_d]}um")
+    plots.stamp(fig, f"2-7 | h.distance 경로거리 · PC→PC 표적: 기저 + 정단근위 {ap[0]:.0f}~{ap[1]:.0f}um (D10) · 시냅스 {[round(d) for d in syn_d]}um")
     outdir = plots.figdir(__file__)
     plots.save(fig, outdir, "2-7_distance_map.png")
 
-    out = dict(post=geo["pair"]["post_tag"], sr_band=sr,
+    out = dict(post=geo["pair"]["post_tag"],
                apical_max_dist_um=round(dmax, 1),
                syn_path_um=[round(d, 1) for d in syn_d],
-               syn_in_sr=[bool(sr[0] <= d <= sr[1]) for d in syn_d])
+               target_zones=dict(basal=use_basal, apical_proximal_um=list(ap)),
+               syn_domain=[sp.get("domain", "?") for sp in b.syn_specs])
     jpath = os.path.join(outdir, "2-7_distance.json")
     with open(jpath, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     print(f"  정단 최대 경로거리 {dmax:.0f}um · 시냅스 거리 {[round(d) for d in syn_d]}um")
-    print(f"  SR 대역 안 시냅스: {sum(out['syn_in_sr'])}/5")
+    print(f"  시냅스 구획: {out['syn_domain']} · 경로거리 {[round(d) for d in syn_d]}um")
     print(f"saved: {jpath}")
     print("\n[통과] 2-7 완료")
     return 0

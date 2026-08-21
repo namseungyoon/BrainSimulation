@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""3-3 배선 — 고정 기하의 5개 시냅스에 pre 스파이크를 NetCon+거리기반 지연으로 전달
+"""3-3 배선 — 고정 기하의 시냅스에 pre 스파이크를 NetCon+거리기반 지연으로 전달
 
 단계   : 3-3 (파이프라인 3단계 시냅스 / 하위 3 wiring)
-방법   : lib.bench.Bench 로 확정 기하(두 세포 + 시냅스 5개 위치)를 재현하고, 각 시냅스에
+방법   : lib.bench.Bench 로 확정 기하(두 세포 + 시냅스 위치)를 재현하고, 각 시냅스에
          전달 시냅스(GBPlasticitySyn 을 동결 = 가소성 off)를 얹는다. pre 소마 스파이크를
          감지해 각 시냅스로 NetCon 전달하되 지연은 config/geometry.yaml 의 거리기반 값.
          pre 를 IClamp 로 1발 발화시켜 배선이 실제로 전류를 만드는지 확인한다.
@@ -30,13 +30,16 @@ except Exception:
 
 import numpy as np                          # noqa: E402
 from lib import plots                        # noqa: E402
+from lib import measure                        # noqa: E402
 from lib import morphology as mo             # noqa: E402
 from lib.bench import Bench                   # noqa: E402
+from lib.wiring import Wiring, SETTLE_MS      # noqa: E402  (시냅스·배선·기록 단일 출처)
 from lib.nrnenv import h                     # noqa: E402
 import lib.nrnenv as nrnenv                  # noqa: E402
 
-G_NS = 0.6              # 전달 전도도 nS (SC->PC E1s)
-NMDA_RATIO = 1.22
+T_SPIKE = SETTLE_MS + 10.0   # 정착 후 자극 (기저선 표류 제거)
+TSTOP = T_SPIKE + 60.0
+REC_DT = 0.025               # 3-4·3-5 와 동일 (진폭 비교 가능하게)
 PRE_C, POST_C = "#2e7d32", "#d84315"
 
 
@@ -85,47 +88,22 @@ def main():
     L = geo["placement"]["soma_lateral_L_um"]
     theta = geo["placement"]["pre_rotation_deg"]
 
-    keep = []               # anti-GC
-    syns, ncs = [], []
-    # 각 시냅스에 동결 전달 시냅스
-    for seg, spec in b.post_syn_segs():
-        syn = h.GBPlasticitySyn(seg)
-        syn.gmax = G_NS / 1000.0
-        syn.NMDA_ratio = NMDA_RATIO
-        syn.rho0 = 0.0                      # w = w0 = 1 (기저 전달)
-        syn.gamma_p = 0.0; syn.gamma_d = 0.0   # 동결: 가소성 off
-        syns.append((syn, spec)); keep.append(syn)
-
-    # pre 소마 스파이크 감지 -> NetCon -> 각 시냅스 (거리기반 지연)
-    pre_soma = b.pre_soma_seg()
-    for (syn, spec) in syns:
-        nc = h.NetCon(pre_soma._ref_v, syn, sec=b.pre.soma[0])
-        nc.threshold = -10.0
-        nc.weight[0] = 1.0
-        nc.delay = spec["delay_ms"]
-        ncs.append(nc); keep.append(nc)
-
-    # pre 1발 발화 (IClamp)
-    ic = h.IClamp(pre_soma)
-    ic.delay, ic.dur, ic.amp = 20.0, 3.0, 1.2
-    keep.append(ic)
-
-    # 기록
-    t = h.Vector().record(h._ref_t)
-    v_pre = h.Vector().record(pre_soma._ref_v)
-    v_post = h.Vector().record(b.post_soma_seg()._ref_v)
-    g_syn = [h.Vector().record(s._ref_g) for s, _ in syns]
-
-    nrnenv.finit(v_init=-70.0)
-    h.continuerun(80.0)
-
-    t = np.array(t); v_pre = np.array(v_pre); v_post = np.array(v_post)
-    g_syn = [np.array(g) for g in g_syn]
+    # ★ 시냅스 생성·배선·기록은 lib.wiring 하나로 통일한다 (D12).
+    #   이전 판은 여기서 인라인으로 GBPlasticitySyn 을 만들며 syn.e / AMPA·NMDA 시상수 / mg 를
+    #   설정하지 않아 mod 기본값을 썼다 -> 3-4·3-5 와 '다른 시냅스'가 되어 EPSP 가 어긋났다.
+    w = Wiring(b, frozen=True)
+    syns = w.syns
+    w.drive_pre_iclamp([T_SPIKE], amp_nA=1.2, dur_ms=3.0)
+    w.record(rec_dt=REC_DT, local_v=False, currents=False)
+    w.run(TSTOP)
+    R = w.arrays()
+    t, v_pre, v_post = R["t"], R["pre_v"], R["post_v"]
+    g_syn = R["g"]
 
     # 검증 수치
     pre_spikes = int(((v_pre[:-1] < -10) & (v_pre[1:] >= -10)).sum())
     g_peaks = [float(g.max()) for g in g_syn]
-    epsp = float(v_post.max() - v_post[t < ic.delay].mean())
+    epsp = measure.peak_amp(t, v_post, T_SPIKE + b.syn_specs[0]["delay_ms"])
     print(f"  pre 스파이크 {pre_spikes}발 · 시냅스 전도도 피크 {[f'{p*1e3:.2f}nS' for p in g_peaks]}")
     print(f"  post 소마 EPSP {epsp:.3f} mV")
 
@@ -157,8 +135,14 @@ def main():
     axM.set_aspect("equal", adjustable="box"); axM.set_xticks([]); axM.set_yticks([]); axM.grid(False)
     for s in axM.spines.values():
         s.set_color("#dddddd")
-    sr = geo["sr_band_um"]
-    axM.axhspan(sr[0], sr[1], color="#ffb300", alpha=0.10, zorder=0)
+    # PC->PC 표적 구역 음영 (D10): 정단 근위 + 기저수상돌기
+    tz = geo["target_zones"]
+    ap = tz["apical_proximal_um"]
+    axM.axhspan(ap[0], ap[1], color="#ffb300", alpha=0.12, zorder=0)
+    if tz.get("basal"):
+        ybas = m_post["xyz"][m_post["type"] == mo.BASAL, 1]
+        if len(ybas):
+            axM.axhspan(float(ybas.min()), 0.0, color="#4fc3f7", alpha=0.10, zorder=0)
     pre_soma_xy = m_pre["xyz"][m_pre["type"] == mo.SOMA].mean(axis=0)[:2]
     for (syn, spec) in syns:
         sec = None
@@ -177,14 +161,14 @@ def main():
     post_soma_xy = m_post["xyz"][m_post["type"] == mo.SOMA].mean(axis=0)[:2]
     axM.text(post_soma_xy[0], np.percentile(m_post["xyz"][:, 1], 99.8) + 35, "post (기록)",
              fontsize=9.5, ha="center", color=POST_C, fontweight="bold")
-    axM.set_title("A. 배선 — pre 소마 스파이크 → NetCon+지연 → 시냅스 5개", fontsize=10.5, loc="left")
+    axM.set_title(f"A. 배선 — pre 소마 스파이크 → NetCon+지연 → 시냅스 {len(syns)}개", fontsize=10.5, loc="left")
     mo.scalebar(axM, 200, "200 um", loc=(0.05, 0.02))
 
     # pre Vm
     ax1.plot(t, v_pre, color=PRE_C, lw=1.4)
-    ax1.axvline(ic.delay, color="#999", ls=":", lw=0.9)
+    ax1.axvline(T_SPIKE, color="#999", ls=":", lw=0.9)
     ax1.set_ylabel("pre Vm (mV)")
-    ax1.set_title(f"B. pre 소마 (IClamp {ic.amp}nA → 스파이크 {pre_spikes}발)", fontsize=9.5, loc="left")
+    ax1.set_title(f"B. pre 소마 (IClamp 1.2nA → 스파이크 {pre_spikes}발)", fontsize=9.5, loc="left")
     ax1.set_xticklabels([])
 
     # 시냅스 전도도
@@ -203,15 +187,15 @@ def main():
     for ax in (ax1, ax2, ax3):
         ax.set_xlim(10, 60)
 
-    fig.suptitle("3-3  배선 검증 — pre 1발 → 시냅스 5개 전도도 → post EPSP (동결 전달 시냅스)",
+    fig.suptitle(f"3-3  배선 검증 — pre 1발 → 시냅스 {len(syns)}개 전도도 → post EPSP (동결 전달 시냅스)",
                  fontsize=12.5, y=0.98)
-    plots.stamp(fig, f"3-3 | 고정 기하(θ*={theta:.0f}도) · 지연 거리기반 · g={G_NS}nS · 가소성 off")
+    plots.stamp(fig, f"3-3 | {w.class_name} · 고정 기하(θ*={theta:.0f}도) · 지연 거리기반 · g={w.p['g_nS']}nS · 가소성 off · 정착 {SETTLE_MS:.0f}ms")
     outdir = plots.figdir(__file__)
     plots.save(fig, outdir, "3-3_wiring_diagram.png")
 
     checks = [
         ("pre 1발 발화", pre_spikes == 1),
-        ("시냅스 5개 전도도 발생", all(p > 0 for p in g_peaks)),
+        (f"시냅스 {len(syns)}개 전도도 발생", all(p > 0 for p in g_peaks)),
         ("post EPSP > 0", epsp > 0),
     ]
     n_ok = sum(1 for _, ok in checks if ok)
@@ -222,7 +206,7 @@ def main():
                n_syn=len(syns), pre_spikes=pre_spikes,
                g_peaks_nS=[round(p*1e3, 3) for p in g_peaks],
                delays_ms=[s[1]["delay_ms"] for s in syns],
-               epsp_mv=round(epsp, 4), g_nS=G_NS,
+               epsp_mv=round(epsp, 4), g_nS=w.p["g_nS"], cls=w.class_name, settle_ms=SETTLE_MS,
                checks={k: bool(v) for k, v in checks},
                checks_passed=n_ok, checks_total=len(checks))
     jpath = os.path.join(outdir, "3-3_wiring.json")

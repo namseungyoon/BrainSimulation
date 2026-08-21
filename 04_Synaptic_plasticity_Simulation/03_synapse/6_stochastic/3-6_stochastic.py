@@ -4,11 +4,14 @@
 단계   : 3-6 (파이프라인 3단계 시냅스 / 하위 6 stochastic)
 쉬운 설명: 실제 시냅스는 자극이 와도 신경전달물질을 '확률적으로' 방출한다 — 어떤 때는 방출,
           어떤 때는 실패(0). 결정론 시냅스(3-5)와 달리 시행마다 EPSP 크기가 흔들린다.
-방법   : 확률 방출 시냅스(모델 C, Nrrp=1, Use=0.15)로 pre 1발을 N회 반복(시행마다 다른 RNG).
-          시냅스별 방출 여부와 soma EPSP 진폭 분포를 모아 방출확률·CV·실패율을 잰다.
-검증   : 시냅스별 방출확률 ≈ Use(0.15) · 연결 실패율 ≈ (1-Use)^Nrrp 의 5시냅스 조합.
+방법   : 확률 방출 시냅스(모델 C)로 pre 1발을 N회 반복(시행마다 RNG 재시딩).
+          정착(SETTLE_MS)은 1회만 하고 스냅샷에서 복원해 매 시행 기저선을 동일하게 만든다.
+          시냅스별 방출 소포 수와 soma EPSP 진폭 분포를 모아 방출확률·CV·실패율을 잰다.
+검증   : 다소포 방출(EMS)에서 시냅스당 방출확률 = 1-(1-Use)^Nrrp (Nrrp 자리가 각각 Use 로 방출).
+         연결 실패율 = (1-Use)^(Nrrp x 시냅스수) (전 시냅스·전 자리가 모두 실패).
          ★ RNG 미시딩 함정(방출확률이 1.0 에 붙으면 setRNG 안 된 것) 동시 점검.
-근거   : 확률 다소포 방출(BBP EMS, Random123). SC->PC Use=0.15 → 단일 시냅스 방출 15%.
+근거   : 확률 다소포 방출(BBP EMS, Random123). PC->PC(Ecker Table3): Use=0.50 · Nrrp=2
+         -> 시냅스당 방출확률 1-0.5^2 = 0.75 · 시냅스 2개 연결 실패율 0.5^4 = 0.0625.
 결과   : figures/3-6_amp_hist.png · figures/3-6_stochastic.json
 실행   : . .\\env\\activate.ps1 ; & $Py04 03_synapse\\6_stochastic\\3-6_stochastic.py
 """
@@ -33,8 +36,9 @@ from lib.wiring import Wiring                 # noqa: E402
 from lib.nrnenv import h                     # noqa: E402
 import lib.nrnenv as nrnenv                  # noqa: E402
 
-T_SPIKE = 20.0
-TSTOP = 60.0
+from lib.wiring import SETTLE_MS   # noqa: E402
+T_SPIKE = SETTLE_MS + 10.0     # 정착 후 자극 (기저선 표류 제거)
+TSTOP = T_SPIKE + 40.0
 N_TRIAL = 200
 
 
@@ -51,22 +55,28 @@ def main():
 
     amps = []               # 시행별 soma EPSP 진폭
     ves = []                # 시행별 시냅스별 방출 소포 수
+    # 정착은 1회만 하고 스냅샷을 저장 -> 매 시행은 거기서 복원해 이어간다(빠르고 기저선 동일)
+    w.settle()
     for tr in range(N_TRIAL):
+        w.restore()
         w.seed_prob(tr)
-        w.run(TSTOP)
+        w.run_settled(TSTOP)
         R = w.arrays()
         amps.append(measure.peak_amp(R["t"], R["post_v"], t_event))
         ves.append([float(s.ves_last) for s, _ in w.syns])
-    amps = np.array(amps); ves = np.array(ves)   # ves: (N_TRIAL, 5)
+    amps = np.array(amps); ves = np.array(ves)   # ves: (N_TRIAL, 시냅스수)
 
     # 통계
     rel_prob = (ves > 0).mean(axis=0)            # 시냅스별 방출확률
-    conn_fail = float((ves.sum(axis=1) == 0).mean())   # 연결(5시냅스 전부 실패) 비율
+    conn_fail = float((ves.sum(axis=1) == 0).mean())   # 연결(전 시냅스 실패) 비율
     cv = measure.cv(amps)
     mean_amp = float(amps.mean())
-    theory_syn = Use ** Nrrp if False else Use    # Nrrp=1 이면 방출확률=Use
-    theory_conn_fail = (1 - Use) ** (Nrrp * len(w.syns))   # 5시냅스 전부 실패
-    print(f"  시냅스별 방출확률 {[round(x,3) for x in rel_prob]} (이론 Use={Use})")
+    # 다소포 방출: Nrrp 개 자리가 각각 Use 로 방출 -> 시냅스가 '무언가 방출'할 확률
+    theory_syn = 1.0 - (1.0 - Use) ** Nrrp
+    theory_conn_fail = (1 - Use) ** (Nrrp * len(w.syns))   # 전 시냅스·전 자리 실패
+    print(f"  시냅스별 방출확률 {[round(x,3) for x in rel_prob]} "
+          f"(이론 1-(1-{Use})^{Nrrp} = {theory_syn:.3f})")
+    print(f"  평균 방출 소포 수 {ves.mean():.3f} (이론 Use*Nrrp = {Use*Nrrp:.3f})")
     print(f"  연결 실패율 {conn_fail:.3f} (이론 (1-Use)^{Nrrp*len(w.syns)}={theory_conn_fail:.3f})")
     print(f"  soma EPSP 평균 {mean_amp:.3f} mV · CV {cv:.3f}")
 
@@ -88,11 +98,14 @@ def main():
     # B: 시냅스별 방출확률 vs 이론 Use
     x = np.arange(len(w.syns))
     a2.bar(x, rel_prob, color="#7b1fa2", width=0.6, label="실측")
-    a2.axhline(Use, color="#2e7d32", ls="--", lw=1.5, label=f"이론 Use={Use}")
+    a2.axhline(theory_syn, color="#2e7d32", ls="--", lw=1.5,
+               label=f"이론 1-(1-Use)^Nrrp = {theory_syn:.2f}")
     a2.set_xticks(x); a2.set_xticklabels([f"syn{i+1}\n{round(sp['path_um'])}um"
                                           for i, (_, sp) in enumerate(w.syns)], fontsize=8)
-    a2.set_ylabel("방출확률 (방출 시행 / 전체)"); a2.set_ylim(0, max(0.3, rel_prob.max()*1.3))
-    a2.set_title(f"B. 시냅스별 방출확률 ~ Use\n연결 실패율 {conn_fail:.2f}(이론 {theory_conn_fail:.2f})",
+    a2.set_ylabel("방출확률 (1개 이상 방출한 시행 / 전체)")
+    a2.set_ylim(0, max(1.0, rel_prob.max()*1.25))
+    a2.set_title(f"B. 시냅스별 방출확률 ~ 1-(1-Use)^Nrrp = {theory_syn:.2f}\n"
+                 f"연결 실패율 {conn_fail:.3f}(이론 {theory_conn_fail:.3f})",
                  fontsize=10, loc="left")
     a2.legend(fontsize=9)
     for i, rp in enumerate(rel_prob):
@@ -102,22 +115,29 @@ def main():
                  fontsize=12.5, y=0.99)
     fig.subplots_adjust(top=0.86, wspace=0.24)
     tag = "정상" if rng_ok else "★RNG 미시딩 의심(방출확률~1)"
-    plots.stamp(fig, f"3-6 | 시냅스 방출확률 평균 {rel_prob.mean():.3f} ~ Use={Use} · CV {cv:.3f} · {tag}")
+    plots.stamp(fig, f"3-6 | {w.class_name} · Use={Use}·Nrrp={Nrrp} · 방출확률 {rel_prob.mean():.3f}"
+                     f"(이론 {theory_syn:.3f}) · 실패율 {conn_fail:.3f}(이론 {theory_conn_fail:.3f}) · CV {cv:.3f} · {tag}")
     outdir = plots.figdir(__file__)
     plots.save(fig, outdir, "3-6_amp_hist.png")
 
     checks = [
         ("RNG 시딩 정상(방출확률<0.9)", rng_ok),
-        ("시냅스 방출확률 ≈ Use(±0.08)", abs(rel_prob.mean() - Use) < 0.08),
+        (f"시냅스 방출확률 ~ 1-(1-Use)^Nrrp={theory_syn:.2f} (±0.08)",
+         abs(rel_prob.mean() - theory_syn) < 0.08),
+        (f"평균 소포 수 ~ Use*Nrrp={Use*Nrrp:.2f} (±0.15)",
+         abs(float(ves.mean()) - Use * Nrrp) < 0.15),
         ("시행간 변동 존재(CV>0.1)", cv > 0.1),
-        ("연결 실패율 이론과 근접(±0.15)", abs(conn_fail - theory_conn_fail) < 0.15),
+        ("연결 실패율 이론과 근접(±0.06)", abs(conn_fail - theory_conn_fail) < 0.06),
     ]
     n_ok = sum(1 for _, ok in checks if ok)
     for k, ok in checks:
         print(f"  {'O' if ok else 'X'} {k}")
 
     out = dict(cls=w.class_name, mech="GBPlasticityStpProbSyn", Use=Use, Nrrp=Nrrp,
-               n_trial=N_TRIAL, rel_prob=[round(float(x), 3) for x in rel_prob],
+               n_trial=N_TRIAL, settle_ms=SETTLE_MS,
+               theory_rel_prob=round(theory_syn, 3),
+               mean_vesicles=round(float(ves.mean()), 3),
+               rel_prob=[round(float(x), 3) for x in rel_prob],
                rel_prob_mean=round(float(rel_prob.mean()), 3),
                conn_fail=round(conn_fail, 3), conn_fail_theory=round(theory_conn_fail, 3),
                mean_amp_mV=round(mean_amp, 4), cv=round(cv, 3), rng_ok=rng_ok,

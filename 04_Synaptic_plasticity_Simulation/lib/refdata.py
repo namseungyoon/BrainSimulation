@@ -37,6 +37,16 @@ SAYER1990 = {
     "src": "Sayer/Friedlander/Redman 1990 J Neurosci 10(3):826 (PMID 2319304)",
 }
 
+# 참고 대조용 — Ecker 2020 Table 3 의 '실측 촉진형' 흥분성 클래스 PC->SOM+ (E1).
+#   ⚠️ 이 벤치의 연결이 아니다(표적이 개재뉴런). 억압 vs 촉진 대비를 보일 때
+#   없는 클래스를 만들지 않고 이 실측 클래스를 쓴다 (D9 원칙).
+ECKER_E1_CONTRAST = {
+    "name": "PC->SOM+ (E1)",
+    "g_nS": 0.8, "tau_d_AMPA": 1.7, "NMDA_ratio": 0.28,
+    "Use": 0.09, "Dep_ms": 138.0, "Fac_ms": 670.0, "Nrrp": 1,
+    "src": "Ecker 2020 Hippocampus 30:1129 Table 3 (PC->O-LM)",
+}
+
 # CA1 추체세포(cACpyr) e-특징 대략 범위 (lo, hi)
 CACPYR = {
     "Rin_MOhm":         (50, 180),     # 입력저항

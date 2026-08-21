@@ -40,12 +40,12 @@
 | **2-5** | `02_neurons/5_resonance` | `2-5_zap_resonance.py` | `2-5_zap_impedance.png` · `2-5_zap_trace.png` · `2-5_resonance.json` | ✅ 판정:불가 |
 | **2-6** | `02_neurons/6_pair` | `2-6_two_cells.py` | `2-6_two_cells.png` · `2-6_pair.json` | ✅ |
 | **2-7** | `02_neurons/7_distance` | `2-7_distance_map.py` | `2-7_distance_map.png` · `2-7_distance.json` | ✅ |
-| **3-1** | `03_synapse/1_params` | `3-1_param_table.py` | `3-1_param_table.png` · `3-1_stp_classes.png` · `3-1_params.json` | ⬜ |
+| **3-1** | `03_synapse/1_params` | `3-1_param_table.py` | `3-1_param_table.png` · `3-1_stp_classes.png` · `3-1_params.json` | ✅ |
 | **3-2** | `03_synapse/2_placement` | `3-2_placement.py` | `3-2_rotation.png` · `3-2_syn_sites.png` · `3-2_placement.json` | ✅ **기하 고정** |
-| **3-3** | `03_synapse/3_wiring` | `3-3_wiring.py` | `3-3_wiring_diagram.png` · `3-3_wiring.json` | ⬜ |
-| **3-4** | `03_synapse/4_record` | `3-4_record.py` | `3-4_record_check.png` · `3-4_record.json` | ⬜ |
-| **3-5** | `03_synapse/5_uepsp` | `3-5_uepsp.py` | `3-5_uepsp_trace.png` · `3-5_uepsp_stats.png` · `3-5_uepsp.json` | ⬜ |
-| **3-6** | `03_synapse/6_stochastic` | `3-6_stochastic.py` | `3-6_amp_hist.png` | ⬜ |
+| **3-3** | `03_synapse/3_wiring` | `3-3_wiring.py` | `3-3_wiring_diagram.png` · `3-3_wiring.json` | ✅ |
+| **3-4** | `03_synapse/4_record` | `3-4_record.py` | `3-4_record_check.png` · `3-4_record.json` | ✅ |
+| **3-5** | `03_synapse/5_uepsp` | `3-5_uepsp.py` | `3-5_uepsp_trace.png` · `3-5_uepsp_stats.png` · `3-5_uepsp.json` | ✅ |
+| **3-6** | `03_synapse/6_stochastic` | `3-6_stochastic.py` | `3-6_amp_hist.png` | ✅ |
 | **3-7** | `03_synapse/7_calibrate` | `3-7_calibrate_g.py` | `3-7_g_sweep.png` | ⬜ |
 | **3-8** | `03_synapse/8_distance` | `3-8_attenuation.py` | `3-8_attenuation.png` | ⬜ |
 | **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` | ⬜ |

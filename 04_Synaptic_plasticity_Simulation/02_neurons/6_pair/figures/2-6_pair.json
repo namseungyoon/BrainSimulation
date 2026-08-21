@@ -2,7 +2,7 @@
   "pre_tag": "oh140807_A0_idF",
   "post_tag": "oh140807_A0_idC",
   "arrangement": "schematic",
-  "note": "D8: pre->post 는 NetCon+지연. 두 세포의 상대 위치는 시뮬레이션 결과에 영향 없음. pre 를 왼쪽에 둔 것은 Schaffer collateral 입력의 상징.",
+  "note": "D8: pre->post 는 NetCon+지연. 두 세포의 상대 위치는 시뮬레이션 결과에 영향 없음. pre 를 왼쪽에 둔 것은 도해상의 배치(두 세포 다 CA1 추체세포).",
   "offset_um": 313.5,
   "sr_band": [
     100.0,

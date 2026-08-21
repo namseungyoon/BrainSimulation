@@ -2,7 +2,7 @@
 """lib/wiring.py — 고정 벤치 배선 + 기록 (번호 없음 = import 전용 모듈)
 
 3-3 에서 인라인으로 하던 것을 재사용 모듈로. 3-4~3-9 · 5단계가 전부 이걸 쓴다.
-- 고정 기하(lib.bench.Bench)의 5개 시냅스에 전달 시냅스(GBPlasticitySyn 동결)를 얹고
+- 고정 기하(lib.bench.Bench)의 확정 시냅스에 전달 시냅스(GBPlasticitySyn 동결)를 얹고
 - pre 소마 스파이크 -> NetCon + config 거리기반 지연 -> 각 시냅스
 - (옵션) post 소마 스파이크 -> weight<0 sentinel (가소성 엔진의 후시냅스 칼슘용)
 - pre/post 소마 전압, 시냅스별 국소 수상돌기 전압·전도도·전류를 기록
@@ -17,6 +17,10 @@ from lib.nrnenv import h
 import lib.nrnenv as nrnenv
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# ★ 자극 전 정착 시간 (ms). 실측 근거는 Wiring.settle() 주석 참조.
+#   자극은 반드시 이 시각 이후에 준다. 안 그러면 기저선이 표류해 EPSP 진폭이 왜곡된다.
+SETTLE_MS = 250.0
 
 
 def load_synapse_cfg(class_name=None):
@@ -40,6 +44,8 @@ class Wiring:
         self.pre_ncs = []
         self.post_ncs = []
         self.rec = {}
+        self._ss = None             # 정착 스냅샷 (settle/restore)
+        self._t_settle = 0.0
         nrnenv.load_mechanisms()
         self._build(frozen)
 
@@ -116,6 +122,32 @@ class Wiring:
 
     def run(self, tstop, v_init=-70.0, dt=None):
         nrnenv.finit(v_init=v_init, dt=dt)
+        h.continuerun(tstop)
+
+    # ---- 정상상태 정착 (기저선 표류 제거) ----
+    # ★ 왜 필요한가: v_init=-70 에서 시작하면 세포가 자기 정지전위(-69.55mV)로 가는 동안
+    #   막전위가 표류한다. 실측(2026-08-22): t=20ms 에서 정상상태보다 +0.228mV 높고,
+    #   기저선 창을 어떻게 잡느냐에 따라 EPSP 진폭이 0.215mV(약 30~40%) 달라졌다.
+    #   -> 자극은 반드시 SETTLE_MS 이후에 준다. t>=200ms 에서 잔류 표류 0.001mV.
+    def settle(self, t_settle=None, v_init=-70.0, dt=None):
+        """자극 전 정상상태까지 진행하고 스냅샷 저장(다시행 실험에서 재사용)."""
+        ts = SETTLE_MS if t_settle is None else t_settle
+        nrnenv.finit(v_init=v_init, dt=dt)
+        h.continuerun(ts)
+        self._ss = h.SaveState(); self._ss.save()
+        self._t_settle = ts
+        return ts
+
+    def restore(self):
+        """settle() 로 저장한 정착 상태로 복원(t 포함) + 기록 벡터 초기화."""
+        if self._ss is None:
+            raise RuntimeError("settle() 을 먼저 호출해야 한다")
+        self._ss.restore(1)          # 1 = t 까지 복원
+        h.frecord_init()             # 기록 벡터를 현재 t 부터 다시 기록
+        return self._t_settle
+
+    def run_settled(self, tstop):
+        """restore() 이후 이어서 진행 (finit 하지 않는다 — 정착 상태를 깨지 않으려고)."""
         h.continuerun(tstop)
 
     def arrays(self):

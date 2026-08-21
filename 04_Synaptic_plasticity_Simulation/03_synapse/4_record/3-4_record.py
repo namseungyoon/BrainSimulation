@@ -23,12 +23,14 @@ except Exception:
     pass
 
 import numpy as np                          # noqa: E402
-from lib import plots                        # noqa: E402
+from lib import plots
+from lib import measure                        # noqa: E402
 from lib.bench import Bench                   # noqa: E402
 from lib.wiring import Wiring                 # noqa: E402
 
-T_SPIKE = 20.0
-TSTOP = 80.0
+from lib.wiring import SETTLE_MS   # noqa: E402  (정착 후 자극)
+T_SPIKE = SETTLE_MS + 10.0
+TSTOP = T_SPIKE + 60.0
 
 
 def main():
@@ -39,14 +41,14 @@ def main():
     print(f"  클래스 {w.class_name} · 시냅스 {len(w.syns)}개 · e_rev={w.p['e_rev_mV']}mV")
     w.drive_pre_iclamp([T_SPIKE], amp_nA=1.2, dur_ms=3.0)
     w.record(rec_dt=0.05, local_v=True, currents=True)
-    w.run(TSTOP)
+    w.run(TSTOP)   # SETTLE_MS 이후에 자극이 오므로 기저선이 평평하다
     R = w.arrays()
 
     t = R["t"]
-    base = t < T_SPIKE
+    t_event = T_SPIKE + b.syn_specs[0]["delay_ms"]   # 기저선 = 자극 직전 5ms (lib.measure, D12)
     pre_spikes = int(((R["pre_v"][:-1] < -10) & (R["pre_v"][1:] >= -10)).sum())
-    post_epsp = float(R["post_v"].max() - R["post_v"][base].mean())
-    local_epsp = [float(lv.max() - lv[base].mean()) for lv in R["local_v"]]
+    post_epsp = measure.peak_amp(t, R["post_v"], t_event)
+    local_epsp = [measure.peak_amp(t, lv, t_event) for lv in R["local_v"]]
     g_peak = [float(g.max()) for g in R["g"]]
     dists = [spec["path_um"] for _, spec in w.syns]
 
@@ -100,9 +102,9 @@ def main():
     checks = [
         ("pre 1발 발화", pre_spikes == 1),
         ("post 소마 EPSP>0", post_epsp > 0),
-        ("국소 전압 5채널 기록", len(R["local_v"]) == 5 and all(x > 0 for x in local_epsp)),
-        ("전도도 5채널", len(R["g"]) == 5 and all(x > 0 for x in g_peak)),
-        ("전류 5채널", len(R["i"]) == 5),
+        (f"국소 전압 {b.n_syn()}채널 기록", len(R["local_v"]) == b.n_syn() and all(x > 0 for x in local_epsp)),
+        (f"전도도 {b.n_syn()}채널", len(R["g"]) == b.n_syn() and all(x > 0 for x in g_peak)),
+        (f"전류 {b.n_syn()}채널", len(R["i"]) == b.n_syn()),
         ("국소 EPSP > 소마 EPSP", min(local_epsp) > post_epsp),
         ("npz 왕복", roundtrip),
     ]

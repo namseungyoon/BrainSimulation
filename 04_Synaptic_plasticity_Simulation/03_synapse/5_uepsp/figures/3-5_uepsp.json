@@ -1,0 +1,17 @@
+{
+  "cls": "PC->PC",
+  "n_syn": 2,
+  "amp_mV": 0.5236,
+  "latency_ms": 1.965,
+  "rise_ms": 2.35,
+  "halfwidth_ms": 13.325,
+  "decay_ms": 11.7,
+  "deuchars1996": {
+    "amp_mean_mV": 0.7,
+    "amp_max_mV": 1.5,
+    "rise_ms": "2.7±0.9",
+    "halfwidth_ms": "16.8±4.1"
+  },
+  "amp_ratio_to_mean": 0.75,
+  "amp_ratio_to_max": 0.35
+}

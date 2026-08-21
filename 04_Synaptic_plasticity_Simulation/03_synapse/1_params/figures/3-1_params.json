@@ -1,0 +1,107 @@
+{
+  "default_class": "PC->PC",
+  "classes": [
+    "PC->PC"
+  ],
+  "PC_PC": {
+    "g_nS": {
+      "v": 0.6,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2) g_hat. 3-7 에서 uEPSP 기준 재보정"
+    },
+    "e_rev_mV": {
+      "v": -8.5,
+      "src": "paper",
+      "ref": "Moradi & Ascoli 2020 유효 역전위(§2.6). mod 기본 0 을 덮어씀"
+    },
+    "tau_r_AMPA": {
+      "v": 0.2,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 (E 계열)"
+    },
+    "tau_d_AMPA": {
+      "v": 3.0,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2) tau_d"
+    },
+    "tau_r_NMDA": {
+      "v": 3.9,
+      "src": "paper",
+      "ref": "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"
+    },
+    "tau_d_NMDA": {
+      "v": 148.5,
+      "src": "paper",
+      "ref": "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"
+    },
+    "NMDA_ratio": {
+      "v": 1.22,
+      "src": "paper",
+      "ref": "Ecker2020 §2.3 PC->PC NMDA:AMPA"
+    },
+    "Use": {
+      "v": 0.5,
+      "src": "paper",
+      "ref": "Ecker2020 Table3. ⚠️HippocampusHub 는 0.65±0.1 — DECISIONS 미결#2"
+    },
+    "Dep_ms": {
+      "v": 671.0,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2)"
+    },
+    "Fac_ms": {
+      "v": 17.0,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2). Fac<Dep -> 억압"
+    },
+    "Nrrp": {
+      "v": 2,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2) 방출자리 수"
+    }
+  },
+  "contrast_reference": {
+    "name": "PC->SOM+ (E1)",
+    "g_nS": 0.8,
+    "tau_d_AMPA": 1.7,
+    "NMDA_ratio": 0.28,
+    "Use": 0.09,
+    "Dep_ms": 138.0,
+    "Fac_ms": 670.0,
+    "Nrrp": 1,
+    "src": "Ecker 2020 Hippocampus 30:1129 Table 3 (PC->O-LM)"
+  },
+  "pc_train_20hz": [
+    1.0,
+    0.55,
+    0.322,
+    0.219,
+    0.173,
+    0.152,
+    0.142,
+    0.138
+  ],
+  "e1_train_20hz": [
+    1.0,
+    1.729,
+    2.169,
+    2.397,
+    2.501,
+    2.548,
+    2.575,
+    2.595
+  ],
+  "pc_depression": true,
+  "tuned_params": [],
+  "checks": {
+    "기본 클래스 = PC->PC": true,
+    "SC->PC 클래스 없음 (D9 회귀 방지)": true,
+    "등록 클래스 1개뿐": true,
+    "Ecker Table3/§2.3 값과 일치": true,
+    "튜닝값 0개": true,
+    "PC->PC 는 억압 (끝 < 첫)": true,
+    "참고 E1 은 촉진 (끝 > 첫)": true
+  },
+  "passed": 7,
+  "total": 7
+}

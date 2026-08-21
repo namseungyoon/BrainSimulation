@@ -1,0 +1,28 @@
+{
+  "cls": "PC->PC",
+  "pre_spikes": 1,
+  "post_epsp_mv": 0.5236,
+  "local_epsp_mv": [
+    10.757,
+    12.286
+  ],
+  "g_peak_nS": [
+    0.599,
+    0.6
+  ],
+  "dists_um": [
+    144.3,
+    171.7
+  ],
+  "checks": {
+    "pre 1발 발화": true,
+    "post 소마 EPSP>0": true,
+    "국소 전압 2채널 기록": true,
+    "전도도 2채널": true,
+    "전류 2채널": true,
+    "국소 EPSP > 소마 EPSP": true,
+    "npz 왕복": true
+  },
+  "passed": 7,
+  "total": 7
+}
