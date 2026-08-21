@@ -24,10 +24,21 @@ sys.path.insert(0, os.path.join(ROOT, "lib"))
 DERIVED = os.path.join(ROOT, "data", "derived")
 CFG = os.path.join(ROOT, "config", "synapse_rules.json")
 FIBER_OFFSET = 10_000_000
-SETTLE = 300.0
-STIM_T = SETTLE + 10.0
-TSTOP = SETTLE + 90.0
 RADIUS = float(sys.argv[sys.argv.index("--r") + 1]) if "--r" in sys.argv else 150.0
+USE_GPU = "--gpu" in sys.argv   # CoreNEURON GPU 실행(단일 psolve, 균일 dt)
+NOSTIM = "--nostim" in sys.argv  # 자극 없음(자발 발화율 baseline)
+SETTLE = 300.0
+if NOSTIM:
+    # 무자극 자발 baseline: settle 후 OBS(기본 1000ms) 관측, 자극 없음
+    OBS = float(sys.argv[sys.argv.index("--obs") + 1]) if "--obs" in sys.argv else 1000.0
+    STIM_T = SETTLE                 # 자극 없으니 기준시각 = 관측 시작
+    TSTOP = SETTLE + OBS
+    TAG = "_nostim"
+else:
+    STIM_T = SETTLE + 10.0
+    TSTOP = SETTLE + 40.0
+    TAG = ""
+WRITE_DIR = sys.argv[sys.argv.index("--write") + 1] if "--write" in sys.argv else None  # 파일모드: 모델을 여기 덤프 후 종료
 
 SC2 = {"SP_CCKBC", "SR_SCA", "SLM_PPA", "SP_Ivy"}
 SC3 = {"SP_PVBC", "SP_AA", "SP_BS", "SO_OLM", "SO_Tri", "SO_BS", "SO_BP"}
@@ -106,8 +117,8 @@ def main():
     if rank == 0:
         print(f"[조립] {N}세포 · {time.time()-t0:.0f}s", flush=True)
 
-    # 자극 대상 = E3 반경 섬유 (국소 SC point 자극)
-    driven = set(np.unique(fiber_id[dist_e3 < RADIUS]).tolist())
+    # 자극 대상 = E3 반경 섬유 (국소 SC point 자극). 무자극(nostim)이면 아무도 안 켬.
+    driven = set() if NOSTIM else set(np.unique(fiber_id[dist_e3 < RADIUS]).tolist())
     vstim = {}
     for fidv in set(int(f) for f in np.unique(fiber_id) if int(f) % nhost == rank):
         pc.set_gid2node(FIBER_OFFSET + fidv, rank)
@@ -157,18 +168,57 @@ def main():
                 syn = h.ProbGABAAB_EMS(sec(x))
                 if rl:
                     syn.Use = rl["U"]; syn.Dep = rl["D"]; syn.Fac = rl["F"]; syn.Nrrp = rl["NRRP"]
+                syn.setRNG(qg + 1, 800000 + ci, 4)   # 확률 시냅스 RNG 필수(GPU 직렬화 위해서도) — stream 4
                 ncp = pc.gid_connect(pg, syn); ncp.weight[0] = gs / 1000.0; ncp.delay = 1.0
                 keep.append((syn, ncp))
             n_int += 1
     pc.barrier(); tot_int = int(pc.allreduce(n_int, 1))
     if rank == 0:
-        print(f"[내부] {tot_int:,} · 총 {tot_sc+tot_int:,} 시냅스 · {time.time()-t0:.0f}s · 구동 시작", flush=True)
+        print(f"[내부] {tot_int:,} · 총 {tot_sc+tot_int:,} 시냅스 · {time.time()-t0:.0f}s", flush=True)
+
+    # ── 파일모드(B): 모델을 디스크로 덤프하고 종료. 이후 special-core가 GPU로 실행 ──
+    if WRITE_DIR:
+        pc.set_maxstep(10); h.dt = 0.025; h.finitialize(-70)
+        if rank == 0:
+            os.makedirs(WRITE_DIR, exist_ok=True)
+        pc.barrier()
+        pc.nrncore_write(WRITE_DIR)
+        if rank == 0:
+            meta = {"n": N, "sc": tot_sc, "internal": tot_int, "stim_t": STIM_T,
+                    "settle": SETTLE, "tstop": TSTOP, "radius": RADIUS, "nostim": int(NOSTIM), "tag": TAG}
+            json.dump(meta, open(os.path.join(WRITE_DIR, "meta.json"), "w"))
+            print(f"[WRITE] CoreNEURON 모델 저장 -> {WRITE_DIR} · tstop {TSTOP}ms · {time.time()-t0:.0f}s", flush=True)
+        pc.barrier(); pc.done(); h.quit(); return
+
+    if rank == 0:
+        print(f"      구동 시작", flush=True)
 
     # 발화 기록 + 구동
     tspk = h.Vector(); idspk = h.Vector(); pc.spike_record(-1, tspk, idspk)
-    pc.set_maxstep(10); h.finitialize(-70); trun = time.time()
-    h.dt = 0.25; pc.psolve(SETTLE); h.dt = 0.025; pc.psolve(TSTOP)
-    psolve_s = time.time() - trun
+    if USE_GPU:
+        # CoreNEURON GPU: 모델을 GPU로 1회 전송 후 단일 psolve(균일 dt). volley는 STIM_T에
+        # VecStim이 자동 발생. 청크 루프(랭크간 allreduce 반복)는 GPU 재진입 오버헤드라 미사용.
+        from neuron import coreneuron
+        coreneuron.enable = True; coreneuron.gpu = True
+        pc.set_maxstep(10); h.finitialize(-70); trun = time.time()
+        h.dt = 0.025; pc.psolve(TSTOP)
+        psolve_s = time.time() - trun
+        if rank == 0:
+            print(f"[GPU 구동 완료] tstop {TSTOP}ms · dt {h.dt} · psolve {psolve_s:.1f}s", flush=True)
+    else:
+        # CPU: 안정화(거친 dt) → 구동(고운 dt) + 5ms 청크마다 누적 스파이크 계측(과발화 즉시 감지)
+        pc.set_maxstep(10); h.finitialize(-70); trun = time.time()
+        h.dt = 0.25; pc.psolve(SETTLE)
+        nsp0 = int(pc.allreduce(int(tspk.size()), 1))
+        if rank == 0:
+            print(f"[안정화 완료] {time.time()-trun:.0f}s · 안정화중 스파이크 {nsp0} (0이면 정상)", flush=True)
+        h.dt = 0.025; t = SETTLE
+        while t < TSTOP - 1e-6:
+            t = min(t + 5.0, TSTOP); pc.psolve(t)
+            nsp = int(pc.allreduce(int(tspk.size()), 1))   # 전 랭크 호출(집합통신)
+            if rank == 0:
+                print(f"  [구동] t={t-STIM_T:+.0f}ms(자극기준) · 누적스파이크 {nsp:,} · {time.time()-trun:.0f}s", flush=True)
+        psolve_s = time.time() - trun
 
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -176,6 +226,8 @@ def main():
     if rank == 0:
         st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])
         sid = np.concatenate([np.array(x) for x in ai]).astype(int) if any(len(x) for x in ai) else np.array([], int)
+        cellmask = sid < N               # 섬유(VecStim) gid(FIBER_OFFSET+) 제거 → 실제 뉴런 스파이크만
+        st = st[cellmask]; sid = sid[cellmask]
         fired = set(sid.tolist())
         is_pc = np.array([mt[g] == "SP_PC" for g in range(N)])
         firedmask = np.array([g in fired for g in range(N)])
@@ -185,15 +237,20 @@ def main():
         print(f"[발화] 총 스파이크 {len(st):,} · 발화세포 {int(firedmask.sum())}/{N} ({100*firedmask.mean():.0f}%)", flush=True)
         print(f"       추체 {nE}/{totE} ({100*nE/totE:.0f}%) · 억제 {nI}/{totI} ({100*nI/max(totI,1):.0f}%)", flush=True)
         cnt = np.bincount(sid, minlength=N)
-        print(f"       발화세포 평균 {cnt[firedmask].mean() if firedmask.any() else 0:.1f} 스파이크/세포 (자극 volley 1회)", flush=True)
-        np.savez_compressed(os.path.join(ROOT, "scratch", "mpi_baseline.npz"),
+        obs_ms = TSTOP - SETTLE                              # 관측 창(ms)
+        rate = 1000.0 * len(st) / max(obs_ms, 1) / N        # 평균 발화율(Hz/세포)
+        note = "무자극 자발" if NOSTIM else "자극 volley 1회"
+        print(f"       발화세포 평균 {cnt[firedmask].mean() if firedmask.any() else 0:.1f} 스파이크/세포 ({note})", flush=True)
+        print(f"       망 평균 발화율 {rate:.3f} Hz/세포 (관측 {obs_ms:.0f}ms)", flush=True)
+        np.savez_compressed(os.path.join(ROOT, "scratch", f"mpi_baseline{TAG}.npz"),
                             spk_t=st, spk_id=sid, fired=firedmask, is_pc=is_pc,
-                            radius=RADIUS, stim_t=STIM_T, settle=SETTLE, n=N)
+                            radius=RADIUS, stim_t=STIM_T, settle=SETTLE, n=N, nostim=int(NOSTIM))
         json.dump({"n": N, "sc": tot_sc, "internal": tot_int, "spikes": int(len(st)),
                    "active": int(firedmask.sum()), "activeE": nE, "activeI": nI,
-                   "psolve_s": psolve_s, "radius": RADIUS},
-                  open(os.path.join(ROOT, "scratch", "mpi_baseline.json"), "w"))
-        print(f"[저장] scratch/mpi_baseline.npz · 총 {time.time()-t0:.0f}s", flush=True)
+                   "psolve_s": psolve_s, "radius": RADIUS, "nostim": int(NOSTIM),
+                   "obs_ms": obs_ms, "rate_hz": rate},
+                  open(os.path.join(ROOT, "scratch", f"mpi_baseline{TAG}.json"), "w"))
+        print(f"[저장] scratch/mpi_baseline{TAG}.npz · 총 {time.time()-t0:.0f}s", flush=True)
     pc.barrier(); pc.done(); h.quit()
 
 

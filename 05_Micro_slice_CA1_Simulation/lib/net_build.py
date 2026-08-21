@@ -16,7 +16,7 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 REPO = os.path.abspath(os.path.join(ROOT, ".."))
 DERIVED = os.path.join(ROOT, "data", "derived")
 MORPHLIB = os.path.join(ROOT, "data", "morphology_library", "morphology_library")
-MECH = os.path.join(ROOT, "scratch", "mechbuild", "x86_64", "libnrnmech.so")
+MECH = os.environ.get("CA1_MECH_LIB", os.path.join(ROOT, "scratch", "mechbuild", "x86_64", "libnrnmech.so"))
 SCR = os.path.join(ROOT, "scratch")
 
 
@@ -25,7 +25,8 @@ class NetBuilder:
         from neuron import h
         self.h = h
         h.load_file("stdrun.hoc")
-        h.nrn_load_dll(MECH.replace("\\", "/"))
+        if not hasattr(h, "GBPlasticityStpProbSyn"):   # 이미 로드됨(cwd 자동로드/GPU)이면 중복로드 회피
+            h.nrn_load_dll(MECH.replace("\\", "/"))
         h.celsius = 34
         self.wc = np.load(os.path.join(DERIVED, "window_cells.npz"), allow_pickle=True)
         self.mt = self.wc["mtype"].astype(str)

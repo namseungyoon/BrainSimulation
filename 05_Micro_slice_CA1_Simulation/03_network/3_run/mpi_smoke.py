@@ -37,6 +37,7 @@ def arg(f, d):
 
 NCELL = arg("--ncell", 300)
 RADIUS = arg("--r", 200.0)
+USE_GPU = "--gpu" in sys.argv   # 스모크를 CoreNEURON online GPU로 (소규모라 OOM 없음)
 
 # post mtype → SC STP 규칙
 SC2 = {"SP_CCKBC", "SR_SCA", "SLM_PPA", "SP_Ivy"}
@@ -150,13 +151,20 @@ def main():
 
     # 5) 구동 — 안정화(거친 dt) → 자극창(고정 dt 0.025)
     pc.set_maxstep(10)
-    h.finitialize(-70)
-    trun = time.time()
-    h.dt = 0.25
-    pc.psolve(SETTLE)
-    h.dt = 0.025
-    pc.psolve(TSTOP)
-    psolve_s = time.time() - trun
+    if USE_GPU:
+        from neuron import coreneuron
+        coreneuron.enable = True; coreneuron.gpu = True
+        h.finitialize(-70); trun = time.time()
+        h.dt = 0.025; pc.psolve(TSTOP)     # 균일 dt 단일 psolve (online GPU)
+        psolve_s = time.time() - trun
+    else:
+        h.finitialize(-70)
+        trun = time.time()
+        h.dt = 0.25
+        pc.psolve(SETTLE)
+        h.dt = 0.025
+        pc.psolve(TSTOP)
+        psolve_s = time.time() - trun
 
     # 6) 스파이크 gather → rank0 저장·시각화 데이터
     from mpi4py import MPI

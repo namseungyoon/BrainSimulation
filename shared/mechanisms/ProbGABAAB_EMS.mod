@@ -256,6 +256,7 @@ NET_RECEIVE (weight, weight_GABAA, weight_GABAB, Psurv, nc_type) {
     INITIAL {
         if (nc_type == 0) {  :// presynaptic netcon
     VERBATIM
+#ifndef CORENEURON_BUILD
             // setup self events for delayed connections to change weights
             IvocVect *vv_delay_times = *((IvocVect**)(&_p_delay_times));
             IvocVect *vv_delay_weights = *((IvocVect**)(&_p_delay_weights));
@@ -271,6 +272,7 @@ NET_RECEIVE (weight, weight_GABAA, weight_GABAB, Psurv, nc_type) {
     VERBATIM
                 }
             }
+#endif
     ENDVERBATIM
         }
     }
@@ -280,6 +282,7 @@ NET_RECEIVE (weight, weight_GABAA, weight_GABAB, Psurv, nc_type) {
         :    printf( "gaba: self event at synapse %f time %g\n", synapseID, t)
         :UNITSON
     VERBATIM
+#ifndef CORENEURON_BUILD
         // setup self events for delayed connections to change weights
         IvocVect *vv_delay_weights = *((IvocVect**)(&_p_delay_weights));
         if (vv_delay_weights && vector_capacity(vv_delay_weights)>=next_delay) {
@@ -290,6 +293,7 @@ NET_RECEIVE (weight, weight_GABAA, weight_GABAB, Psurv, nc_type) {
             next_delay = next_delay + 1
     VERBATIM
         }
+#endif
         return;
     ENDVERBATIM
     }

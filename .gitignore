@@ -137,3 +137,10 @@ Models/
 05_Micro_slice_CA1_Simulation/_*.log
 05_Micro_slice_CA1_Simulation/_*.err
 05_Micro_slice_CA1_Simulation/_*.pid
+
+# =====================================================================
+#  06 Presynaptic Afferent Stimulation — 신규 독립 트랙 (2026-08-21 재편)
+#  05 SC 자극과 방식이 다른 독립 연구. 작업 중이라 로컬 + Notion 으로만 관리(현재 git 미추적).
+#  (옛 06 특허 공개금지 정책은 폐기 — 2026-08-21.) 공개 준비되면 이 규칙 제거.
+# =====================================================================
+06_Presynaptic_Afferent_Stimulation/
