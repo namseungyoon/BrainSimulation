@@ -93,7 +93,7 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 | **3-1** 시냅스 파라미터 | ✅ config/synapse.yaml 확정(출처 태그) · SC→PC 촉진(1.0→1.48)·PC→PC 억압(1.0→0.14) |
 | **3-2** 시냅스 생성+가지치기 | ✅ 방사축 정렬+회전(θ*=160°)으로 인접 → 접촉 시냅스 5개 · **기하 고정**(config/geometry.yaml) |
 | **3-3** 배선 | ✅ pre 1발 → 시냅스 5개 전도도(0.59nS) → post EPSP 1.36mV (3/3) |
-| 3-1·3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |
+| 3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |
 
 conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지
 확신할 수 없어 **질문 자체가 성립하지 않는 경로**를 택했다 ([DECISIONS.md](docs/DECISIONS.md) D7).
