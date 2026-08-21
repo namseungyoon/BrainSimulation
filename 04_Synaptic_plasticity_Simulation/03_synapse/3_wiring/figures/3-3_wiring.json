@@ -1,0 +1,29 @@
+{
+  "pre": "oh140807_A0_idF",
+  "post": "oh140807_A0_idC",
+  "n_syn": 5,
+  "pre_spikes": 1,
+  "g_peaks_nS": [
+    0.592,
+    0.592,
+    0.592,
+    0.592,
+    0.592
+  ],
+  "delays_ms": [
+    0.72,
+    0.79,
+    0.85,
+    0.86,
+    0.8
+  ],
+  "epsp_mv": 1.3584,
+  "g_nS": 0.6,
+  "checks": {
+    "pre 1발 발화": true,
+    "시냅스 5개 전도도 발생": true,
+    "post EPSP > 0": true
+  },
+  "checks_passed": 3,
+  "checks_total": 3
+}
