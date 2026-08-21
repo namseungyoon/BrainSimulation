@@ -1,0 +1,28 @@
+{
+  "cls": "SC->PC",
+  "mech": "GBPlasticityStpProbSyn",
+  "Use": 0.15,
+  "Nrrp": 1,
+  "n_trial": 200,
+  "rel_prob": [
+    0.155,
+    0.15,
+    0.165,
+    0.14,
+    0.15
+  ],
+  "rel_prob_mean": 0.152,
+  "conn_fail": 0.425,
+  "conn_fail_theory": 0.444,
+  "mean_amp_mV": 1.442,
+  "cv": 1.072,
+  "rng_ok": true,
+  "checks": {
+    "RNG 시딩 정상(방출확률<0.9)": true,
+    "시냅스 방출확률 ≈ Use(±0.08)": true,
+    "시행간 변동 존재(CV>0.1)": true,
+    "연결 실패율 이론과 근접(±0.15)": true
+  },
+  "passed": 4,
+  "total": 4
+}

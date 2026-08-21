@@ -31,9 +31,10 @@ def load_synapse_cfg(class_name=None):
 class Wiring:
     """고정 벤치 위의 전달 배선 + 기록. NEURON 객체를 keep 리스트로 GC 방지."""
 
-    def __init__(self, bench, class_name=None, frozen=True):
+    def __init__(self, bench, class_name=None, frozen=True, prob=False):
         self.b = bench
         self.class_name, self.p = load_synapse_cfg(class_name)
+        self.prob = prob        # True 면 확률 방출(GBPlasticityStpProbSyn, 모델 C)
         self.keep = []
         self.syns = []          # [(syn, spec)]
         self.pre_ncs = []
@@ -44,8 +45,9 @@ class Wiring:
 
     def _build(self, frozen):
         p = self.p
+        mech = h.GBPlasticityStpProbSyn if self.prob else h.GBPlasticitySyn
         for seg, spec in self.b.post_syn_segs():
-            syn = h.GBPlasticitySyn(seg)
+            syn = mech(seg)
             syn.gmax = p["g_nS"] / 1000.0            # nS -> uS
             syn.e = p["e_rev_mV"]                      # ★ mod 기본 0 을 덮어씀
             syn.tau_r_AMPA = p["tau_r_AMPA"]; syn.tau_d_AMPA = p["tau_d_AMPA"]
@@ -54,7 +56,19 @@ class Wiring:
             syn.rho0 = 0.0
             if frozen:
                 syn.gamma_p = 0.0; syn.gamma_d = 0.0   # 가소성 off (순수 전달)
+            if self.prob:
+                syn.Use = p["Use"]; syn.Dep = p["Dep_ms"]; syn.Fac = p["Fac_ms"]
+                syn.Nrrp = p["Nrrp"]
+                if hasattr(syn, "ca_stp"):
+                    syn.ca_stp = 0                     # 보수적(논문 원본, Nrrp=1 인공물 회피)
+                # ★ RNG 시딩 필수 — 안 하면 urand()=0 으로 무증상 오작동
+                syn.setRNG(1, 2, 3)
             self.syns.append((syn, spec)); self.keep.append(syn)
+
+    def seed_prob(self, trial):
+        """확률 시냅스 재시딩(시행별). 시냅스마다 다른 스트림."""
+        for i, (syn, _) in enumerate(self.syns):
+            syn.setRNG(1000 + trial, 7 * i + 1, 13 * i + 3)
 
     # ---- pre 구동 ----
     def drive_pre_iclamp(self, times, amp_nA=1.2, dur_ms=3.0):
