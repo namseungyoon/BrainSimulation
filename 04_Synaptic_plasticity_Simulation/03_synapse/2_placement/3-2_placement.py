@@ -6,9 +6,21 @@
          (2) 소마를 방사축에 수직으로 거리 L 만큼 벌려 인접.
          (3) pre 를 방사축(+y) 둘레로 회전각 θ 스윕 -> 두 수상돌기 필드의 접촉(apposition)이
              최대가 되는 θ* 선택. (방위각은 생물학적으로 자유 파라미터)
-         (4) θ* 배치에서 post SR 정단이 pre 와 가장 가까운 지점에 시냅스, 과잉은 가지치기.
+         (4) θ* 배치에서 ★PC->PC 표적 구역★ 안에서 pre 와 가장 가까운 지점에 시냅스, 나머지는 가지치기.
          (5) 전도지연 = pre소마->시냅스 3D 거리 / 전도속도 + 시냅스지연.
-근거   : docs/DECISIONS.md D8 (2026-08-21 재갱신)
+
+★표적 구역·개수는 PC->PC 문헌 근거다 (D10):
+  - Deuchars & Thomson 1996 Neuroscience 74:1009 (PMID 8895869) — CA1 추체세포 989쌍 중
+    단일시냅스 연결 9개(희소). 완전 재구성된 1쌍에서 전시냅스 축삭이 post 의 **3차 기저수상돌기**에
+    접촉 **2개**(스파인 1·shaft 1). 짝펄스 억압 확인.
+  - Crepel, Khazipov & Ben-Ari 1997 J Neurophysiol 77:2071 (PMID 9114256) — CA1 국소 재귀
+    축삭은 stratum oriens 를 지나고(oriens TTX 로 다시냅스 성분 감소), 전류원밀도상 응답은
+    **정단 근위 50~150um**(추체층 아래 radiatum)에서 생성.
+  - Ecker 2020 Fig.3b — E->E 연결당 시냅스 수 1.3.
+  => 표적 = 기저수상돌기 전체 + 정단 근위 50~150um · 유지 개수 = 2.
+  ⚠️ 이전 판은 SC(Schaffer collateral) 전제로 정단 SR 100~300um 에 5개를 놓았다. SC 는 이 벤치의
+     연결이 아니므로(D9) 폐기했다.
+근거   : docs/DECISIONS.md D8(방사축 정렬·회전) · D9(PC->PC) · D10(표적 구역·개수)
 ★사실  : 04는 아틀라스를 로드하지 않으므로(독립 트랙) 세포 고유 정단축을 방사축 대응물로 쓴다.
          전달 자체는 NetCon(불가피). 이 단계가 정하는 것은 위치·방위·지연이다.
 결과   : figures/3-2_syn_sites.png · figures/3-2_rotation.png · figures/3-2_placement.json
@@ -38,11 +50,13 @@ from lib import cells                        # noqa: E402
 from lib import morphology as mo             # noqa: E402
 from lib.nrnenv import h                     # noqa: E402
 
-SR_MIN, SR_MAX = 100.0, 300.0
+# PC->PC 표적 구역 (D10, 문헌 근거는 위 docstring)
+APIC_PROX = (50.0, 150.0)   # 정단 근위 (Crepel 1997 CSD)
+USE_BASAL = True            # 기저수상돌기 전체 (Deuchars & Thomson 1996 EM)
 SOMA_LATERAL_L = 120.0    # 소마-소마 측방거리 um (모델링 값, 수상돌기 필드 겹침 범위)
 TOUCH_R = 10.0            # 접촉(apposition) 반경 um (3D)
 ANGLE_STEP = 10           # 회전 스윕 간격 도
-N_KEEP = 5
+N_KEEP = 2                # Deuchars 1996 재구성 쌍 = 접촉 2개 (Ecker E->E 평균 1.3)
 V_COND = 0.5             # 전도속도 um/us = 0.5 m/s
 SYN_DELAY = 0.5          # 시냅스 지연 ms
 
@@ -65,17 +79,25 @@ def points_and_transform(cell):
     return m, c, R
 
 
-def apical_sr_segs(post, c, R):
+def target_segs(post, c, R):
+    """PC->PC 표적 구역의 post 세그먼트 (D10): 기저수상돌기 전체 + 정단 근위 50~150um."""
     h.distance(0, post.soma[0](0.5))
     out = []
     for s in post.all:
-        if ".apic" not in s.name():
+        nm = s.name()
+        if ".dend" in nm:
+            dom = "basal" if USE_BASAL else None
+        elif ".apic" in nm:
+            d0 = h.distance(s(0.5))
+            dom = "apical" if APIC_PROX[0] <= d0 <= APIC_PROX[1] else None
+        else:
+            dom = None
+        if dom is None:
             continue
         d = h.distance(s(0.5))
-        if SR_MIN <= d <= SR_MAX:
-            i = s.n3d() // 2
-            p = mo.apply_transform(np.array([s.x3d(i), s.y3d(i), s.z3d(i)]), c, R)
-            out.append((s(0.5), d, p))
+        i = s.n3d() // 2
+        p = mo.apply_transform(np.array([s.x3d(i), s.y3d(i), s.z3d(i)]), c, R)
+        out.append((s(0.5), d, p, dom))
     return out
 
 
@@ -111,9 +133,11 @@ def main():
     m_pre0, _, _ = points_and_transform(pre)
     pre_pts0 = m_pre0["xyz"].copy()           # 회전 전(소마 원점, 정단 +y)
 
-    sr_segs = apical_sr_segs(post, cP, RP)
-    sr_pos = np.array([p for _, _, p in sr_segs])
-    print(f"  post SR 정단 세그먼트 {len(sr_segs)}개 · 소마-소마 측방 L={SOMA_LATERAL_L:.0f}um")
+    sr_segs = target_segs(post, cP, RP)
+    sr_pos = np.array([p for _, _, p, _ in sr_segs])
+    n_bas = sum(1 for t in sr_segs if t[3] == "basal")
+    print(f"  PC->PC 표적 세그먼트 {len(sr_segs)}개 "
+          f"(기저 {n_bas} · 정단근위 {len(sr_segs)-n_bas}) · 소마-소마 측방 L={SOMA_LATERAL_L:.0f}um")
 
     # 회전각 스윕: 방사축 둘레 θ 마다 접촉 개수
     angles = np.arange(0, 360, ANGLE_STEP)
@@ -142,11 +166,13 @@ def main():
 
     syn = []
     for i in keep_i:
-        seg, d, p = sr_segs[i]
+        seg, d, p, dom = sr_segs[i]
         dist3d = float(np.linalg.norm(p - pre_soma3d))
-        syn.append(dict(seg=seg, path=d, pos=p, touch=float(mind[i]),
+        syn.append(dict(seg=seg, path=d, pos=p, touch=float(mind[i]), dom=dom,
                         dist3d=dist3d, delay=dist3d / (V_COND * 1000.0) + SYN_DELAY))
-    print(f"  유지 {len(syn)}개 · 접촉거리 {[round(s['touch'],1) for s in syn]} um · "
+    print(f"  유지 {len(syn)}개 {[s['dom'] for s in syn]} · "
+          f"경로거리 {[round(s['path']) for s in syn]} um · "
+          f"접촉거리 {[round(s['touch'],1) for s in syn]} um · "
           f"지연 {[round(s['delay'],2) for s in syn]} ms")
 
     # pre 형태 dict (그리기용, θ* 배치)
@@ -188,9 +214,15 @@ def main():
     axA.set_aspect("equal", adjustable="box"); axA.set_xticks([]); axA.set_yticks([]); axA.grid(False)
     for s in axA.spines.values():
         s.set_color("#dddddd")
-    axA.axhspan(SR_MIN, SR_MAX, color="#ffb300", alpha=0.10, zorder=0)
-    axA.text(allx.max() + 35, (SR_MIN + SR_MAX) / 2, "SR", fontsize=9, color="#b26a00",
+    axA.axhspan(APIC_PROX[0], APIC_PROX[1], color="#ffb300", alpha=0.12, zorder=0)
+    axA.text(allx.max() + 35, sum(APIC_PROX) / 2,
+             f"정단 근위\n{APIC_PROX[0]:.0f}~{APIC_PROX[1]:.0f}um", fontsize=8, color="#b26a00",
              va="center", ha="right")
+    ybas = m_post["xyz"][m_post["type"] == mo.BASAL, 1]
+    if len(ybas):
+        axA.axhspan(float(ybas.min()), 0.0, color="#4fc3f7", alpha=0.10, zorder=0)
+        axA.text(allx.max() + 35, float(ybas.min()) / 2, "기저수상돌기", fontsize=8,
+                 color="#0277bd", va="center", ha="right")
     if prune_i:
         pp = np.array([sr_segs[i][2][:2] for i in prune_i])
         axA.scatter(pp[:, 0], pp[:, 1], s=55, marker="x", color="#9e9e9e", lw=1.7, zorder=5)
@@ -228,7 +260,9 @@ def main():
     ypos = np.arange(len(syn))
     delays = [s["delay"] for s in syn]
     axB.barh(ypos, delays, color="#7b1fa2", alpha=0.85)
-    axB.set_yticks(ypos); axB.set_yticklabels([f"{round(s['path'])}um" for s in syn], fontsize=9)
+    axB.set_yticks(ypos)
+    axB.set_yticklabels([f"{'기저' if s['dom']=='basal' else '정단'} {round(s['path'])}um"
+                         for s in syn], fontsize=9)
     axB.invert_yaxis()
     axB.set_xlabel("전도지연 (ms) = 거리/속도 + 시냅스지연")
     axB.set_ylabel("시냅스 (post 소마 경로거리)")
@@ -241,16 +275,22 @@ def main():
     fig2.suptitle(f"3-2  방사축 정렬·회전 배치 (θ*={theta:.0f}도) → 접촉 시냅스 {len(syn)}개",
                   fontsize=12.5, y=0.98)
     fig2.subplots_adjust(top=0.88, bottom=0.20, wspace=0.18)
-    plots.stamp(fig2, f"3-2 | θ*={theta:.0f}도 · L={SOMA_LATERAL_L:.0f}um · 전도속도 {V_COND}um/us · SR {SR_MIN:.0f}~{SR_MAX:.0f}um")
+    plots.stamp(fig2, f"3-2 | PC->PC 표적: 기저 + 정단근위 {APIC_PROX[0]:.0f}~{APIC_PROX[1]:.0f}um · "
+                      f"유지 {N_KEEP}개 (Deuchars1996) · θ*={theta:.0f}도 · L={SOMA_LATERAL_L:.0f}um")
     plots.save(fig2, outdir, "3-2_syn_sites.png")
 
-    out = dict(pre=cfg["pre_tag"], post=cfg["post_tag"], sr_band=[SR_MIN, SR_MAX],
+    out = dict(pre=cfg["pre_tag"], post=cfg["post_tag"],
+               target_zones=dict(basal=USE_BASAL, apical_proximal_um=list(APIC_PROX)),
+               n_keep=N_KEEP,
+               basis="Deuchars&Thomson1996 PMID8895869 (기저 3차, 접촉 2) · "
+                     "Crepel1997 PMID9114256 (정단근위 50-150um) · Ecker2020 Fig3b (E->E 1.3)",
                soma_lateral_L_um=SOMA_LATERAL_L, touch_r_um=TOUCH_R, angle_step_deg=ANGLE_STEP,
                best_angle_deg=theta, best_touch_count=int(counts[best]),
                best_mean_mindist_um=round(float(meandist[best]), 1),
                v_cond_um_per_us=V_COND, syn_delay_ms=SYN_DELAY,
                kept=len(syn),
                synapses=[dict(path_um=round(s["path"], 1), touch_um=round(s["touch"], 1),
+                              domain=s["dom"],
                               dist3d_um=round(s["dist3d"], 1), delay_ms=round(s["delay"], 2),
                               section=s["seg"].sec.name().split(".")[-1]) for s in syn])
     jpath = os.path.join(outdir, "3-2_placement.json")

@@ -1,6 +1,6 @@
-# 04 벤치 확정 기하 — 3-2 에서 고정 (2026-08-21). 이후 모든 단계가 이 값을 재현한다.
+# 04 벤치 확정 기하 — 3-2 에서 고정 (2026-08-21 / PC->PC 근거로 재확정)
 # ⚠️ 이 파일을 바꾸면 3-2 를 다시 돌려 시냅스 위치·지연을 재생성해야 한다.
-# 근거: docs/DECISIONS.md D8 (방사축 정렬 + 회전각 탐색)
+# 근거: docs/DECISIONS.md D8(방사축 정렬+회전) · D9(PC->PC) · D10(표적 구역·개수)
 
 fixed: true                 # 기하 고정됨. 배치 탐색을 다시 하지 않는다.
 
@@ -12,23 +12,28 @@ pair:
 
 placement:
   # 두 세포를 정단(방사)축 +y 로 정렬 후 소마를 측방으로 L 만큼 벌리고,
-  # pre 를 방사축 둘레로 best_angle 회전 → 접촉 최대 (3-2 탐색 결과)
+  # pre 를 방사축 둘레로 best_angle 회전 → 표적 구역 접촉 최대 (3-2 탐색 결과)
   radial_axis: apical_plus_y     # 04는 아틀라스 미로드 → 세포 정단축을 방사축 대응물로
   soma_lateral_L_um: 120.0
-  pre_rotation_deg: 160.0        # θ* (접촉 최대)
+  pre_rotation_deg: 330.0        # θ* (표적 구역 접촉 최대: 4개)
   touch_r_um: 10.0
 
-sr_band_um: [100.0, 300.0]       # post 정단수상돌기 SR 대역 (시냅스 배치 구간)
+# ★ PC->PC 표적 구역 (D10) — 이전 판의 SC 전제(정단 SR 100~300um)는 폐기
+#   Deuchars & Thomson 1996 (PMID 8895869): 완전 재구성 쌍의 접촉이 post 3차 기저수상돌기에 2개
+#   Crepel/Khazipov/Ben-Ari 1997 (PMID 9114256): 국소 재귀 축삭은 oriens 통과,
+#                                                 CSD 응답은 정단 근위 50~150um
+#   Ecker 2020 Fig.3b: E->E 연결당 시냅스 수 1.3
+target_zones:
+  basal: true                    # 기저수상돌기 전체
+  apical_proximal_um: [50.0, 150.0]
+n_syn_per_connection: 2          # Deuchars 1996 재구성 쌍 = 2 (Ecker 평균 1.3)
 
 conduction:
-  v_cond_um_per_us: 0.5          # 전도속도 0.5 m/s (CA3 SC 무수초 근사)
+  v_cond_um_per_us: 0.5          # 전도속도 0.5 m/s (무수초 국소 축삭 근사)
   syn_delay_ms: 0.5              # 시냅스 지연 (전도지연에 더함)
 
-# 확정 시냅스 5개 — post 세포의 구획·경로거리·전도지연.
-# 각 시냅스는 해당 apic 구획의 (0.5) 위치에 놓는다.
+# 확정 시냅스 2개 — post 세포의 구획·경로거리·전도지연.
+# 각 시냅스는 해당 구획의 (0.5) 위치에 놓는다. 둘 다 기저수상돌기(문헌 근거와 일치).
 synapses:
-  - {section: "apic[21]",  path_um: 178.1, dist3d_um: 109.8, delay_ms: 0.72, touch_um: 7.4}
-  - {section: "apic[109]", path_um: 206.6, dist3d_um: 144.3, delay_ms: 0.79, touch_um: 8.5}
-  - {section: "apic[36]",  path_um: 218.6, dist3d_um: 173.2, delay_ms: 0.85, touch_um: 18.1}
-  - {section: "apic[37]",  path_um: 225.1, dist3d_um: 178.9, delay_ms: 0.86, touch_um: 16.5}
-  - {section: "apic[29]",  path_um: 239.2, dist3d_um: 147.7, delay_ms: 0.80, touch_um: 9.2}
+  - {section: "dend[3]",  domain: basal, path_um: 144.3, dist3d_um: 132.3, delay_ms: 0.76, touch_um: 7.8}
+  - {section: "dend[23]", domain: basal, path_um: 171.7, dist3d_um: 118.4, delay_ms: 0.74, touch_um: 6.2}

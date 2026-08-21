@@ -1,54 +1,40 @@
 {
   "pre": "oh140807_A0_idF",
   "post": "oh140807_A0_idC",
-  "sr_band": [
-    100.0,
-    300.0
-  ],
+  "target_zones": {
+    "basal": true,
+    "apical_proximal_um": [
+      50.0,
+      150.0
+    ]
+  },
+  "n_keep": 2,
+  "basis": "Deuchars&Thomson1996 PMID8895869 (기저 3차, 접촉 2) · Crepel1997 PMID9114256 (정단근위 50-150um) · Ecker2020 Fig3b (E->E 1.3)",
   "soma_lateral_L_um": 120.0,
   "touch_r_um": 10.0,
   "angle_step_deg": 10,
-  "best_angle_deg": 160.0,
-  "best_touch_count": 5,
-  "best_mean_mindist_um": 42.7,
+  "best_angle_deg": 330.0,
+  "best_touch_count": 4,
+  "best_mean_mindist_um": 34.2,
   "v_cond_um_per_us": 0.5,
   "syn_delay_ms": 0.5,
-  "kept": 5,
+  "kept": 2,
   "synapses": [
     {
-      "path_um": 178.1,
-      "touch_um": 7.4,
-      "dist3d_um": 109.8,
-      "delay_ms": 0.72,
-      "section": "apic[21]"
+      "path_um": 144.3,
+      "touch_um": 7.8,
+      "domain": "basal",
+      "dist3d_um": 132.3,
+      "delay_ms": 0.76,
+      "section": "dend[3]"
     },
     {
-      "path_um": 206.6,
-      "touch_um": 8.5,
-      "dist3d_um": 144.3,
-      "delay_ms": 0.79,
-      "section": "apic[109]"
-    },
-    {
-      "path_um": 218.6,
-      "touch_um": 18.1,
-      "dist3d_um": 173.2,
-      "delay_ms": 0.85,
-      "section": "apic[36]"
-    },
-    {
-      "path_um": 225.1,
-      "touch_um": 16.5,
-      "dist3d_um": 178.9,
-      "delay_ms": 0.86,
-      "section": "apic[37]"
-    },
-    {
-      "path_um": 239.2,
-      "touch_um": 9.2,
-      "dist3d_um": 147.7,
-      "delay_ms": 0.8,
-      "section": "apic[29]"
+      "path_um": 171.7,
+      "touch_um": 6.2,
+      "domain": "basal",
+      "dist3d_um": 118.4,
+      "delay_ms": 0.74,
+      "section": "dend[23]"
     }
   ]
 }

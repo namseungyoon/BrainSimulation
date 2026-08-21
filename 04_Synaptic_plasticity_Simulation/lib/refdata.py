@@ -7,7 +7,26 @@
 출처(범주): Hippocampome.org · Migliore et al. 2018 · Magee & Cook 2000 · full-scale CA1 논문.
 """
 
-# 단일 연결 uEPSP (CA3->CA1) — Sayer, Friedlander & Redman 1990 J Neurosci 10(3):826
+# ★ 이 벤치(CA1 PC -> CA1 PC)의 uEPSP 기준 문헌 — Deuchars & Thomson 1996
+#   Neuroscience 74(4):1009-1018 (PMID 8895869, DOI 10.1016/0306-4522(96)00251-5)
+#   성체 흰쥐 CA1 추체세포 989쌍 동시 세포내기록 -> 단일시냅스 흥분성 연결 9개(6쌍 분석가능).
+#   post Vm -67~-70mV 에서: 진폭 0.7±0.5 mV (0.17~1.5) · 10-90% 상승 2.7±0.9 ms (1.5~3.8)
+#   · 반치폭 16.8±4.1 ms (11.6~25). AMPA+NMDA 매개. 4쌍 전부 짝펄스 억압.
+#   완전 재구성된 1쌍: 전시냅스 축삭이 post 3차 기저수상돌기에 접촉 2개(스파인1·shaft1),
+#   그 쌍의 EPSP 진폭 1.5mV · 상승 2.8ms · 반치폭 11.6ms.
+#   ⚠️ 상승시간은 10-90% 기준이다(우리 measure 는 20-80%) -> 우리 값이 체계적으로 작게 나온다.
+DEUCHARS1996 = {
+    "amp_mV":       {"min": 0.17, "max": 1.5, "mean": 0.7, "sd": 0.5},
+    "rise_ms":      {"mean": 2.7, "sd": 0.9, "min": 1.5, "max": 3.8, "note": "10-90%"},
+    "halfwidth_ms": {"mean": 16.8, "sd": 4.1, "min": 11.6, "max": 25.0},
+    "n_contacts":   2,          # 완전 재구성 쌍의 접촉 수 (기저수상돌기)
+    "n_pairs_tested": 989, "n_connected": 9,
+    "src": "Deuchars & Thomson 1996 Neuroscience 74(4):1009 (PMID 8895869)",
+}
+
+# 참고(다른 연결): 단일 연결 uEPSP CA3->CA1 = Schaffer collateral
+#   ⚠️ 이 벤치의 연결이 아니다(D9). SC 자극 실험과 대조할 때만 참고로 쓴다.
+# Sayer, Friedlander & Redman 1990 J Neurosci 10(3):826
 #   PubMed 확인(PMID 2319304, DOI 10.1523/JNEUROSCI.10-03-00826.1990). 기니피그 슬라이스.
 #   71개 EPSP: 진폭 30~665 uV(평균 131), 상승시간 3.9±1.8 ms, 반치폭 19.5±8.0 ms.
 #   양자증분 278 uV. ★ '단일 CA3 세포 활성화'로 유발 = 연결 단위(다접촉 포함).
