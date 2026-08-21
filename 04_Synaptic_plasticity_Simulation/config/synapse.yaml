@@ -1,43 +1,39 @@
-# 04 시냅스 전달 파라미터 — 단일 출처 (3-1 에서 확정, 2026-08-21)
-# 각 값에 출처 태그: paper(측정/논문) · tuned(튜닝값) · ours(우리 선택) · mod(mod 기본값)
+# 04 시냅스 전달 파라미터 — 단일 출처 (3-1 에서 확정, 2026-08-21 / PC->PC 로 정정)
+# 각 값에 출처 태그: paper(측정/논문) · ours(우리 선택) · mod(mod 기본값)
 # ⚠️ 이 값들은 전달(AMPA/NMDA) 파라미터다. 가소성 엔진별 파라미터는 config/engines.yaml.
+#
+# 이 벤치는 CA1 추체세포 2개를 붙인 것이다. 따라서 연결은 PC->PC 하나뿐이다.
+#   D9(2026-08-21): 이전 버전은 default_class 가 SC->PC 였다. SC->PC 는 Ecker2020 Table3 에
+#   존재하지 않는 클래스이고(Table3 = CA1 내부 연결만), 01 트랙에서 "SC 대용"으로 만들어 붙인
+#   튜닝값이었다. 04 는 독립 트랙이므로 그 값을 쓸 근거가 없고, 벤치의 실제 연결도 아니다.
+#   -> SC->PC 삭제. PC->PC (Ecker2020 Table3 실측 E2 클래스) 하나만 남긴다.
 
-# 기본 클래스: SC->PC (E1s) — Schaffer collateral 대리 (촉진형)
-default_class: SC->PC
+default_class: PC->PC
 
 classes:
-  SC->PC:                         # Schaffer collateral -> CA1 PC (촉진형). 04 기본.
+  PC->PC:                         # CA1 추체세포 -> CA1 추체세포 (Ecker2020 Table3 "PC->PC (E2)", 억압형)
     receptor: AMPANMDA
-    g_nS:        {v: 0.6,   src: tuned, ref: "Ecker2020 SC->PC(E1s) 클래스값. 13_net_fepsp 는 1.5 사용 — 3-7 에서 재보정"}
+    g_nS:        {v: 0.6,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2) g_hat. 3-7 에서 uEPSP 기준 재보정"}
     e_rev_mV:    {v: -8.5,  src: paper, ref: "Moradi & Ascoli 2020 유효 역전위(§2.6). mod 기본 0 을 덮어씀"}
     tau_r_AMPA:  {v: 0.2,   src: paper, ref: "Ecker2020 Table3 (E 계열)"}
-    tau_d_AMPA:  {v: 3.0,   src: paper, ref: "Ecker2020 SC->PC(E1s) tau_d"}
-    tau_r_NMDA:  {v: 9.0,   src: paper, ref: "Andrasfalvy & Magee 2001 (CA1 특이). mod 기본과 동일"}
-    tau_d_NMDA:  {v: 61.0,  src: paper, ref: "Andrasfalvy & Magee 2001. ⚠️Ecker 는 PC->PC 에 148.5 사용 — 아래 note"}
-    NMDA_ratio:  {v: 1.22,  src: paper, ref: "Ecker2020 PC->PC 계열 NMDA:AMPA"}
+    tau_d_AMPA:  {v: 3.0,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2) tau_d"}
+    tau_r_NMDA:  {v: 9.0,   src: paper, ref: "Andrasfalvy & Magee 2001 (CA1 특이). ⚠️미결#6 아래 note"}
+    tau_d_NMDA:  {v: 61.0,  src: paper, ref: "Andrasfalvy & Magee 2001. ⚠️Ecker PC->PC 는 148.5 — 미결#6"}
+    NMDA_ratio:  {v: 1.22,  src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA:AMPA"}
     mg_mM:       {v: 1.0,   src: mod,   ref: "생리 세포외 Mg2+"}
-    # 단기가소성(TM) — SC 촉진 유도용 튜닝값
-    Use:         {v: 0.15,  src: tuned, ref: "SC->PC(E1s). ⚠️Ecker Table3 에 SC 없음(내부연결만). 근거 Dobrunz&Stevens1997·Salin1996"}
-    Dep_ms:      {v: 150.0, src: tuned, ref: "SC->PC(E1s) 회복 시상수"}
-    Fac_ms:      {v: 250.0, src: tuned, ref: "SC->PC(E1s) 촉진 시상수 (Fac>Dep -> 촉진)"}
-    Nrrp:        {v: 1,     src: tuned, ref: "SC->PC(E1s) 방출자리 수"}
-
-  PC->PC:                         # CA1 재귀 PC->PC (억압형). 5-9 대조군.
-    receptor: AMPANMDA
-    g_nS:        {v: 0.6,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2)"}
-    e_rev_mV:    {v: -8.5,  src: paper, ref: "Moradi & Ascoli 2020"}
-    tau_r_AMPA:  {v: 0.2,   src: paper}
-    tau_d_AMPA:  {v: 3.0,   src: paper, ref: "Ecker2020 PC->PC(E2)"}
-    tau_r_NMDA:  {v: 9.0,   src: paper, ref: "Andrasfalvy & Magee 2001"}
-    tau_d_NMDA:  {v: 61.0,  src: paper}
-    NMDA_ratio:  {v: 1.22,  src: paper}
-    mg_mM:       {v: 1.0,   src: mod}
+    # 단기가소성(TM) — Ecker2020 Table3 실측값 (억압형: Fac < Dep)
     Use:         {v: 0.50,  src: paper, ref: "Ecker2020 Table3. ⚠️HippocampusHub 는 0.65±0.1 — DECISIONS 미결#2"}
-    Dep_ms:      {v: 671.0, src: paper}
-    Fac_ms:      {v: 17.0,  src: paper, ref: "Fac<Dep -> 억압"}
-    Nrrp:        {v: 2,     src: paper}
+    Dep_ms:      {v: 671.0, src: paper, ref: "Ecker2020 Table3 PC->PC(E2)"}
+    Fac_ms:      {v: 17.0,  src: paper, ref: "Ecker2020 Table3 PC->PC(E2). Fac<Dep -> 억압"}
+    Nrrp:        {v: 2,     src: paper, ref: "Ecker2020 Table3 PC->PC(E2) 방출자리 수"}
 
 notes:
-  - "NMDA tau_d: mod/Andrasfalvy = 61ms 를 채택(GB mod 검증본과 일치). Ecker 가 PC->PC 에 쓴 148.5ms 는 미채택 — 근거 불명확, 채택 시 NMDA 칼슘이 크게 바뀌어 가소성 재검증 필요."
+  - "★ 미결#6 (NMDA 동역학): Ecker2020 은 우리 연결(PC->PC)의 NMDA 를 tau_r=3.9 / tau_d=148.5 ms
+     (§2.3, Q10 보정)로 명시한다. 현재 값 9.0/61.0 은 Andrasfalvy&Magee 2001(CA1 특이) 이고
+     GB mod 검증본과 일치한다. 우리 연결의 논문값은 3.9/148.5 이므로 그쪽이 근거상 우세하지만,
+     채택하면 NMDA 칼슘 총량이 크게 늘어 3-3~3-6 재실행 + 가소성 문턱 재검증이 필요하다.
+     -> 3-7(g 재보정) 착수 전에 결정한다. 미결로 남긴 채 6단계로 넘어가지 않는다."
   - "칼슘 지연 D(13.7 vs 18.8ms)·이중안정 파라미터는 전달이 아니라 가소성 소관 -> 5-1 에서 확정."
   - "e_rev=-8.5 는 GB mod 기본 e=0 을 덮어써야 한다. 시냅스 생성 시 syn.e=-8.5 명시."
+  - "촉진형 대조가 필요해지면 Ecker Table3 의 실측 촉진 클래스(PC->SOM+ E1: Use 0.09/Dep 138/Fac 670)를
+     쓴다. 없는 클래스를 만들어 쓰지 않는다."

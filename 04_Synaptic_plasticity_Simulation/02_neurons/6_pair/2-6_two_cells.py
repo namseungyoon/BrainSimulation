@@ -7,7 +7,7 @@
          연결을 화살표로 그린다.
 ★주의  : 이 배치는 **도해**다. D8 에 따라 pre->post 전달은 물리적 막 접촉이 아니라
          NetCon + 전도지연이므로, 두 세포의 상대 위치는 시뮬레이션 결과에 영향이 없다.
-         pre 를 왼쪽에 둔 것은 Schaffer collateral 입력을 상징적으로 보인 것일 뿐이다.
+         pre 를 왼쪽에 둔 것은 도해상의 배치일 뿐이다(두 세포 다 CA1 추체세포).
 근거   : docs/DECISIONS.md D8 · config/cells.yaml · 2-3 의 SR 대역
 재료   : lib/cells.py · lib/morphology.py · config/cells.yaml
 결과   : figures/2-6_two_cells.png · figures/2-6_pair.json
@@ -183,7 +183,7 @@ def main():
         pre_tag=cfg["pre_tag"], post_tag=cfg["post_tag"],
         arrangement="schematic",
         note=("D8: pre->post 는 NetCon+지연. 두 세포의 상대 위치는 시뮬레이션 결과에 영향 없음. "
-              "pre 를 왼쪽에 둔 것은 Schaffer collateral 입력의 상징."),
+              "pre 를 왼쪽에 둔 것은 도해상의 배치(두 세포 다 CA1 추체세포)."),
         offset_um=round(float(offset), 1),
         sr_band=[SR_MIN, SR_MAX],
         example_synapse_dist_um=round(float(sr[1]), 1) if sr else None,
