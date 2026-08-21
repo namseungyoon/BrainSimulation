@@ -7,6 +7,17 @@
 출처(범주): Hippocampome.org · Migliore et al. 2018 · Magee & Cook 2000 · full-scale CA1 논문.
 """
 
+# 단일 연결 uEPSP (CA3->CA1) — Sayer, Friedlander & Redman 1990 J Neurosci 10(3):826
+#   PubMed 확인(PMID 2319304, DOI 10.1523/JNEUROSCI.10-03-00826.1990). 기니피그 슬라이스.
+#   71개 EPSP: 진폭 30~665 uV(평균 131), 상승시간 3.9±1.8 ms, 반치폭 19.5±8.0 ms.
+#   양자증분 278 uV. ★ '단일 CA3 세포 활성화'로 유발 = 연결 단위(다접촉 포함).
+SAYER1990 = {
+    "amp_mV":       {"min": 0.030, "max": 0.665, "mean": 0.131},
+    "rise_ms":      {"mean": 3.9, "sd": 1.8},
+    "halfwidth_ms": {"mean": 19.5, "sd": 8.0},
+    "src": "Sayer/Friedlander/Redman 1990 J Neurosci 10(3):826 (PMID 2319304)",
+}
+
 # CA1 추체세포(cACpyr) e-특징 대략 범위 (lo, hi)
 CACPYR = {
     "Rin_MOhm":         (50, 180),     # 입력저항

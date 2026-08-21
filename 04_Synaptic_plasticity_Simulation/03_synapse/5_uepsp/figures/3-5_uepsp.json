@@ -6,9 +6,12 @@
   "rise_ms": 1.725,
   "halfwidth_ms": 11.075,
   "decay_ms": 9.85,
-  "lit_amp_range": [
-    0.1,
-    1.0
-  ],
-  "amp_in_lit": false
+  "sayer1990": {
+    "amp_mean_mV": 0.131,
+    "amp_max_mV": 0.665,
+    "rise_ms": "3.9±1.8",
+    "halfwidth_ms": "19.5±8.0"
+  },
+  "amp_ratio_to_mean": 10.15,
+  "amp_ratio_to_max": 2.0
 }

@@ -97,7 +97,7 @@
 |---|---|---|---|
 | **2-4** 전기생리 | Rin·Vrest·sag·AP·발화적응 | Hippocampome.org · Migliore 2018 (cACpyr 범위) | ✅ |
 | **2-5** 공명 | 내재 막전위 공명(자연 theta 가능성) | Ih=Magee 1998(`hd.mod`) · M 전류(`kmb.mod`) | ✅ 판정: **불가** |
-| **3-5** uEPSP | 단일 연결 EPSP 진폭 | Sayer/Friedlander/Redman 1990 *(확인요)* | ⬜ |
+| **3-5** uEPSP | 단일 연결 EPSP 진폭·상승·반치폭 | Sayer/Friedlander/Redman 1990 (PMID 2319304, PubMed 확인) | ✅ |
 | **5-9** 단기가소성 | PPR·주파수 트레인 | Tsodyks & Markram 1997 · Dobrunz & Stevens 1997 | ⬜ |
 | **5-3~5-5** 장기가소성 엔진 | 칼슘 문턱·이중안정 | Graupner & Brunel 2012 *PNAS* 109:3991 | ⬜ |
 

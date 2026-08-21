@@ -26,13 +26,13 @@ except Exception:
 import numpy as np                          # noqa: E402
 from lib import plots                        # noqa: E402
 from lib import measure                       # noqa: E402
+from lib import refdata                       # noqa: E402
 from lib.bench import Bench                   # noqa: E402
 from lib.wiring import Wiring                 # noqa: E402
 
 T_SPIKE = 20.0
 TSTOP = 90.0
-# 문헌 전형 범위 (Sayer 1990: 단일 연결 uEPSP). 평균은 작으나 분포 상단은 ~1mV.
-LIT = {"amp_mV": (0.1, 1.0)}
+S = refdata.SAYER1990          # Sayer1990 실측(PubMed 확인)
 
 
 def main():
@@ -49,20 +49,22 @@ def main():
     f = measure.epsp_features(t, v, T_SPIKE + b.syn_specs[0]["delay_ms"])
     print(f"  진폭 {f['amp_mV']:.3f} mV · 개시지연 {f['latency_ms']:.2f} ms · "
           f"상승 {f['rise_ms']:.2f} ms · 반치폭 {f['halfwidth_ms']:.2f} ms · 감쇠 {f['decay_ms']:.2f} ms")
-    in_lit = LIT["amp_mV"][0] <= f["amp_mV"] <= LIT["amp_mV"][1]
-    print(f"  문헌 범위(Sayer1990 {LIT['amp_mV'][0]}~{LIT['amp_mV'][1]}mV): "
-          f"{'안' if in_lit else '상단 초과' if f['amp_mV']>LIT['amp_mV'][1] else '하단 미만'}")
+
+    # 논문(Sayer1990) 대조: 진폭(범위) · 상승(평균±SD) · 반치폭(평균±SD)
+    amp_ratio = f["amp_mV"] / S["amp_mV"]["mean"]
+    amp_vs_max = f["amp_mV"] / S["amp_mV"]["max"]
+    print(f"  [Sayer1990] 진폭 우리 {f['amp_mV']:.3f} vs 평균 {S['amp_mV']['mean']:.3f} "
+          f"(최대 {S['amp_mV']['max']:.3f}) mV -> 평균의 {amp_ratio:.1f}배·최대의 {amp_vs_max:.1f}배")
+    print(f"              상승 우리 {f['rise_ms']:.2f} vs {S['rise_ms']['mean']}±{S['rise_ms']['sd']} ms")
+    print(f"              반치폭 우리 {f['halfwidth_ms']:.2f} vs {S['halfwidth_ms']['mean']}±{S['halfwidth_ms']['sd']} ms")
 
     import matplotlib.pyplot as plt
-    fig, (axT, axS) = plt.subplots(1, 2, figsize=(12.5, 5.0),
-                                   gridspec_kw={"width_ratios": [1.4, 1]})
-
-    # 왼쪽: EPSP 파형 + 특성 표시
     base = v[(t >= T_SPIKE - 5) & (t < T_SPIKE)].mean()
-    axT.plot(t, v, color="#d84315", lw=1.8)
+
+    # ---- 그림 1: EPSP 파형 (trace) ----
+    figT, axT = plt.subplots(figsize=(8.2, 5.0))
+    axT.plot(t, v, color="#d84315", lw=1.9)
     axT.axhline(base, ls=":", color="#999", lw=0.8)
-    tpk = T_SPIKE + b.syn_specs[0]["delay_ms"] + f["t_peak_ms"] - (T_SPIKE + b.syn_specs[0]["delay_ms"])
-    # 정점 표시
     vpk = base + f["amp_mV"]
     axT.annotate(f"진폭 {f['amp_mV']:.3f} mV", xy=(f["t_peak_ms"], vpk),
                  xytext=(f["t_peak_ms"]+8, vpk), fontsize=10, color="#b71c1c",
@@ -71,46 +73,65 @@ def main():
     axT.text(T_SPIKE, axT.get_ylim()[0], " pre 발화", fontsize=8, color="#2e7d32", va="bottom")
     axT.set_xlim(T_SPIKE-5, T_SPIKE+50)
     axT.set_xlabel("시간 (ms)"); axT.set_ylabel("post 소마 Vm (mV)")
-    axT.set_title(f"A. 단발 uEPSP 파형 (연결 = 시냅스 {b.n_syn()}개 합)", fontsize=10.5, loc="left")
-
-    # 오른쪽: 특성 막대 + 진폭 문헌범위
-    names = ["진폭\n(mV)", "개시지연\n(ms)", "상승20-80\n(ms)", "반치폭\n(ms)", "감쇠1/e\n(ms)"]
-    vals = [f["amp_mV"], f["latency_ms"], f["rise_ms"], f["halfwidth_ms"], f["decay_ms"]]
-    cols = ["#d84315", "#546e7a", "#546e7a", "#546e7a", "#546e7a"]
-    axS.bar(range(len(vals)), vals, color=cols)
-    axS.set_xticks(range(len(vals))); axS.set_xticklabels(names, fontsize=8.5)
-    for i, val in enumerate(vals):
-        axS.text(i, val, f"{val:.2f}", ha="center", va="bottom", fontsize=8.5)
-    # 진폭 문헌 범위 띠
-    axS.axhspan(LIT["amp_mV"][0], LIT["amp_mV"][1], xmin=0.0, xmax=0.2,
-                color="#ffb300", alpha=0.25)
-    axS.text(0, LIT["amp_mV"][1]+0.05, f"문헌 {LIT['amp_mV'][0]}~{LIT['amp_mV'][1]}",
-             fontsize=7.5, color="#b26a00", ha="center")
-    axS.set_title("B. EPSP 특성 (진폭=주황, 문헌범위 띠)", fontsize=10.5, loc="left")
-    axS.set_ylabel("값")
-
-    fig.suptitle("3-5  단발 uEPSP — pre 1발 → post 소마 EPSP 특성 (동결 전달 시냅스)",
-                 fontsize=12.5, y=0.99)
-    fig.subplots_adjust(top=0.88, wspace=0.22)
-    tag = "안" if in_lit else ("상단 초과" if f["amp_mV"] > LIT["amp_mV"][1] else "하단")
-    plots.stamp(fig, f"3-5 | {w.class_name} · 진폭 {f['amp_mV']:.3f}mV (문헌 {tag}) · 3-7 에서 g 재보정")
+    axT.set_title(f"3-5  단발 uEPSP 파형 (연결=시냅스 {b.n_syn()}개 합)\n"
+                  f"상승 {f['rise_ms']:.2f}ms · 반치폭 {f['halfwidth_ms']:.2f}ms · 감쇠 {f['decay_ms']:.2f}ms",
+                  fontsize=11, loc="left")
+    plots.stamp(figT, f"3-5 | {w.class_name} · 동결 전달 · 진폭 {f['amp_mV']:.3f}mV")
     outdir = plots.figdir(__file__)
-    # 두 파일명(같은 번호, slug 다름) 규약대로: trace / stats
-    fig.savefig(os.path.join(outdir, "3-5_uepsp_trace.png"))
-    fig.savefig(os.path.join(outdir, "3-5_uepsp_stats.png"))
-    import matplotlib.pyplot as _plt; _plt.close(fig)
-    print(f"saved: 3-5_uepsp_trace.png · 3-5_uepsp_stats.png")
+    plots.save(figT, outdir, "3-5_uepsp_trace.png")
+
+    # ---- 그림 2: 논문(Sayer1990) 대조 (stats) ----
+    figS, (b1, b2, b3) = plt.subplots(1, 3, figsize=(12.5, 4.6))
+    # 진폭: 우리 vs Sayer 범위(min~max)+평균
+    b1.bar([0], [f["amp_mV"]], color="#d84315", width=0.5, label="우리")
+    b1.bar([1], [S["amp_mV"]["mean"]], color="#546e7a", width=0.5, label="Sayer 평균")
+    b1.errorbar([1], [S["amp_mV"]["mean"]],
+                yerr=[[S["amp_mV"]["mean"]-S["amp_mV"]["min"]], [S["amp_mV"]["max"]-S["amp_mV"]["mean"]]],
+                fmt="none", ecolor="#263238", capsize=6, lw=1.5)
+    b1.axhspan(S["amp_mV"]["min"], S["amp_mV"]["max"], xmin=0.55, xmax=0.95,
+               color="#ffb300", alpha=0.18)
+    b1.set_xticks([0, 1]); b1.set_xticklabels(["우리", "Sayer1990\n(범위 30~665µV)"], fontsize=8.5)
+    b1.set_ylabel("진폭 (mV)"); b1.set_title(f"진폭 — 평균의 {amp_ratio:.1f}배", fontsize=10, loc="left")
+    b1.text(0, f["amp_mV"], f"{f['amp_mV']:.3f}", ha="center", va="bottom", fontsize=9)
+    b1.text(1, S["amp_mV"]["mean"], f"{S['amp_mV']['mean']:.3f}", ha="center", va="bottom", fontsize=9)
+
+    # 상승시간
+    b2.bar([0], [f["rise_ms"]], color="#d84315", width=0.5)
+    b2.bar([1], [S["rise_ms"]["mean"]], color="#546e7a", width=0.5)
+    b2.errorbar([1], [S["rise_ms"]["mean"]], yerr=[S["rise_ms"]["sd"]], fmt="none",
+                ecolor="#263238", capsize=6, lw=1.5)
+    b2.set_xticks([0, 1]); b2.set_xticklabels(["우리", "Sayer\n3.9±1.8"], fontsize=8.5)
+    b2.set_ylabel("상승시간 (ms)"); b2.set_title("상승시간 (20-80%)", fontsize=10, loc="left")
+    b2.text(0, f["rise_ms"], f"{f['rise_ms']:.2f}", ha="center", va="bottom", fontsize=9)
+
+    # 반치폭
+    b3.bar([0], [f["halfwidth_ms"]], color="#d84315", width=0.5)
+    b3.bar([1], [S["halfwidth_ms"]["mean"]], color="#546e7a", width=0.5)
+    b3.errorbar([1], [S["halfwidth_ms"]["mean"]], yerr=[S["halfwidth_ms"]["sd"]], fmt="none",
+                ecolor="#263238", capsize=6, lw=1.5)
+    b3.set_xticks([0, 1]); b3.set_xticklabels(["우리", "Sayer\n19.5±8.0"], fontsize=8.5)
+    b3.set_ylabel("반치폭 (ms)"); b3.set_title("반치폭", fontsize=10, loc="left")
+    b3.text(0, f["halfwidth_ms"], f"{f['halfwidth_ms']:.2f}", ha="center", va="bottom", fontsize=9)
+
+    figS.suptitle("3-5  단발 uEPSP vs 논문 (Sayer, Friedlander & Redman 1990, J Neurosci 10:826)",
+                  fontsize=12, y=0.99)
+    figS.subplots_adjust(top=0.84, wspace=0.30)
+    plots.stamp(figS, f"3-5 | 진폭 평균의 {amp_ratio:.1f}배(최대의 {amp_vs_max:.1f}배) -> 3-7 g 재보정 · 상승/반치폭은 다소 빠름")
+    plots.save(figS, outdir, "3-5_uepsp_stats.png")
 
     out = dict(cls=w.class_name, n_syn=b.n_syn(),
                amp_mV=round(f["amp_mV"], 4), latency_ms=round(f["latency_ms"], 3),
                rise_ms=round(f["rise_ms"], 3), halfwidth_ms=round(f["halfwidth_ms"], 3),
                decay_ms=round(f["decay_ms"], 3),
-               lit_amp_range=LIT["amp_mV"], amp_in_lit=bool(in_lit))
+               sayer1990=dict(amp_mean_mV=S["amp_mV"]["mean"], amp_max_mV=S["amp_mV"]["max"],
+                              rise_ms=f"{S['rise_ms']['mean']}±{S['rise_ms']['sd']}",
+                              halfwidth_ms=f"{S['halfwidth_ms']['mean']}±{S['halfwidth_ms']['sd']}"),
+               amp_ratio_to_mean=round(amp_ratio, 2), amp_ratio_to_max=round(amp_vs_max, 2))
     jpath = os.path.join(outdir, "3-5_uepsp.json")
     with open(jpath, "w", encoding="utf-8") as f2:
         json.dump(out, f2, ensure_ascii=False, indent=2)
     print(f"saved: {jpath}")
-    print("\n[통과] 3-5 완료" + ("" if in_lit else " (진폭 문헌 상단 초과 — 3-7 재보정 예정)"))
+    print(f"\n[통과] 3-5 완료 — 진폭이 Sayer 평균의 {amp_ratio:.1f}배 -> 3-7 에서 g 재보정")
     return 0
 
 
