@@ -99,7 +99,7 @@ NEURON {
     RANGE c, rho, w, g, g_AMPA, g_NMDA, i_AMPA, i_NMDA
     RANGE pr_last, ca_last, ves_last, n_pre, n_rel
     NONSPECIFIC_CURRENT i
-    POINTER rng
+    BBCOREPOINTER rng
 }
 
 UNITS {
@@ -418,3 +418,33 @@ VERBATIM
     _lurand = value;
 ENDVERBATIM
 }
+
+: ---- CoreNEURON/GPU serialization of the Random123 stream ----
+: BBCOREPOINTER rng requires these; serializes the RNG state (3 ids + seq + which = 5 ints).
+: No delay vectors in this mod, so this is the RNG-only variant of ProbAMPANMDA_EMS's bbcore.
+VERBATIM
+static void bbcore_write(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  if (d) {
+    uint32_t* di = ((uint32_t*)d) + *d_offset;
+    nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+    nrnran123_getids3(*pv, di, di+1, di+2);
+    char which;
+    nrnran123_getseq(*pv, di+3, &which);
+    di[4] = (int)which;
+  }
+  *d_offset += 5;
+}
+static void bbcore_read(double* x, int* d, int* x_offset, int* d_offset, _threadargsproto_) {
+  uint32_t* di = ((uint32_t*)d) + *d_offset;
+  if (di[0] != 0 || di[1] != 0 || di[2] != 0) {
+      nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+#if !NRNBBCORE
+      if(*pv) { nrnran123_deletestream(*pv); }
+#endif
+      *pv = nrnran123_newstream3(di[0], di[1], di[2]);
+      char which = (char)di[4];
+      nrnran123_setseq(*pv, di[3], which);
+  }
+  *d_offset += 5;
+}
+ENDVERBATIM
