@@ -90,6 +90,7 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 | **2-4** 전기생리 | ✅ f-I·Rin·sag·AP·발화적응 · cACpyr 문헌 범위 대조 (pre 6/8·post 5/8, Rin·적응만 벗어남) |
 | **2-5** 공명(ZAP) | ✅ 판정 **불가** — theta 공명 없음(f_R 11.4Hz·Q1.28) → theta 는 부과. Ih 활성은 확인 |
 | **2-7** 거리 지도 | ✅ 수상돌기 경로거리 색칠 · 정단 최대 780µm · 고정 시냅스 5/5 SR 대역 안 → **2단계 완료** |
+| **3-1** 시냅스 파라미터 | ✅ config/synapse.yaml 확정(출처 태그) · SC→PC 촉진(1.0→1.48)·PC→PC 억압(1.0→0.14) |
 | **3-2** 시냅스 생성+가지치기 | ✅ 방사축 정렬+회전(θ*=160°)으로 인접 → 접촉 시냅스 5개 · **기하 고정**(config/geometry.yaml) |
 | **3-3** 배선 | ✅ pre 1발 → 시냅스 5개 전도도(0.59nS) → post EPSP 1.36mV (3/3) |
 | 3-1·3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |

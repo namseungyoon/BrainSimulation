@@ -1,0 +1,134 @@
+{
+  "default_class": "SC->PC",
+  "SC_PC": {
+    "g_nS": {
+      "v": 0.6,
+      "src": "tuned",
+      "ref": "Ecker2020 SC->PC(E1s) 클래스값. 13_net_fepsp 는 1.5 사용 — 3-7 에서 재보정"
+    },
+    "e_rev_mV": {
+      "v": -8.5,
+      "src": "paper",
+      "ref": "Moradi & Ascoli 2020 유효 역전위(§2.6). mod 기본 0 을 덮어씀"
+    },
+    "tau_r_AMPA": {
+      "v": 0.2,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 (E 계열)"
+    },
+    "tau_d_AMPA": {
+      "v": 3.0,
+      "src": "paper",
+      "ref": "Ecker2020 SC->PC(E1s) tau_d"
+    },
+    "tau_r_NMDA": {
+      "v": 9.0,
+      "src": "paper",
+      "ref": "Andrasfalvy & Magee 2001 (CA1 특이). mod 기본과 동일"
+    },
+    "tau_d_NMDA": {
+      "v": 61.0,
+      "src": "paper",
+      "ref": "Andrasfalvy & Magee 2001. ⚠️Ecker 는 PC->PC 에 148.5 사용 — 아래 note"
+    },
+    "NMDA_ratio": {
+      "v": 1.22,
+      "src": "paper",
+      "ref": "Ecker2020 PC->PC 계열 NMDA:AMPA"
+    },
+    "Use": {
+      "v": 0.15,
+      "src": "tuned",
+      "ref": "SC->PC(E1s). ⚠️Ecker Table3 에 SC 없음(내부연결만). 근거 Dobrunz&Stevens1997·Salin1996"
+    },
+    "Dep_ms": {
+      "v": 150.0,
+      "src": "tuned",
+      "ref": "SC->PC(E1s) 회복 시상수"
+    },
+    "Fac_ms": {
+      "v": 250.0,
+      "src": "tuned",
+      "ref": "SC->PC(E1s) 촉진 시상수 (Fac>Dep -> 촉진)"
+    },
+    "Nrrp": {
+      "v": 1,
+      "src": "tuned",
+      "ref": "SC->PC(E1s) 방출자리 수"
+    }
+  },
+  "PC_PC": {
+    "g_nS": {
+      "v": 0.6,
+      "src": "paper",
+      "ref": "Ecker2020 Table3 PC->PC(E2)"
+    },
+    "e_rev_mV": {
+      "v": -8.5,
+      "src": "paper",
+      "ref": "Moradi & Ascoli 2020"
+    },
+    "tau_r_AMPA": {
+      "v": 0.2,
+      "src": "paper"
+    },
+    "tau_d_AMPA": {
+      "v": 3.0,
+      "src": "paper",
+      "ref": "Ecker2020 PC->PC(E2)"
+    },
+    "tau_r_NMDA": {
+      "v": 9.0,
+      "src": "paper",
+      "ref": "Andrasfalvy & Magee 2001"
+    },
+    "tau_d_NMDA": {
+      "v": 61.0,
+      "src": "paper"
+    },
+    "NMDA_ratio": {
+      "v": 1.22,
+      "src": "paper"
+    },
+    "Use": {
+      "v": 0.5,
+      "src": "paper",
+      "ref": "Ecker2020 Table3. ⚠️HippocampusHub 는 0.65±0.1 — DECISIONS 미결#2"
+    },
+    "Dep_ms": {
+      "v": 671.0,
+      "src": "paper"
+    },
+    "Fac_ms": {
+      "v": 17.0,
+      "src": "paper",
+      "ref": "Fac<Dep -> 억압"
+    },
+    "Nrrp": {
+      "v": 2,
+      "src": "paper"
+    }
+  },
+  "sc_facilitation": true,
+  "pc_depression": true,
+  "sc_train_20hz": [
+    1.0,
+    1.514,
+    1.658,
+    1.636,
+    1.578,
+    1.53,
+    1.499,
+    1.482
+  ],
+  "pc_train_20hz": [
+    1.0,
+    0.55,
+    0.322,
+    0.219,
+    0.173,
+    0.152,
+    0.142,
+    0.138
+  ]
+}
