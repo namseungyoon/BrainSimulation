@@ -94,7 +94,7 @@ powershell -ExecutionPolicy Bypass -File env\probe_env.ps1
 | **3-4** 기록 장치 | ✅ lib.wiring 재사용 배선 · pre/post전압·시냅스 국소전압·g·i 5채널 (7/7) |
 | **3-2** 시냅스 생성+가지치기 | ✅ 방사축 정렬+회전(θ*=160°)으로 인접 → 접촉 시냅스 5개 · **기하 고정**(config/geometry.yaml) |
 | **3-3** 배선 | ✅ pre 1발 → 시냅스 5개 전도도(0.59nS) → post EPSP 1.36mV (3/3) |
-| 3-4~3-9 · 4 · 5 · 6 · 7 | ⬜ |
+| 3-5~3-9 · 4 · 5 · 6 · 7 | ⬜ |
 
 conda 는 쓰지 않는다 — 사내 정책상 Anaconda 무료 사용이 불가하고, Miniforge 가 그 제약 밖인지
 확신할 수 없어 **질문 자체가 성립하지 않는 경로**를 택했다 ([DECISIONS.md](docs/DECISIONS.md) D7).
