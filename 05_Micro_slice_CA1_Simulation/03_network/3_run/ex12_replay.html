@@ -66,6 +66,9 @@
   }
   button.play:hover{filter:brightness(1.08)}
   button.play:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  button.restart{background:var(--panel2); color:var(--ink); border:1px solid var(--edge); width:42px; height:44px; border-radius:12px; font-size:20px; cursor:pointer; flex:none; display:grid; place-items:center; line-height:1}
+  button.restart:hover{background:var(--edge)}
+  button.restart:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
   input[type=range]{-webkit-appearance:none; appearance:none; height:6px; border-radius:5px; background:var(--edge); outline:none}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--ink); cursor:pointer; box-shadow:0 0 0 3px rgba(51,214,196,.25)}
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border:none; border-radius:50%; background:var(--ink); cursor:pointer}
@@ -103,9 +106,8 @@
       <div class="row"><span class="dot" style="color:var(--exc);background:var(--exc)"></span> 추체 발화</div>
       <div class="row"><span class="dot" style="color:var(--inh);background:var(--inh)"></span> 억제 발화</div>
       <div class="row"><span class="dot" style="color:var(--dim);background:var(--dim)"></span> 미발화</div>
-      <div class="row"><span class="dot" style="color:var(--accent);background:var(--accent)"></span> E1·E2 기록전극</div>
-      <div class="row"><span class="star">★</span> E3 기록전극(SR)</div>
-      <div class="row"><span style="color:var(--stim)">◯</span> SC 자극 locus</div>
+      <div class="row"><span class="dot" style="color:var(--accent);background:var(--accent)"></span> E1·E2·E3 기록전극</div>
+      <div class="row"><span style="color:var(--stim)">◯</span> SC 자극 locus (E3 SR위치)</div>
       <div class="row"><span style="color:var(--muted)">▭</span> 층 SO·SP·SR·SLM</div>
     </div>
     <div class="overlay mono" id="axes"><b>장축</b> long → · <b>방사축</b> radial ↑<br>SO(아래) · SP · SR(위, 전극면)</div>
@@ -117,6 +119,7 @@
   <footer>
     <div class="track">
       <button class="play" id="play" aria-label="재생/일시정지">▶</button>
+      <button class="restart" id="restart" aria-label="처음부터 다시" title="처음부터 다시">⟲</button>
       <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="시간 스크럽">
       <span class="mono pill" id="playpos">−5.0 ms</span>
     </div>
@@ -129,6 +132,7 @@
         </div>
         <span class="note" id="slowfac"></span>
       </div>
+      <label class="toggle"><input type="checkbox" id="loop"> 반복 재생</label>
       <label class="toggle"><input type="checkbox" id="spin" checked> 자동 회전</label>
       <div class="note" id="cputxt"></div>
     </div>
@@ -185,7 +189,7 @@
   }
 
   // ---- time / playback ----
-  let tcur=T0, playing=false, playSec=15, last=0;
+  let tcur=T0, playing=false, playSec=15, last=0, loopOn=false;
   const bins=new Float32Array(Math.ceil(SPAN)+1); // 1ms bins of spike counts
   let binMax=1;
   for(const [g,t] of SPK){ const b=Math.floor(t-T0); if(b>=0&&b<bins.length){bins[b]++;} }
@@ -251,8 +255,7 @@
     // 전극 마커 + 라벨
     for(const e of els){
       const p=project(e.pos[0],e.pos[1],e.pos[2]);
-      if(e.id==='E3'){ star(ctx,p[0],p[1],7,'#ffc857'); }
-      else { ctx.beginPath(); ctx.arc(p[0],p[1],5,0,6.283); ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=7; ctx.fill(); ctx.shadowBlur=0; }
+      ctx.beginPath(); ctx.arc(p[0],p[1],5,0,6.283); ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=7; ctx.fill(); ctx.shadowBlur=0;
       ctx.fillStyle='#e7eef7'; ctx.font='600 11px "IBM Plex Mono",monospace';
       ctx.fillText(e.id+'·'+e.layer, p[0]+9, p[1]-6);
     }
@@ -290,7 +293,7 @@
     if(autoSpin && !drag.on) yaw+=dt*0.25;
     if(playing){
       tcur += (SPAN/playSec)*dt;
-      if(tcur>=T1){ tcur=T1; playing=false; $('play').textContent='▶'; }
+      if(tcur>=T1){ if(loopOn){ tcur=T0; } else { tcur=T1; playing=false; $('play').textContent='▶'; } }
       updateStats(); drawRaster();
     }
     draw();
@@ -302,6 +305,8 @@
     if(tcur>=T1-1e-6) tcur=T0;
     playing=!playing; $('play').textContent=playing?'❚❚':'▶';
   });
+  $('restart').addEventListener('click',()=>{ tcur=T0; playing=true; $('play').textContent='❚❚'; updateStats(); drawRaster(); });
+  $('loop').addEventListener('change',e=>loopOn=e.target.checked);
   $('scrub').addEventListener('input',e=>{ tcur=T0+ (e.target.value/1000)*SPAN; playing=false; $('play').textContent='▶'; updateStats(); drawRaster(); });
   document.querySelectorAll('#speed button').forEach(b=>b.addEventListener('click',()=>{
     playSec=+b.dataset.sec;
