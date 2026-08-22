@@ -1,0 +1,323 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CA1 발화 리플레이</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script id="sim-data" type="application/json">__INJECT__</script>
+<style>
+  :root{
+    --bg:#080b12; --panel:#0f141f; --panel2:#141b28; --edge:#243044;
+    --ink:#e7eef7; --muted:#8697b0; --dim:#5a6a84;
+    --accent:#33d6c4; --exc:#ff6b6b; --inh:#5b93ff; --stim:#ffc857;
+    --grid:rgba(120,150,190,.10); --shadow:rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:14px;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+  #app{display:grid; grid-template-rows:auto 1fr auto; height:100dvh; gap:0}
+
+  /* header */
+  header{
+    display:flex; align-items:center; gap:18px; padding:12px 20px;
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border-bottom:1px solid var(--edge);
+  }
+  .brand{display:flex; flex-direction:column; gap:2px; min-width:0}
+  .brand h1{margin:0; font-size:15px; font-weight:600; letter-spacing:.2px; text-wrap:balance}
+  .brand .sub{font-size:11px; color:var(--muted); letter-spacing:.3px}
+  .stats{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap}
+  .stat{background:var(--panel2); border:1px solid var(--edge); border-radius:8px; padding:6px 11px; min-width:78px}
+  .stat .k{font-size:9.5px; text-transform:uppercase; letter-spacing:.7px; color:var(--dim)}
+  .stat .v{font-size:16px; font-weight:600; line-height:1.15}
+  .stat .v small{font-size:10px; color:var(--muted); font-weight:400}
+  .stat.exc .v{color:var(--exc)} .stat.inh .v{color:var(--inh)} .stat.warn .v{color:var(--stim)}
+
+  /* stage */
+  #stage{position:relative; background:radial-gradient(120% 120% at 50% 30%,#0b111c 0%,#070a10 70%); overflow:hidden}
+  #view{position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none}
+  #view:active{cursor:grabbing}
+  .overlay{position:absolute; pointer-events:none; font-size:11px}
+  #legend{left:16px; top:14px; display:flex; flex-direction:column; gap:7px; background:rgba(10,14,22,.6); backdrop-filter:blur(4px); border:1px solid var(--edge); border-radius:10px; padding:11px 13px}
+  #legend .row{display:flex; align-items:center; gap:8px; color:var(--muted)}
+  #legend .dot{width:9px; height:9px; border-radius:50%; box-shadow:0 0 6px currentColor}
+  #legend .star{color:var(--stim); font-size:13px; line-height:1}
+  #axes{right:16px; bottom:14px; text-align:right; color:var(--dim); line-height:1.7}
+  #axes b{color:var(--muted)}
+  #tnow{left:50%; top:14px; transform:translateX(-50%); text-align:center}
+  #tnow .big{font-size:30px; font-weight:600; letter-spacing:.5px}
+  #tnow .lab{font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1.2px}
+  #hint{left:50%; bottom:12px; transform:translateX(-50%); color:var(--dim); font-size:10.5px}
+
+  /* raster strip */
+  #strip{height:70px; border-top:1px solid var(--edge); background:var(--panel); position:relative}
+  #raster{position:absolute; inset:0; width:100%; height:100%}
+  #strip .cap{position:absolute; left:12px; top:7px; font-size:9.5px; letter-spacing:.6px; color:var(--dim); text-transform:uppercase; pointer-events:none}
+
+  /* transport */
+  footer{background:linear-gradient(0deg,var(--panel),var(--panel2)); border-top:1px solid var(--edge); padding:12px 20px 14px; display:flex; flex-direction:column; gap:10px}
+  .track{display:flex; align-items:center; gap:14px}
+  button.play{
+    background:var(--accent); color:#06231f; border:none; width:44px; height:44px; border-radius:12px;
+    font-size:17px; cursor:pointer; flex:none; display:grid; place-items:center; box-shadow:0 2px 10px rgba(51,214,196,.25);
+  }
+  button.play:hover{filter:brightness(1.08)}
+  button.play:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  input[type=range]{-webkit-appearance:none; appearance:none; height:6px; border-radius:5px; background:var(--edge); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--ink); cursor:pointer; box-shadow:0 0 0 3px rgba(51,214,196,.25)}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border:none; border-radius:50%; background:var(--ink); cursor:pointer}
+  #scrub{flex:1}
+  .controls{display:flex; align-items:center; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted)}
+  .ctl{display:flex; align-items:center; gap:8px}
+  .seg{display:flex; border:1px solid var(--edge); border-radius:8px; overflow:hidden}
+  .seg button{background:var(--panel2); color:var(--muted); border:none; padding:5px 10px; font-size:11.5px; cursor:pointer; font-family:inherit}
+  .seg button[aria-pressed=true]{background:var(--accent); color:#06231f; font-weight:600}
+  .toggle{display:flex; align-items:center; gap:7px; cursor:pointer; user-select:none}
+  .toggle input{accent-color:var(--accent)}
+  .note{font-size:11px; color:var(--dim)}
+  .note b{color:var(--stim)}
+  .pill{display:inline-block; background:var(--panel2); border:1px solid var(--edge); border-radius:999px; padding:2px 9px; color:var(--muted); font-size:10.5px}
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <h1>CA1 미세슬라이스 · 단일 volley 발화 리플레이</h1>
+      <div class="sub mono">Ex1 baseline · 5,610 세포 · 5.91M 시냅스 · SC 자극 locus @ E3(SR)</div>
+    </div>
+    <div class="stats mono">
+      <div class="stat"><div class="k">발화 세포</div><div class="v" id="s-active">0<small>/5610</small></div></div>
+      <div class="stat exc"><div class="k">추체 E</div><div class="v" id="s-e">0</div></div>
+      <div class="stat inh"><div class="k">억제 I</div><div class="v" id="s-i">0</div></div>
+      <div class="stat warn"><div class="k">계산 소요</div><div class="v" id="s-cpu">–</div></div>
+    </div>
+  </header>
+
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div class="overlay" id="tnow"><div class="big mono" id="t-big">+0.0</div><div class="lab">ms · 자극기준</div></div>
+    <div class="overlay" id="legend">
+      <div class="row"><span class="dot" style="color:var(--exc);background:var(--exc)"></span> 추체 발화</div>
+      <div class="row"><span class="dot" style="color:var(--inh);background:var(--inh)"></span> 억제 발화</div>
+      <div class="row"><span class="dot" style="color:var(--dim);background:var(--dim)"></span> 미발화</div>
+      <div class="row"><span class="dot" style="color:var(--accent);background:var(--accent)"></span> E1·E2 기록전극</div>
+      <div class="row"><span class="star">★</span> E3 기록전극(SR)</div>
+      <div class="row"><span style="color:var(--stim)">◯</span> SC 자극 locus</div>
+      <div class="row"><span style="color:var(--muted)">▭</span> 층 SO·SP·SR·SLM</div>
+    </div>
+    <div class="overlay mono" id="axes"><b>장축</b> long → · <b>방사축</b> radial ↑<br>SO(아래) · SP · SR(위, 전극면)</div>
+    <div class="overlay mono" id="hint">드래그로 회전 · 휠로 확대</div>
+  </div>
+
+  <div id="strip"><span class="cap">집단 발화 (1 ms bin) · 자극기준 −5 → +30 ms</span><canvas id="raster"></canvas></div>
+
+  <footer>
+    <div class="track">
+      <button class="play" id="play" aria-label="재생/일시정지">▶</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="시간 스크럽">
+      <span class="mono pill" id="playpos">−5.0 ms</span>
+    </div>
+    <div class="controls">
+      <div class="ctl">재생 길이
+        <div class="seg" id="speed" role="group" aria-label="재생 길이">
+          <button data-sec="6" aria-pressed="false">6 s</button>
+          <button data-sec="15" aria-pressed="true">15 s</button>
+          <button data-sec="40" aria-pressed="false">40 s</button>
+        </div>
+        <span class="note" id="slowfac"></span>
+      </div>
+      <label class="toggle"><input type="checkbox" id="spin" checked> 자동 회전</label>
+      <div class="note" id="cputxt"></div>
+    </div>
+    <div class="note">🐢 <b>실시간 아님</b> — 상세 전체망은 GPU로도 못 살려 CPU-MPI로 계산. 이 창은 <b>설계→계산→리플레이</b>의 리플레이 단계. <span class="pill">Ex12 완성본 = 자극 설계(위치·파형·주기) + fEPSP 파형</span></div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const DATA = JSON.parse(document.getElementById('sim-data').textContent);
+  const M = DATA.meta, CELLS = DATA.cells, SPK = DATA.spikes;
+  const N = M.n, T0 = M.tmin, T1 = M.tmax, SPAN = T1 - T0;
+
+  // per-cell first spike + E/I
+  const firstT = new Float32Array(N).fill(Infinity);
+  for(const [g,t] of SPK){ if(t < firstT[g]) firstT[g] = t; }
+
+  // center + scale of cell cloud
+  let cx=0,cy=0,cz=0; for(const c of CELLS){cx+=c[0];cy+=c[1];cz+=c[2];}
+  cx/=N; cy/=N; cz/=N;
+  let rad=1; for(const c of CELLS){ const dx=c[0]-cx,dy=c[1]-cy,dz=c[2]-cz; rad=Math.max(rad,Math.hypot(dx,dy,dz)); }
+
+  // ---- canvas ----
+  const cv = document.getElementById('view'), ctx = cv.getContext('2d');
+  const rcv = document.getElementById('raster'), rx = rcv.getContext('2d');
+  let W=0,H=0,DPR=Math.min(2,window.devicePixelRatio||1);
+  function resize(){
+    const s=cv.parentElement.getBoundingClientRect(); W=s.width; H=s.height;
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+    const r=rcv.parentElement.getBoundingClientRect(); rcv.width=r.width*DPR; rcv.height=r.height*DPR;
+    rx.setTransform(DPR,0,0,DPR,0,0); drawRaster();
+  }
+  window.addEventListener('resize',resize);
+
+  // ---- camera ----
+  let yaw=-0.6, pitch=0.5, zoom=1, autoSpin=true;
+  const drag={on:false,x:0,y:0};
+  cv.addEventListener('pointerdown',e=>{drag.on=true;drag.x=e.clientX;drag.y=e.clientY;autoSpin=false;document.getElementById('spin').checked=false;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointermove',e=>{ if(!drag.on)return; yaw+=(e.clientX-drag.x)*0.008; pitch+=(e.clientY-drag.y)*0.008; pitch=Math.max(-1.4,Math.min(1.4,pitch)); drag.x=e.clientX; drag.y=e.clientY;});
+  cv.addEventListener('pointerup',()=>drag.on=false);
+  cv.addEventListener('wheel',e=>{e.preventDefault(); zoom*=Math.exp(-e.deltaY*0.0011); zoom=Math.max(0.5,Math.min(4,zoom));},{passive:false});
+  document.getElementById('spin').addEventListener('change',e=>autoSpin=e.target.checked);
+
+  function project(x,y,z){
+    // center + rotate (yaw around vertical r-axis, pitch)
+    let X=x-cx, Y=y-cy, Z=z-cz;
+    // yaw about Y(radial) axis -> mix X(long),Z(thick)
+    const cyaw=Math.cos(yaw),syaw=Math.sin(yaw);
+    let X1=X*cyaw - Z*syaw, Z1=X*syaw + Z*cyaw;
+    const cp=Math.cos(pitch),sp=Math.sin(pitch);
+    let Y1=Y*cp - Z1*sp, Z2=Y*sp + Z1*cp;
+    const scale = (Math.min(W,H)*0.40/rad)*zoom;
+    return [W/2 + X1*scale, H/2 - Y1*scale, Z2]; // screen x,y + depth
+  }
+
+  // ---- time / playback ----
+  let tcur=T0, playing=false, playSec=15, last=0;
+  const bins=new Float32Array(Math.ceil(SPAN)+1); // 1ms bins of spike counts
+  let binMax=1;
+  for(const [g,t] of SPK){ const b=Math.floor(t-T0); if(b>=0&&b<bins.length){bins[b]++;} }
+  for(const v of bins) binMax=Math.max(binMax,v);
+
+  const $=id=>document.getElementById(id);
+  function fmt(t){return (t>=0?'+':'')+t.toFixed(1);}
+
+  function updateStats(){
+    let a=0,e=0,i=0;
+    for(let g=0; g<N; g++){ if(firstT[g]<=tcur){ a++; if(CELLS[g][3]) e++; else i++; } }
+    $('s-active').innerHTML = a.toLocaleString()+'<small>/5610</small>';
+    $('s-e').textContent=e.toLocaleString(); $('s-i').textContent=i.toLocaleString();
+    $('t-big').textContent=fmt(tcur); $('playpos').textContent=fmt(tcur)+' ms';
+    $('scrub').value = Math.round((tcur-T0)/SPAN*1000);
+  }
+
+  function drawRaster(){
+    const w=rcv.width/DPR, h=rcv.height/DPR;
+    rx.clearRect(0,0,w,h);
+    // grid baseline
+    rx.strokeStyle='rgba(120,150,190,.12)'; rx.lineWidth=1;
+    const x0=t=> (t-T0)/SPAN*w;
+    // bars
+    for(let b=0;b<bins.length;b++){
+      const bh=(bins[b]/binMax)*(h-16);
+      const x=x0(T0+b), x2=x0(T0+b+1);
+      const filled = (T0+b) <= tcur;
+      rx.fillStyle = filled ? 'rgba(255,107,107,.85)' : 'rgba(120,140,175,.18)';
+      rx.fillRect(x+0.5, h-4-bh, Math.max(1,x2-x-1), bh);
+    }
+    // stim line at 0
+    rx.strokeStyle='rgba(255,200,87,.7)'; rx.beginPath(); rx.moveTo(x0(0),2); rx.lineTo(x0(0),h); rx.stroke();
+    // playhead
+    rx.strokeStyle='rgba(51,214,196,.9)'; rx.lineWidth=1.5; rx.beginPath(); rx.moveTo(x0(tcur),0); rx.lineTo(x0(tcur),h); rx.stroke();
+  }
+
+  const LAYCOL={SO:'90,165,205',SP:'255,178,120',SR:'150,140,225',SLM:'120,205,160'};
+  function drawLayers(){
+    if(!M.layers) return;
+    for(const ly of M.layers){
+      const rgb=LAYCOL[ly.name]||'130,150,185';
+      const c0=project(M.uMin,ly.rmin,0),c1=project(M.uMax,ly.rmin,0),c2=project(M.uMax,ly.rmax,0),c3=project(M.uMin,ly.rmax,0);
+      ctx.beginPath(); ctx.moveTo(c0[0],c0[1]); ctx.lineTo(c1[0],c1[1]); ctx.lineTo(c2[0],c2[1]); ctx.lineTo(c3[0],c3[1]); ctx.closePath();
+      ctx.fillStyle='rgba('+rgb+',0.05)'; ctx.fill();
+      ctx.strokeStyle='rgba('+rgb+',0.22)'; ctx.lineWidth=1; ctx.stroke();
+      const lm=project(M.uMin,(ly.rmin+ly.rmax)/2,0);
+      ctx.fillStyle='rgba('+rgb+',0.85)'; ctx.font='600 10.5px "IBM Plex Mono",monospace'; ctx.textAlign='right';
+      ctx.fillText(ly.name, lm[0]-7, lm[1]+3); ctx.textAlign='left';
+    }
+  }
+  function drawElectrodes(scale){
+    // SC 자극 locus (E3 위치 중심)
+    const e3=project(M.e3[0],M.e3[1],M.e3[2]);
+    ctx.strokeStyle='rgba(255,200,87,.5)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(e3[0],e3[1],M.radius*scale,0,6.283); ctx.stroke(); ctx.setLineDash([]);
+    const els=M.electrodes||[];
+    // 프로브 라인 (E1-E2-E3 연결)
+    if(els.length>=2){
+      ctx.strokeStyle='rgba(51,214,196,.35)'; ctx.lineWidth=2;
+      ctx.beginPath(); els.forEach((e,i)=>{const p=project(e.pos[0],e.pos[1],e.pos[2]); i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}); ctx.stroke();
+    }
+    // 전극 마커 + 라벨
+    for(const e of els){
+      const p=project(e.pos[0],e.pos[1],e.pos[2]);
+      if(e.id==='E3'){ star(ctx,p[0],p[1],7,'#ffc857'); }
+      else { ctx.beginPath(); ctx.arc(p[0],p[1],5,0,6.283); ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=7; ctx.fill(); ctx.shadowBlur=0; }
+      ctx.fillStyle='#e7eef7'; ctx.font='600 11px "IBM Plex Mono",monospace';
+      ctx.fillText(e.id+'·'+e.layer, p[0]+9, p[1]-6);
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const scale=(Math.min(W,H)*0.40/rad)*zoom;
+    drawLayers();
+    for(let g=0; g<N; g++){
+      const c=CELLS[g], p=project(c[0],c[1],c[2]);
+      const depth=(p[2]/rad); const fade=0.55+0.45*(1-(depth*0.5+0.5));
+      const ft=firstT[g], dt=tcur-ft;
+      let col, r, a;
+      if(ft===Infinity || dt<0){ col=[90,106,132]; r=1.3; a=0.28*fade; }
+      else {
+        const base = c[3]?[255,107,107]:[91,147,255];
+        const flash=Math.exp(-Math.max(0,dt)/2.2);
+        r=1.5+flash*2.6; a=(0.5+0.5*flash)*fade;
+        col=[ base[0]+(255-base[0])*flash, base[1]+(255-base[1])*flash, base[2]+(255-base[2])*flash ];
+      }
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,6.283);
+      ctx.fillStyle='rgba('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+','+a.toFixed(3)+')'; ctx.fill();
+    }
+    drawElectrodes(scale);
+  }
+  function star(c,x,y,rr,col){
+    c.save(); c.translate(x,y); c.beginPath();
+    for(let i=0;i<10;i++){ const a=Math.PI/5*i - Math.PI/2; const rad=i%2?rr*0.44:rr; c.lineTo(Math.cos(a)*rad,Math.sin(a)*rad); }
+    c.closePath(); c.fillStyle=col; c.shadowColor=col; c.shadowBlur=8; c.fill(); c.restore();
+  }
+
+  // ---- loop ----
+  function frame(ts){
+    let dt=(ts-last)/1000; last=ts; if(dt>0.05||dt<0) dt=0.016; // 탭 재개 시 큰 점프 방지
+    if(autoSpin && !drag.on) yaw+=dt*0.25;
+    if(playing){
+      tcur += (SPAN/playSec)*dt;
+      if(tcur>=T1){ tcur=T1; playing=false; $('play').textContent='▶'; }
+      updateStats(); drawRaster();
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- controls ----
+  $('play').addEventListener('click',()=>{
+    if(tcur>=T1-1e-6) tcur=T0;
+    playing=!playing; $('play').textContent=playing?'❚❚':'▶';
+  });
+  $('scrub').addEventListener('input',e=>{ tcur=T0+ (e.target.value/1000)*SPAN; playing=false; $('play').textContent='▶'; updateStats(); drawRaster(); });
+  document.querySelectorAll('#speed button').forEach(b=>b.addEventListener('click',()=>{
+    playSec=+b.dataset.sec;
+    document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    setSlow();
+  }));
+  function setSlow(){
+    const realMs=SPAN, slow=(playSec*1000)/realMs;
+    $('slowfac').textContent='≈ '+Math.round(slow).toLocaleString()+'× 슬로모션 (실제 '+realMs.toFixed(0)+'ms)';
+  }
+
+  // compute-time readout
+  const cpuMin=M.psolve_s/60, realCompSlow=(M.psolve_s)/(0.040); // 40ms bio
+  $('s-cpu').innerHTML=Math.round(cpuMin)+'<small> 분</small>';
+  $('cputxt').innerHTML='⏱️ bio 40 ms 계산에 wall-clock <b style="color:var(--stim)">'+Math.round(cpuMin)+'분</b> (실시간의 ~'+Math.round(realCompSlow/1000)+'천배 느림)';
+
+  resize(); updateStats(); setSlow(); requestAnimationFrame(frame);
+})();
+</script>
