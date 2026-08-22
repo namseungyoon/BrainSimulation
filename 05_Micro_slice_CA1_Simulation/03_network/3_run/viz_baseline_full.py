@@ -77,11 +77,11 @@ ax.scatter(u[~fired], r[~fired], s=4, c=C_BG, alpha=0.5, label="미발화", rast
 fe = fired & is_pc; fi = fired & ~is_pc
 ax.scatter(u[fi], r[fi], s=10, c=C_I, alpha=0.8, label="발화 I", rasterized=True)
 ax.scatter(u[fe], r[fe], s=10, c=C_E, alpha=0.8, label="발화 E", rasterized=True)
-ax.scatter([e3u], [e3r], marker="*", s=320, c="gold", edgecolors="k", lw=1.2, zorder=5, label="E3 자극전극")
+ax.scatter([e3u], [e3r], marker="*", s=320, c="gold", edgecolors="k", lw=1.2, zorder=5, label="E3 기록전극(SR)")
 th = np.linspace(0, 2 * np.pi, 100)
-ax.plot(e3u + RADIUS * np.cos(th), e3r + RADIUS * np.sin(th), "--", color="k", lw=1, alpha=0.7, label=f"자극반경 {RADIUS:.0f}µm")
+ax.plot(e3u + RADIUS * np.cos(th), e3r + RADIUS * np.sin(th), "--", color="k", lw=1, alpha=0.7, label=f"SC 자극 locus r={RADIUS:.0f}µm")
 ax.set_xlabel("장축 long (µm)"); ax.set_ylabel("방사축 radial (µm)")
-ax.set_title("(c) 공간 발화맵 — E3 국소 자극 locus"); ax.set_aspect("equal", "box")
+ax.set_title("(c) 공간 발화맵 — SC 자극 locus (E3 SR위치 중심·E3=기록전극)"); ax.set_aspect("equal", "box")
 ax.legend(loc="best", fontsize=7.5, markerscale=1.3)
 
 # (d) E/I 발화분율
