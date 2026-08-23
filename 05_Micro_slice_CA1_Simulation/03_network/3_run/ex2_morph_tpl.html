@@ -116,7 +116,7 @@
   document.getElementById('spin').addEventListener('change',e=>autoSpin=e.target.checked);
   function proj(p){let X=p[0]-cx,Y=p[1]-cy,Z=p[2]-cz;const cy1=Math.cos(yaw),sy=Math.sin(yaw);let X1=X*cy1-Z*sy,Z1=X*sy+Z*cy1;const cp=Math.cos(pitch),sp=Math.sin(pitch);let Y1=Y*cp-Z1*sp,Z2=Y*sp+Z1*cp;const sc=(Math.min(W,H)*0.42/rad)*zoom;return [W/2+X1*sc,H/2-Y1*sc,Z2];}
 
-  let frame=0, playing=false, playSec=14, last=0, loopOn=true;
+  let frame=0, playing=true, playSec=14, last=0, loopOn=true;
   const $=id=>document.getElementById(id);
   // depth order (static-ish; recompute per draw for correctness)
   function draw(){
@@ -124,7 +124,7 @@
     const order=[]; const pr=new Array(N);
     for(let i=0;i<N;i++){pr[i]=proj(POS[i]); order.push(i);}
     order.sort((a,b)=>pr[a][2]-pr[b][2]);
-    const Vf=V[frame];
+    const Vf=V[frame|0];
     for(const i of order){
       const p=pr[i], u=norm(Vf[i]), col=ramp(u);
       const r=Math.max(1.0, Math.min(4, 0.8+DIA[i]*0.7));
@@ -142,16 +142,16 @@
       ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(sx,sy,5,0,6.283); ctx.fill(); ctx.shadowBlur=0;}
   }
   function readout(){
-    const Vf=V[frame];
+    const fi=frame|0, Vf=V[fi];
     const vs=synIdx.length?Vf[synIdx[0]]:REST;
     let vsoma=REST; if(somaIdx.length){vsoma=0;for(const s of somaIdx)vsoma+=Vf[s];vsoma/=somaIdx.length;}
     const dsyn=vs-REST, dsoma=vsoma-REST;
     $('s-syn').textContent=(dsyn>=0?'+':'')+dsyn.toFixed(1)+' mV';
     $('s-soma').textContent=(dsoma>=0?'+':'')+dsoma.toFixed(2)+' mV';
     $('s-att').textContent=(dsoma>0.01?(dsyn/dsoma).toFixed(1)+'×':'–');
-    $('tbig').textContent=(T[frame]>=0?'+':'')+T[frame].toFixed(1);
-    $('pos').textContent=(T[frame]>=0?'+':'')+T[frame].toFixed(1)+' ms';
-    $('scrub').value=Math.round(frame/(NF-1)*1000);
+    $('tbig').textContent=(T[fi]>=0?'+':'')+T[fi].toFixed(1);
+    $('pos').textContent=(T[fi]>=0?'+':'')+T[fi].toFixed(1)+' ms';
+    $('scrub').value=Math.round(fi/(NF-1)*1000);
   }
   function loop(ts){const dt=Math.min(0.05,(ts-last)/1000)||0.016; last=ts;
     if(autoSpin&&!drag.on) yaw+=dt*0.3;
@@ -165,6 +165,8 @@
   $('scrub').addEventListener('input',e=>{frame=Math.round(e.target.value/1000*(NF-1));playing=false;$('play').textContent='▶';readout();});
   $('loop').addEventListener('change',e=>loopOn=e.target.checked);
   document.querySelectorAll('#speed button').forEach(b=>b.addEventListener('click',()=>{playSec=+b.dataset.sec;document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
-  resize(); readout(); requestAnimationFrame(loop);
+  resize(); readout(); $('play').textContent='❚❚';
+  requestAnimationFrame(()=>{resize(); requestAnimationFrame(loop);});   // iframe 크기 확정 후 재크기
+  window.addEventListener('load', resize);
 })();
 </script>
