@@ -35,9 +35,13 @@ def load_synapse_cfg(class_name=None):
 class Wiring:
     """고정 벤치 위의 전달 배선 + 기록. NEURON 객체를 keep 리스트로 GC 방지."""
 
-    def __init__(self, bench, class_name=None, frozen=True, prob=False):
+    def __init__(self, bench, class_name=None, frozen=True, prob=False, segs=None):
+        """segs: [(seg, spec), ...] 를 주면 고정 기하 대신 그 위치에 시냅스를 만든다.
+        spec 은 최소한 delay_ms 를 가져야 한다. 3-8(거리 스윕)·3-9 처럼 임의 위치가
+        필요한 단계용이고, 시냅스 파라미터는 여전히 config 단일 출처를 쓴다."""
         self.b = bench
         self.class_name, self.p = load_synapse_cfg(class_name)
+        self.segs_override = segs
         self.prob = prob        # True 면 확률 방출(GBPlasticityStpProbSyn, 모델 C)
         self.keep = []
         self.syns = []          # [(syn, spec)]
@@ -52,7 +56,8 @@ class Wiring:
     def _build(self, frozen):
         p = self.p
         mech = h.GBPlasticityStpProbSyn if self.prob else h.GBPlasticitySyn
-        for seg, spec in self.b.post_syn_segs():
+        targets = self.segs_override if self.segs_override is not None else self.b.post_syn_segs()
+        for seg, spec in targets:
             syn = mech(seg)
             syn.gmax = p["g_nS"] / 1000.0            # nS -> uS
             syn.e = p["e_rev_mV"]                      # ★ mod 기본 0 을 덮어씀

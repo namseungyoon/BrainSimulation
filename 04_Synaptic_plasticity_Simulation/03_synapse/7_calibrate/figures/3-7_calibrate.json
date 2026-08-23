@@ -62,7 +62,7 @@
     true,
     true
   ],
-  "dspike_rise_criterion_ms": 1.5,
+  "dspike_vloc_threshold_mV": -30.0,
   "g_dendritic_spike_onset_nS": 1.1,
   "g_adopted_nS": 0.6,
   "amp_at_adopted_mV": 0.5236,

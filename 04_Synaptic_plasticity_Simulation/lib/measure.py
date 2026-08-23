@@ -69,3 +69,18 @@ def failure_rate(amps, thr_mV=0.02):
     """실패율 = 진폭이 thr 미만인 시행 비율."""
     a = np.asarray(amps, dtype=float)
     return float((a < thr_mV).mean()) if len(a) else float("nan")
+
+
+# ── 국소(수상돌기) 스파이크 판정 ───────────────────────────────────────────────
+# 3-7(D13) 실측 근거: g 스윕에서 시냅스 국소 최고 전압이
+#   수동 구간  g<=1.0nS -> -66 ~ -48 mV
+#   스파이크   g>=1.1nS -> -2 ~ +12 mV
+# 로 확연히 갈렸다. 두 군 사이가 40mV 이상 비어 있어 -30mV 를 문턱으로 둔다.
+# ★ 상승시간으로 판정하지 않는다: 국소 EPSP 는 시냅스 바로 옆이라 수동이어도 상승이 빠르다
+#   (3-8 에서 국소 상승시간 기준을 쓰자 전 지점이 스파이크로 오판됐다).
+DSPIKE_VLOC_MV = -30.0
+
+
+def is_dendritic_spike(local_peak_mV, thresh=DSPIKE_VLOC_MV):
+    """시냅스 국소 최고 전압이 문턱을 넘으면 국소 스파이크로 본다."""
+    return bool(float(local_peak_mV) > thresh)

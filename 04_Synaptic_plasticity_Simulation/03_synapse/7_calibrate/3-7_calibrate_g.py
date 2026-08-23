@@ -42,7 +42,7 @@ T_SPIKE = SETTLE_MS + 10.0
 TSTOP = T_SPIKE + 70.0
 REC_DT = 0.025
 G_SWEEP = [0.1, 0.2, 0.3, 0.45, 0.6, 0.8, 1.0, 1.1, 1.2, 1.3, 1.4, 1.7, 2.0]  # nS (0.6 = 논문값)
-DSPIKE_RISE_MS = 1.5     # 상승시간이 이보다 빠르면 수동 EPSP 가 아니라 국소(수상돌기) 스파이크
+# 국소 스파이크 판정은 lib.measure.is_dendritic_spike (국소 최고 전압 문턱) 하나로 통일한다
 D = refdata.DEUCHARS1996
 
 
@@ -72,7 +72,7 @@ def main():
         R = w.arrays()
         f = measure.epsp_features(R["t"], R["post_v"], t_event)
         vloc_pk = max(float(lv.max()) for lv in R["local_v"])      # 국소 최고 전압(절대, mV)
-        dspike = bool(f["rise_ms"] < DSPIKE_RISE_MS)               # 상승이 급하면 국소 스파이크
+        dspike = measure.is_dendritic_spike(vloc_pk)                # 국소 최고 전압 문턱(공용)
         amps.append(f["amp_mV"]); vlocs.append(vloc_pk); dsp.append(dspike)
         traces.append((g, R["t"].copy(), R["post_v"].copy(), f, dspike))
         print(f"  g={g:5.2f} nS -> soma EPSP {f['amp_mV']:7.4f} mV "
@@ -208,7 +208,7 @@ def main():
                amp_mV=[round(float(x), 4) for x in amps],
                local_v_peak_mV=[round(float(x), 2) for x in vlocs],
                is_dendritic_spike=[bool(x) for x in dsp],
-               dspike_rise_criterion_ms=DSPIKE_RISE_MS,
+               dspike_vloc_threshold_mV=measure.DSPIKE_VLOC_MV,
                g_dendritic_spike_onset_nS=g_dsp_thr,
                g_adopted_nS=g_cfg, amp_at_adopted_mV=round(amp_cfg, 4),
                amp_ratio_to_paper_mean=round(amp_cfg / D["amp_mV"]["mean"], 3),
