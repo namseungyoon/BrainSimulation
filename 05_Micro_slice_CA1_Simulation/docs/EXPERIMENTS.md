@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
 | Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
-| Ex2 | Schaffer collateral(CA3→CA1) | `04_experiments/Ex2_schaffer` | TBD | ⬜ |
+| Ex2 | Schaffer collateral(CA3→CA1) 단발 uEPSP | `04_experiments/Ex2_schaffer` | 05페이지 | ✅ **uEPSP 0.43mV·PPR 2.11·τ9.95ms (Sayer1990 추세일치)** |
 | Ex3 | SC I-O + 억제 차단 | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | TBD | ⬜ |
