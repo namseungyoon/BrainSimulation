@@ -52,6 +52,7 @@ env/      런처·빌드(추적)               scratch/   일회성(gitignore)
 파이썬이 숫자로 시작하는 모듈을 import 못 한다). **번호 스크립트는 서로 import 하지 않는다** — 재사용 코드는 전부 `lib/`.
 
 색인은 [docs/PIPELINE.md](docs/PIPELINE.md), 전체 계획은 [PLAN.md](PLAN.md).
+**문헌 대조는 [docs/LITERATURE_COMPARISON.md](docs/LITERATURE_COMPARISON.md) 하나로 모았다** — 단계별 우리 값 vs 문헌 값, PubMed 확인 여부, SC 오염 5건 정정 기록.
 
 ## 실행
 
