@@ -7,7 +7,8 @@
 
 | ID | 실험 | 폴더 | Notion | 상태 |
 |---|---|---|---|---|
-| Ex1 | baseline 발화율·구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ volley(39%) · 무자극 진행중 |
+| Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
+| Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
 | Ex2 | Schaffer collateral(CA3→CA1) | `04_experiments/Ex2_schaffer` | TBD | ⬜ |
 | Ex3 | SC I-O + 억제 차단 | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
@@ -27,6 +28,14 @@
 
 ## 최종목표 사슬
 Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
+
+## Ex2 상세 — Schaffer collateral 단발 uEPSP 특성화 (다음 실험)
+**목표**: 단일 SC 섬유 활성 → CA1 추체의 **단발 uEPSP**(진폭·지연·10-90% 상승시간·감쇠τ) + **페어펄스(PPR)** 를 미세슬라이스 커넥텀 맥락에서 재현. 04 벤치·Sayer 1990 실측과 대조.
+- **단위 검증**(Ex2) → 집단 I-O(Ex3) → 관측량 fEPSP(Ex4) 순서의 첫 단계. Ex2가 맞아야 Ex3 신뢰.
+- **방법**: 커넥텀(`sc_synapses`·`sc_fibers`)에서 **SC 섬유 1개 선택** → 그 섬유가 접촉하는 추체 타깃·시냅스 추출. uEPSP는 역치하(subthreshold)라 타 세포로 전파 안 함 → **타깃 세포 + 해당 시냅스만 빌드**(소형·빠름, 전체망 불필요). 형태·시냅스 위치는 실제 커넥텀 그대로.
+- **기록(신규)**: 대표 세포 **Vm** — 소마 + 시냅스가 놓인 수상돌기 세그먼트 → EPSP가 수상돌기→소마로 감쇠·전파되는 것 관찰. (지금까지 스파이크만 저장 → Ex2부터 Vm 기록 추가)
+- **프로토콜**: ① 단발(1 스파이크) → uEPSP. ② 페어펄스 ISI 50ms → PPR=EPSP2/EPSP1 (SC→PC 촉진성 → >1 기대). 확률시냅스(Nrrp>1)라 **다수 시행 평균**.
+- **검증지표**: 소마 uEPSP 진폭(mV)·지연(ms)·상승시간·감쇠τ · PPR. **대조**: 04 벤치(Sayer 1990) · gsyn 규칙(HippocampusHub).
 
 ## Ex8 상세 — LTP/LTD 유도 프로토콜 (가능성 확인 ✅)
 - **인프라**: `../shared/mechanisms/GBPlasticity{Syn,StpSyn,StpProbSyn}.mod`(Graupner-Brunel 칼슘 가소성). c(t)→ρ 이중안정→w=w0+ρ(w1−w0).
