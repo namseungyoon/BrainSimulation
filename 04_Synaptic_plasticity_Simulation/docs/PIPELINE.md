@@ -46,7 +46,7 @@
 | **3-4** | `03_synapse/4_record` | `3-4_record.py` | `3-4_record_check.png` · `3-4_record.json` | ✅ |
 | **3-5** | `03_synapse/5_uepsp` | `3-5_uepsp.py` | `3-5_uepsp_trace.png` · `3-5_uepsp_stats.png` · `3-5_uepsp.json` | ✅ |
 | **3-6** | `03_synapse/6_stochastic` | `3-6_stochastic.py` | `3-6_amp_hist.png` | ✅ |
-| **3-7** | `03_synapse/7_calibrate` | `3-7_calibrate_g.py` | `3-7_g_sweep.png` | ⬜ |
+| **3-7** | `03_synapse/7_calibrate` | `3-7_calibrate_g.py` | `3-7_g_sweep.png` · `3-7_calibrate.json` | ✅ |
 | **3-8** | `03_synapse/8_distance` | `3-8_attenuation.py` | `3-8_attenuation.png` | ⬜ |
 | **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` | ⬜ |
 | **4-1** | `04_drive/1_modes` | `4-1_drive_modes.py` | `4-1_drive_modes.png` | ⬜ |
