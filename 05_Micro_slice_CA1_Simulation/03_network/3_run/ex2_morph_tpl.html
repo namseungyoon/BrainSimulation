@@ -1,0 +1,170 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uEPSP 수상돌기 전파</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script id="morph-data" type="application/json">__INJECT__</script>
+<style>
+  :root{ --bg:#080b12; --panel:#0f141f; --panel2:#141b28; --edge:#243044; --ink:#e7eef7; --muted:#8697b0; --dim:#5a6a84;
+    --accent:#33d6c4; --syn:#ffc857; }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:14px; overflow:hidden}
+  .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+  #app{display:grid; grid-template-rows:auto 1fr auto; height:100dvh}
+  header{display:flex; align-items:center; gap:16px; padding:12px 20px; background:linear-gradient(180deg,var(--panel),var(--panel2)); border-bottom:1px solid var(--edge)}
+  .brand h1{margin:0; font-size:15px; font-weight:600}
+  .brand .sub{font-size:11px; color:var(--muted)}
+  .stats{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap}
+  .stat{background:var(--panel2); border:1px solid var(--edge); border-radius:8px; padding:6px 11px}
+  .stat .k{font-size:9.5px; text-transform:uppercase; letter-spacing:.7px; color:var(--dim)}
+  .stat .v{font-size:16px; font-weight:600}
+  #stage{position:relative; background:radial-gradient(120% 120% at 50% 35%,#0b111c,#070a10 70%); overflow:hidden}
+  #view{position:absolute; inset:0; width:100%; height:100%; cursor:grab; touch-action:none}
+  #view:active{cursor:grabbing}
+  .ov{position:absolute; pointer-events:none; font-size:11px}
+  #legend{left:16px; top:14px; display:flex; flex-direction:column; gap:7px; background:rgba(10,14,22,.6); backdrop-filter:blur(4px); border:1px solid var(--edge); border-radius:10px; padding:11px 13px}
+  #legend .row{display:flex; align-items:center; gap:8px; color:var(--muted)}
+  #tnow{left:50%; top:14px; transform:translateX(-50%); text-align:center}
+  #tnow .big{font-size:28px; font-weight:600}
+  #tnow .lab{font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:1.2px}
+  #cbar{right:18px; top:50%; transform:translateY(-50%); text-align:center}
+  #cbar canvas{border-radius:4px; border:1px solid var(--edge)}
+  #cbar .lab{font-size:10px; color:var(--muted); margin:3px 0}
+  #hint{left:50%; bottom:12px; transform:translateX(-50%); color:var(--dim); font-size:10.5px}
+  footer{background:linear-gradient(0deg,var(--panel),var(--panel2)); border-top:1px solid var(--edge); padding:12px 20px 14px; display:flex; flex-direction:column; gap:10px}
+  .track{display:flex; align-items:center; gap:12px}
+  button.p{background:var(--accent); color:#06231f; border:none; width:44px; height:44px; border-radius:12px; font-size:17px; cursor:pointer; display:grid; place-items:center}
+  button.s{background:var(--panel2); color:var(--ink); border:1px solid var(--edge); width:42px; height:44px; border-radius:12px; font-size:20px; cursor:pointer; display:grid; place-items:center}
+  button.p:hover{filter:brightness(1.08)} button.s:hover{background:var(--edge)}
+  input[type=range]{-webkit-appearance:none; height:6px; border-radius:5px; background:var(--edge); flex:1}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--ink); cursor:pointer; box-shadow:0 0 0 3px rgba(51,214,196,.25)}
+  .controls{display:flex; align-items:center; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted)}
+  .seg{display:flex; border:1px solid var(--edge); border-radius:8px; overflow:hidden}
+  .seg button{background:var(--panel2); color:var(--muted); border:none; padding:5px 10px; font-size:11.5px; cursor:pointer; font-family:inherit}
+  .seg button[aria-pressed=true]{background:var(--accent); color:#06231f; font-weight:600}
+  .toggle{display:flex; align-items:center; gap:7px; cursor:pointer} .toggle input{accent-color:var(--accent)}
+  .pill{background:var(--panel2); border:1px solid var(--edge); border-radius:999px; padding:2px 9px; color:var(--muted); font-size:10.5px}
+  .note{font-size:11px; color:var(--dim)} .note b{color:var(--syn)}
+</style>
+<div id="app">
+  <header>
+    <div class="brand"><h1>단발 uEPSP — 수상돌기 전파 (실제 형태)</h1>
+      <div class="sub mono">Ex2 · CA1 추체 1개 · SC 시냅스(SR)에서 EPSP → 소마(SP) 감쇠·전파</div></div>
+    <div class="stats mono">
+      <div class="stat"><div class="k">시냅스 자리 ΔV</div><div class="v" id="s-syn" style="color:var(--syn)">–</div></div>
+      <div class="stat"><div class="k">소마 ΔV</div><div class="v" id="s-soma" style="color:var(--accent)">–</div></div>
+      <div class="stat"><div class="k">감쇠비</div><div class="v" id="s-att">–</div></div>
+    </div>
+  </header>
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div class="ov" id="tnow"><div class="big mono" id="tbig">0.0</div><div class="lab">ms · 자극기준</div></div>
+    <div class="ov" id="legend">
+      <div class="row"><span style="color:var(--syn); font-size:13px">◎</span> SC 시냅스 자리(SR)</div>
+      <div class="row"><span style="width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent)"></span> 소마(SP)</div>
+      <div class="row">색 = 막전위 Vm (아래 척도)</div>
+    </div>
+    <div class="ov" id="cbar"><div class="lab" id="cb-hi">–</div><canvas id="cbc" width="16" height="120"></canvas><div class="lab" id="cb-lo">–</div><div class="lab">mV</div></div>
+    <div class="ov mono" id="hint">드래그 회전 · 휠 확대</div>
+  </div>
+  <footer>
+    <div class="track">
+      <button class="p" id="play">▶</button>
+      <button class="s" id="restart" title="처음부터">⟲</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0">
+      <span class="mono pill" id="pos">0.0 ms</span>
+    </div>
+    <div class="controls">
+      <div style="display:flex;align-items:center;gap:8px">재생 길이
+        <div class="seg" id="speed"><button data-sec="6">6 s</button><button data-sec="14" aria-pressed="true">14 s</button><button data-sec="30">30 s</button></div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="loop" checked> 반복</label>
+      <label class="toggle"><input type="checkbox" id="spin" checked> 자동 회전</label>
+      <div class="note">🐢 슬로모션 리플레이 · <b>SR 시냅스에서 EPSP가 켜져 수상돌기를 타고 소마로 내려가며 감쇠</b> = SR(입력)/SP(소마) 분리</div>
+    </div>
+  </footer>
+</div>
+<script>
+(function(){
+  const D=JSON.parse(document.getElementById('morph-data').textContent);
+  const POS=D.pos, DIA=D.diam, V=D.V, T=D.t, N=D.n_seg, NF=T.length;
+  const somaIdx=D.soma_idx, synIdx=D.syn_idx;
+  const VMIN=D.vmin, VMAX=D.vmax, REST=-70;
+  // center + radius
+  let cx=0,cy=0,cz=0; for(const p of POS){cx+=p[0];cy+=p[1];cz+=p[2];} cx/=N;cy/=N;cz/=N;
+  let rad=1; for(const p of POS){rad=Math.max(rad,Math.hypot(p[0]-cx,p[1]-cy,p[2]-cz));}
+  // color ramp: rest(dark blue) -> depolarized(cyan->yellow->red)
+  function ramp(u){ u=Math.max(0,Math.min(1,u));
+    const stops=[[30,45,70],[40,110,180],[40,210,200],[240,220,90],[240,90,70]];
+    const x=u*(stops.length-1), i=Math.floor(x), f=x-i, a=stops[i], b=stops[Math.min(i+1,stops.length-1)];
+    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f]; }
+  const norm=v=>(v-VMIN)/(VMAX-VMIN);
+  // colorbar
+  (function(){const c=document.getElementById('cbc'),x=c.getContext('2d');
+    for(let y=0;y<120;y++){const u=1-y/119;const col=ramp(u);x.fillStyle='rgb('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+')';x.fillRect(0,y,16,1);}
+    document.getElementById('cb-hi').textContent=VMAX.toFixed(0); document.getElementById('cb-lo').textContent=VMIN.toFixed(0);})();
+
+  const cv=document.getElementById('view'), ctx=cv.getContext('2d');
+  let W=0,H=0,DPR=Math.min(2,window.devicePixelRatio||1);
+  function resize(){const s=cv.parentElement.getBoundingClientRect();W=s.width;H=s.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+  window.addEventListener('resize',resize);
+  let yaw=0.3,pitch=0.1,zoom=1,autoSpin=true;
+  const drag={on:false,x:0,y:0};
+  cv.addEventListener('pointerdown',e=>{drag.on=true;drag.x=e.clientX;drag.y=e.clientY;autoSpin=false;document.getElementById('spin').checked=false;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointermove',e=>{if(!drag.on)return;yaw+=(e.clientX-drag.x)*0.008;pitch+=(e.clientY-drag.y)*0.008;pitch=Math.max(-1.4,Math.min(1.4,pitch));drag.x=e.clientX;drag.y=e.clientY;});
+  cv.addEventListener('pointerup',()=>drag.on=false);
+  cv.addEventListener('wheel',e=>{e.preventDefault();zoom*=Math.exp(-e.deltaY*0.0011);zoom=Math.max(0.5,Math.min(5,zoom));},{passive:false});
+  document.getElementById('spin').addEventListener('change',e=>autoSpin=e.target.checked);
+  function proj(p){let X=p[0]-cx,Y=p[1]-cy,Z=p[2]-cz;const cy1=Math.cos(yaw),sy=Math.sin(yaw);let X1=X*cy1-Z*sy,Z1=X*sy+Z*cy1;const cp=Math.cos(pitch),sp=Math.sin(pitch);let Y1=Y*cp-Z1*sp,Z2=Y*sp+Z1*cp;const sc=(Math.min(W,H)*0.42/rad)*zoom;return [W/2+X1*sc,H/2-Y1*sc,Z2];}
+
+  let frame=0, playing=false, playSec=14, last=0, loopOn=true;
+  const $=id=>document.getElementById(id);
+  // depth order (static-ish; recompute per draw for correctness)
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const order=[]; const pr=new Array(N);
+    for(let i=0;i<N;i++){pr[i]=proj(POS[i]); order.push(i);}
+    order.sort((a,b)=>pr[a][2]-pr[b][2]);
+    const Vf=V[frame];
+    for(const i of order){
+      const p=pr[i], u=norm(Vf[i]), col=ramp(u);
+      const r=Math.max(1.0, Math.min(4, 0.8+DIA[i]*0.7));
+      const depol=Math.max(0,(Vf[i]-REST))/(VMAX-REST);
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,6.283);
+      ctx.fillStyle='rgba('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+','+(0.5+0.5*depol).toFixed(2)+')';
+      if(depol>0.15){ctx.shadowColor='rgb('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+')';ctx.shadowBlur=6*depol;} else ctx.shadowBlur=0;
+      ctx.fill();
+    }
+    ctx.shadowBlur=0;
+    // synapse rings
+    for(const si of synIdx){const p=pr[si]; ctx.strokeStyle='#ffc857'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p[0],p[1],7,0,6.283); ctx.stroke();}
+    // soma marker
+    if(somaIdx.length){let sx=0,sy=0;for(const s of somaIdx){sx+=pr[s][0];sy+=pr[s][1];}sx/=somaIdx.length;sy/=somaIdx.length;
+      ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(sx,sy,5,0,6.283); ctx.fill(); ctx.shadowBlur=0;}
+  }
+  function readout(){
+    const Vf=V[frame];
+    const vs=synIdx.length?Vf[synIdx[0]]:REST;
+    let vsoma=REST; if(somaIdx.length){vsoma=0;for(const s of somaIdx)vsoma+=Vf[s];vsoma/=somaIdx.length;}
+    const dsyn=vs-REST, dsoma=vsoma-REST;
+    $('s-syn').textContent=(dsyn>=0?'+':'')+dsyn.toFixed(1)+' mV';
+    $('s-soma').textContent=(dsoma>=0?'+':'')+dsoma.toFixed(2)+' mV';
+    $('s-att').textContent=(dsoma>0.01?(dsyn/dsoma).toFixed(1)+'×':'–');
+    $('tbig').textContent=(T[frame]>=0?'+':'')+T[frame].toFixed(1);
+    $('pos').textContent=(T[frame]>=0?'+':'')+T[frame].toFixed(1)+' ms';
+    $('scrub').value=Math.round(frame/(NF-1)*1000);
+  }
+  function loop(ts){const dt=Math.min(0.05,(ts-last)/1000)||0.016; last=ts;
+    if(autoSpin&&!drag.on) yaw+=dt*0.3;
+    if(playing){ frame += (NF/playSec)*dt;
+      if(frame>=NF-1){ if(loopOn) frame=0; else {frame=NF-1;playing=false;$('play').textContent='▶';} }
+      readout(); }
+    draw(); requestAnimationFrame(loop);
+  }
+  $('play').addEventListener('click',()=>{if(frame>=NF-1)frame=0;playing=!playing;$('play').textContent=playing?'❚❚':'▶';});
+  $('restart').addEventListener('click',()=>{frame=0;playing=true;$('play').textContent='❚❚';readout();});
+  $('scrub').addEventListener('input',e=>{frame=Math.round(e.target.value/1000*(NF-1));playing=false;$('play').textContent='▶';readout();});
+  $('loop').addEventListener('change',e=>loopOn=e.target.checked);
+  document.querySelectorAll('#speed button').forEach(b=>b.addEventListener('click',()=>{playSec=+b.dataset.sec;document.querySelectorAll('#speed button').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
+  resize(); readout(); requestAnimationFrame(loop);
+})();
+</script>
