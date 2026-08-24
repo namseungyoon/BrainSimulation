@@ -53,7 +53,14 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 ## Ex4·Ex4b·Ex4c 상세 — fEPSP forward → CSD → 검증 (설계 2026-08-24)
 **사슬:** 세그먼트 막전류 → [forward] → 전극 fEPSP → [inverse=CSD] → sink/source 밴드.
 
-- **Ex4 (fEPSP forward)**: `lib/mea_forward.py` PSA/LSA(무한 균질 매질). 세그먼트 막전류(fast_imem, `lib/fepsp_record.py`) → 전극 V(t). ✅ 인프라 구축·검증 완료(2026-08-24). [[전체망 Ex1+fEPSP 런]]으로 실측 스케일 확인 중.
+- **Ex4 (fEPSP forward)**: `lib/mea_forward.py` PSA/LSA(무한 균질 매질). 세그먼트 막전류(fast_imem, `lib/fepsp_record.py`) → 전극 V(t). ✅ 인프라 구축·검증 완료(2026-08-24).
+  - **소규모 검증(50세포, `ex_fepsp_test.py`)**: locus 근처 PC 50개 SC volley → 막전류 fEPSP.
+    - 크기 **~40µV/50세포** = 실측 스케일 정확(전체망 ~2천세포면 ~mV). biphasic **population spike**(~3ms) + 느린 시냅스 EPSP 꼬리.
+    - 발화 시: E1(SO) −40.5 · E2(SP) **−42.9** · E3(SR) −28.6 µV — 셋 다 음성, **SP 최대 음성 = population spike(소마 Na sink) 지배**.
+    - 역치하(gscale 0.02): 0발화, 필드 0.2µV·세 전극 거의 동일 → **far-field**.
+  - **⚠️ 발견**: 자극 locus와 기록전극 E3 사이 **~400µm 오프셋**(E3 stim→rec 변경 잔재). 50세포 far-field 뭉갬은 **선별 인공물**(locus 근처만 빌드)일 가능성 → **전체망으로 판정 중**(Ex1 volley + fEPSP, `mpi_baseline.py --fepsp`).
+  - **⚙️ 성능**: fEPSP 기록의 `Vector.record`가 O(n²)(전체망 705k세그/랭크) → **세그먼트 stride 서브샘플**(FEPSPRecorder stride, W×보정)로 해결.
+  - **UI**: `04_experiments/00_overview/ui/fepsp_3d.html`(아티팩트 5378691e) — 세그먼트 막전류(sink/source 색)+3전극 fEPSP+막전류그래프+속도/전극/시냅스/자동회전/catchment 토글.
 - **Ex4b (MoI forward, 경계보정)**: 슬라이스 3층(식염수/조직/유리 MEA)의 경계 반사를 **method of images**(Ness 2015)로 보정한 forward. 무한매질 가정의 오차를 잡아 **실측 슬라이스와 맞는** fEPSP·깊이 프로파일("밴드") 산출. `mea_forward`에 MoI 옵션 추가 예정.
 - **Ex4c (CSD/kCSD 역분석 + 정답 검증, 신규)**: 전위 → sink/source **역추정**.
   - **naive CSD**: `-σ·∂²V/∂z²` (등간격 전극 2차미분). 3전극(SO/SP/SR, 간격 200µm)이면 가운데(SP) 한 점.
