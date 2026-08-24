@@ -1,0 +1,163 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미세슬라이스 실험 예보</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{ --bg:#080b12; --panel:#0f141f; --panel2:#141b28; --edge:#243044; --ink:#e7eef7; --muted:#8697b0; --dim:#5a6a84;
+    --accent:#33d6c4; --blue:#5b93ff; --red:#ff6b6b; --gold:#ffc857; --purple:#a78bfa; --green:#5fd08a; --grid:rgba(120,150,190,.12); }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:14px; -webkit-font-smoothing:antialiased}
+  .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+  header{padding:22px 28px 16px; border-bottom:1px solid var(--edge); background:linear-gradient(180deg,var(--panel),var(--panel2))}
+  header h1{margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:.2px}
+  header .sub{color:var(--muted); font-size:12.5px}
+  header .key{margin-top:10px; display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted)}
+  header .chip{display:inline-flex; align-items:center; gap:6px; background:var(--panel2); border:1px solid var(--edge); border-radius:999px; padding:3px 10px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; padding:20px 28px 40px}
+  .card{background:linear-gradient(180deg,var(--panel),#0c1119); border:1px solid var(--edge); border-radius:14px; overflow:hidden; display:flex; flex-direction:column}
+  .card .top{display:flex; align-items:baseline; gap:9px; padding:13px 15px 8px}
+  .card .id{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px; color:var(--accent)}
+  .card .nm{font-size:13.5px; font-weight:600; flex:1}
+  .card .st{font-size:10px; text-transform:uppercase; letter-spacing:.6px; padding:2px 8px; border-radius:999px}
+  .st.done{background:rgba(95,208,138,.15); color:var(--green); border:1px solid rgba(95,208,138,.35)}
+  .st.fore{background:rgba(255,200,87,.12); color:var(--gold); border:1px solid rgba(255,200,87,.3)}
+  .card canvas{width:100%; height:150px; display:block}
+  .card .pred{padding:9px 15px 14px; font-size:12px; color:var(--muted); line-height:1.5; border-top:1px solid rgba(120,150,190,.08)}
+  .card .pred b{color:var(--ink)} .card .pred .m{color:var(--gold)}
+  .lg{display:flex; gap:12px; padding:0 15px 8px; font-size:10.5px; color:var(--muted); flex-wrap:wrap}
+  .lg span{display:inline-flex; align-items:center; gap:5px}
+  .lg i{width:12px; height:3px; border-radius:2px; display:inline-block}
+  a.tool{color:var(--accent); text-decoration:none; border-bottom:1px dotted var(--accent)}
+</style>
+<header>
+  <h1>미세슬라이스 CA1 — 실험 예보 (Ex1 → Ex12)</h1>
+  <div class="sub">각 실험의 <b>예상 결과</b>를 미리 시각화. 실행 완료 시 실측 데이터로 대체.</div>
+  <div class="key">
+    <span class="chip"><span class="st done" style="padding:1px 6px">완료</span> 실측값</span>
+    <span class="chip"><span class="st fore" style="padding:1px 6px">예상</span> 문헌 기반 예측(mockup)</span>
+    <span class="chip mono">전극 E1(SO)·E2(SP)·E3(SR) · SC 직접 자극</span>
+  </div>
+</header>
+<div class="grid" id="grid"></div>
+
+<script>
+const C={blue:'#5b93ff',red:'#ff6b6b',teal:'#33d6c4',gold:'#ffc857',purple:'#a78bfa',green:'#5fd08a',dim:'#5a6a84',ink:'#e7eef7',grid:'rgba(120,150,190,.14)'};
+const CARDS=[
+ {id:'Ex1',nm:'baseline 발화·구동',st:'done',type:'bars',
+  data:{labels:['무자극\n(자발)','volley\n(R=150)'],vals:[0,39],unit:'% 발화',cols:[C.dim,C.red]},
+  pred:'<b>실측:</b> 자발 <span class="m">0 Hz</span>(완전 무음) · volley <span class="m">39%</span> 발화 후 정지 = 건강한 회로.'},
+ {id:'Ex2',nm:'SC 단발 uEPSP',st:'done',type:'bars',
+  data:{labels:['EPSP1','EPSP2\n(ISI 50)'],vals:[1.10,2.32],unit:'mV',cols:[C.blue,C.red]},
+  pred:'<b>실측:</b> uEPSP <span class="m">0.43 mV</span> · <b>PPR 2.11 촉진</b> · 실패 7% (Sayer 1990 추세 일치).'},
+ {id:'Ex3',nm:'SC I-O 곡선 + 억제 차단',st:'fore',type:'io',
+  data:{x:[50,100,150,200,250],normal:[5,20,39,55,65],block:[15,45,70,85,92]},
+  legend:[['정상(억제 O)',C.blue],['억제 차단',C.red]],
+  pred:'<b>예상:</b> 자극세기↑ → 발화% <b>시그모이드</b>. <b>억제 차단 시 위로 이동</b>(억제가 반응을 눌러왔음). R=150 앵커(<span class="m">39%</span>, Ex1).'},
+ {id:'Ex4',nm:'fEPSP (LSA/MoI)',st:'fore',type:'fepsp',
+  legend:[['E3 SR(sink)',C.red],['E2 SP',C.blue],['E1 SO',C.teal]],
+  pred:'<b>예상:</b> SC 자극 → <b>E3(SR)에 음성 sink</b>(시냅스 전류), E2/E1은 층따라 극성·크기 변화 = 깊이 프로파일/CSD.'},
+ {id:'Ex4b',nm:'MEA 3층 영상법(MoI) 밴드',st:'fore',type:'csd',
+  pred:'<b>예상:</b> 3층 경계 반사 보정한 CSD — <b>SR에 sink 밴드, SP/SO에 source</b>. 실측 밴드폭과 대조.'},
+ {id:'Ex5',nm:'theta 변조 입력 + PAC',st:'fore',type:'theta',
+  pred:'<b>예상:</b> theta(~8Hz) 리듬에 <b>gamma가 위상 결합(PAC)</b> — theta 골에서 gamma 진폭↑.'},
+ {id:'Ex6',nm:'내측중격(MS) theta',st:'fore',type:'theta2',
+  pred:'<b>예상:</b> MS 긴장성 구동 → CA1 <b>theta 진동 자가발생</b>. 무자극(0Hz)과 대비되는 리듬 출현.'},
+ {id:'Ex7',nm:'ACh 신경조절',st:'fore',type:'step',
+  data:{cols:[C.dim,C.purple],lab:['ACh 전','ACh 후']},
+  pred:'<b>예상:</b> mAChR 활성 → <b>발화 지속·적응↓</b>(SFA 감소), theta 촉진. 억제/흥분 균형 변화.'},
+ {id:'Ex8',nm:'LTP/LTD (칼슘 가소성)',st:'fore',type:'plast',
+  legend:[['HFS→LTP',C.red],['LFS→LTD',C.blue]],
+  pred:'<b>예상:</b> 정규화 fEPSP slope — <b>HFS(100Hz) → LTP(↑~150%)</b>, <b>LFS(1-3Hz) → LTD(↓~70%)</b>. 방향 재현 기대.'},
+ {id:'Ex9',nm:'실측 MEA 대조 (최종)',st:'fore',type:'match',
+  legend:[['시뮬',C.gold],['실측 MEA',C.ink]],
+  pred:'<b>목표:</b> 시뮬 fEPSP·LTP/LTD 곡선을 <b>실측 MEA와 중첩</b>. 최종 검증 관문.'},
+ {id:'Ex10',nm:'STDP 곡선 (Wittenberg 2006)',st:'fore',type:'stdp',
+  pred:'<b>예상:</b> Δt(pre-post) vs Δw — <b>pre→post(Δt>0) LTP(+)</b>, <b>post→pre(Δt<0) LTD(−)</b> 비대칭 창.'},
+ {id:'Ex11',nm:'cholinergic theta 위상가소성',st:'fore',type:'phase',
+  pred:'<b>예상:</b> theta 위상별 부호 — <b>peak(마루)=LTP(+)</b>, <b>trough(골)=LTD(−)</b> (Huerta&Lisman 1995). 캡스톤.'},
+ {id:'Ex12',nm:'인터랙티브 자극 워크벤치(UI)',st:'done',type:'ui',
+  pred:'<b>프로토타입:</b> 자극 설계 → 스파이크·fEPSP 리플레이. <a class="tool" href="#" onclick="return false">발화 리플레이</a>·<a class="tool" href="#" onclick="return false">uEPSP 형태전파</a> 제작됨.'},
+];
+
+function mk(card){
+  const el=document.createElement('div'); el.className='card';
+  let lg=''; if(card.legend){lg='<div class="lg">'+card.legend.map(([t,c])=>'<span><i style="background:'+c+'"></i>'+t+'</span>').join('')+'</div>';}
+  el.innerHTML='<div class="top"><span class="id">'+card.id+'</span><span class="nm">'+card.nm+'</span><span class="st '+card.st+'">'+(card.st==='done'?'완료':'예상')+'</span></div>'
+    +'<canvas></canvas>'+lg+'<div class="pred">'+card.pred+'</div>';
+  return el;
+}
+function setup(cv){const DPR=Math.min(2,devicePixelRatio||1);const r=cv.getBoundingClientRect();cv.width=r.width*DPR;cv.height=r.height*DPR;const x=cv.getContext('2d');x.setTransform(DPR,0,0,DPR,0,0);return [x,r.width,r.height];}
+function axes(x,W,H,pad){x.strokeStyle=C.grid;x.lineWidth=1;x.beginPath();x.moveTo(pad.l,pad.t);x.lineTo(pad.l,H-pad.b);x.lineTo(W-pad.r,H-pad.b);x.stroke();}
+function txt(x,s,px,py,col,sz,al){x.fillStyle=col;x.font=(sz||10)+'px IBM Plex Mono, monospace';x.textAlign=al||'left';x.fillText(s,px,py);x.textAlign='left';}
+
+function draw(card,cv){
+  const [x,W,H]=setup(cv); const P={l:36,r:14,t:14,b:26};
+  const plot=(fx,fy)=>[P.l+fx*(W-P.l-P.r), H-P.b-fy*(H-P.t-P.b)];
+  if(card.type==='bars'){const d=card.data,n=d.vals.length,mx=Math.max(...d.vals)*1.25||1;
+    const bw=(W-P.l-P.r)/n*0.5;
+    d.vals.forEach((v,i)=>{const cx=P.l+(i+0.5)/n*(W-P.l-P.r);const h=(v/mx)*(H-P.t-P.b);
+      x.fillStyle=d.cols[i];x.beginPath();x.roundRect(cx-bw/2,H-P.b-h,bw,h,[4,4,0,0]);x.fill();
+      txt(x,(v%1?v.toFixed(2):v)+'',cx,H-P.b-h-5,C.ink,11,'center');
+      d.labels[i].split('\n').forEach((s,j)=>txt(x,s,cx,H-P.b+12+j*11,C.muted||C.dim,9.5,'center'));});
+    txt(x,d.unit,P.l-4,P.t+4,C.dim,9,'right');axes(x,W,H,P);}
+  else if(card.type==='io'){const d=card.data,xmin=d.x[0],xmax=d.x[d.x.length-1];
+    axes(x,W,H,P);
+    [['normal',C.blue,[]],['block',C.red,[5,4]]].forEach(([k,col,dash])=>{
+      x.strokeStyle=col;x.lineWidth=2;x.setLineDash(dash);x.beginPath();
+      d.x.forEach((xv,i)=>{const[px,py]=plot((xv-xmin)/(xmax-xmin),d[k][i]/100);i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();x.setLineDash([]);
+      d.x.forEach((xv,i)=>{const[px,py]=plot((xv-xmin)/(xmax-xmin),d[k][i]/100);x.fillStyle=col;x.beginPath();x.arc(px,py,3,0,6.28);x.fill();});});
+    [0,25,50,75,100].forEach(v=>{const[,py]=plot(0,v/100);txt(x,v+'',P.l-4,py+3,C.dim,8.5,'right');});
+    d.x.forEach(xv=>{const[px]=plot((xv-xmin)/(xmax-xmin),0);txt(x,xv+'',px,H-P.b+12,C.dim,8.5,'center');});
+    txt(x,'발화%',P.l-4,P.t+2,C.dim,8.5,'right');txt(x,'자극세기 R(µm)',W-P.r,H-P.b+22,C.dim,9,'right');}
+  else if(card.type==='fepsp'){axes(x,W,H,P);const T=100;
+    const wave=(amp,tp,dk,col,dash)=>{x.strokeStyle=col;x.lineWidth=2;x.setLineDash(dash||[]);x.beginPath();
+      for(let i=0;i<=T;i++){const t=i;const v=0.5 - amp*Math.max(0,(t-15))/tp*Math.exp(1-(t-15)/tp)*(t>15?1:0);const[px,py]=plot(i/T,v);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);};
+    wave(0.42,10,0,C.red);      // SR sink (아래로)
+    wave(0.16,12,0,C.blue,[4,3]);// SP
+    wave(-0.10,14,0,C.teal,[2,3]);// SO (반대극성)
+    x.strokeStyle='rgba(255,200,87,.6)';x.setLineDash([3,3]);const[sx]=plot(0.15,0);x.beginPath();x.moveTo(sx,P.t);x.lineTo(sx,H-P.b);x.stroke();x.setLineDash([]);
+    txt(x,'⚡자극',sx+3,P.t+9,C.gold,9,'left');txt(x,'전위',P.l-4,P.t+2,C.dim,8.5,'right');txt(x,'ms',W-P.r,H-P.b+22,C.dim,9,'right');}
+  else if(card.type==='csd'){ // sink/source 밴드
+    const rows=['SLM','SR','SP','SO'],val=[-.2,-1,.6,.3];
+    rows.forEach((r,i)=>{const y0=P.t+i*(H-P.t-P.b)/rows.length,hh=(H-P.t-P.b)/rows.length;
+      const u=val[i];const col=u<0?[255,107,107]:[91,147,255];const a=Math.abs(u)*0.6+0.08;
+      x.fillStyle='rgba('+col[0]+','+col[1]+','+col[2]+','+a.toFixed(2)+')';x.fillRect(P.l,y0,W-P.l-P.r,hh-2);
+      txt(x,r,P.l+6,y0+hh/2+3,C.ink,10,'left');txt(x,u<0?'sink':'source',W-P.r-6,y0+hh/2+3,'rgba(230,238,247,.7)',9,'right');});}
+  else if(card.type==='theta'||card.type==='theta2'){axes(x,W,H,P);x.strokeStyle=card.type==='theta'?C.purple:C.green;x.lineWidth=2;x.beginPath();
+    for(let i=0;i<=200;i++){const t=i/200;let v=0.5+0.32*Math.sin(t*Math.PI*2*3.2);if(card.type==='theta'){v+=0.12*(0.5+0.5*Math.sin(t*Math.PI*2*3.2))*Math.sin(t*Math.PI*2*22);}const[px,py]=plot(t,v);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    txt(x,card.type==='theta'?'theta+gamma(PAC)':'theta(자가발생)',P.l+4,P.t+10,C.dim,9,'left');}
+  else if(card.type==='step'){axes(x,W,H,P);x.strokeStyle=C.purple;x.lineWidth=2;x.beginPath();
+    for(let i=0;i<=200;i++){const t=i/200;const base=0.35+(t>0.5?0.32:0);const v=base+0.05*Math.sin(t*80);const[px,py]=plot(t,v);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    const[mx]=plot(0.5,0);x.strokeStyle='rgba(167,139,250,.5)';x.setLineDash([3,3]);x.beginPath();x.moveTo(mx,P.t);x.lineTo(mx,H-P.b);x.stroke();x.setLineDash([]);
+    txt(x,'ACh',mx+3,P.t+9,C.purple,9,'left');txt(x,'발화지속↑·적응↓',P.l+4,H-P.b-6,C.dim,9,'left');}
+  else if(card.type==='plast'){axes(x,W,H,P);
+    // baseline 100%
+    const[,by]=plot(0,0.5);x.strokeStyle=C.grid;x.setLineDash([4,4]);x.beginPath();x.moveTo(P.l,by);x.lineTo(W-P.r,by);x.stroke();x.setLineDash([]);
+    const ind=plot(0.3,0);x.strokeStyle='rgba(255,200,87,.5)';x.setLineDash([3,3]);x.beginPath();x.moveTo(ind[0],P.t);x.lineTo(ind[0],H-P.b);x.stroke();x.setLineDash([]);txt(x,'유도',ind[0]+3,P.t+9,C.gold,9);
+    const line=(target,col)=>{x.strokeStyle=col;x.lineWidth=2;x.beginPath();
+      for(let i=0;i<=100;i++){const t=i/100;let y=0.5;if(t>0.3){y=0.5+(target-0.5)*(1-Math.exp(-(t-0.3)/0.15));}const[px,py]=plot(t,y);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();};
+    line(0.78,C.red); line(0.32,C.blue);
+    txt(x,'150%',P.l-4,plot(0,0.78)[1]+3,C.red,8.5,'right');txt(x,'100%',P.l-4,by+3,C.dim,8.5,'right');txt(x,'70%',P.l-4,plot(0,0.32)[1]+3,C.blue,8.5,'right');
+    txt(x,'fEPSP slope',P.l+4,P.t+2,C.dim,8.5,'left');txt(x,'시간→',W-P.r,H-P.b+22,C.dim,9,'right');}
+  else if(card.type==='match'){axes(x,W,H,P);
+    [[C.gold,0,[]],[C.ink,0.02,[4,3]]].forEach(([col,off,dash])=>{x.strokeStyle=col;x.lineWidth=2;x.setLineDash(dash);x.beginPath();
+      for(let i=0;i<=100;i++){const t=i/100;const v=0.5-0.35*Math.max(0,(t-.15))/.12*Math.exp(1-(t-.15)/.12)*(t>.15?1:0)+off;const[px,py]=plot(t,v);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);});
+    txt(x,'시뮬≈실측',P.l+4,H-P.b-6,C.dim,9,'left');}
+  else if(card.type==='stdp'){axes(x,W,H,P);const[,zy]=plot(0,0.5);x.strokeStyle=C.grid;x.beginPath();x.moveTo(P.l,zy);x.lineTo(W-P.r,zy);x.stroke();
+    const[zx]=plot(0.5,0);x.strokeStyle=C.grid;x.beginPath();x.moveTo(zx,P.t);x.lineTo(zx,H-P.b);x.stroke();
+    x.lineWidth=2;x.beginPath();for(let i=0;i<=200;i++){const t=i/200;const dt=(t-0.5)*100;let w;if(dt>=0)w=0.5+0.4*Math.exp(-dt/15);else w=0.5-0.32*Math.exp(dt/22);const[px,py]=plot(t,w);x.strokeStyle=dt>=0?C.red:C.blue;i&&x.lineTo(px,py);x.moveTo(px,py);}
+    x.strokeStyle=C.red;x.beginPath();for(let i=100;i<=200;i++){const t=i/200;const dt=(t-0.5)*100;const[px,py]=plot(t,0.5+0.4*Math.exp(-dt/15));i>100?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    x.strokeStyle=C.blue;x.beginPath();for(let i=0;i<=100;i++){const t=i/200;const dt=(t-0.5)*100;const[px,py]=plot(t,0.5-0.32*Math.exp(dt/22));i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    txt(x,'+LTP',zx+6,plot(0.5,0.85)[1],C.red,9,'left');txt(x,'−LTD',zx-6,plot(0.5,0.2)[1],C.blue,9,'right');
+    txt(x,'Δt(pre→post) ms',W-P.r,H-P.b+22,C.dim,9,'right');txt(x,'Δw',P.l-4,P.t+2,C.dim,8.5,'right');}
+  else if(card.type==='phase'){axes(x,W,H,P);const[,zy]=plot(0,0.5);x.strokeStyle=C.grid;x.beginPath();x.moveTo(P.l,zy);x.lineTo(W-P.r,zy);x.stroke();
+    x.lineWidth=2;x.strokeStyle=C.purple;x.beginPath();for(let i=0;i<=200;i++){const t=i/200;const w=0.5+0.34*Math.cos(t*Math.PI*2);const[px,py]=plot(t,w);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+    txt(x,'peak=LTP',plot(0.0,0.86)[0]+2,plot(0,0.86)[1],C.red,9,'left');txt(x,'trough=LTD',plot(0.5,0.14)[0],plot(0,0.14)[1],C.blue,9,'center');
+    txt(x,'theta 위상 0→360°',W-P.r,H-P.b+22,C.dim,9,'right');txt(x,'Δw',P.l-4,P.t+2,C.dim,8.5,'right');}
+  else if(card.type==='ui'){x.fillStyle=C.dim;x.font='40px sans-serif';x.textAlign='center';x.fillText('🧠  🌿',W/2,H/2+6);x.textAlign='left';
+    txt(x,'인터랙티브 리플레이 (제작 완료)',W/2,H/2+30,C.muted||C.dim,10,'center');}
+}
+const grid=document.getElementById('grid');
+CARDS.forEach(c=>{const el=mk(c);grid.appendChild(el);const cv=el.querySelector('canvas');requestAnimationFrame(()=>draw(c,cv));});
+window.addEventListener('resize',()=>{CARDS.forEach((c,i)=>{const cv=grid.children[i].querySelector('canvas');draw(c,cv);});});
+</script>
