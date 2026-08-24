@@ -127,7 +127,8 @@ def main():
     tpl_p = os.path.join(HERE, "ex2_morph_tpl.html")
     if os.path.exists(tpl_p):
         html = open(tpl_p, encoding="utf-8").read().replace("__INJECT__", data)
-        open(os.path.join(HERE, "ex2_morph.html"), "w", encoding="utf-8").write(html)
+        _uidir = os.path.join(ROOT, "04_experiments", "Ex2_schaffer", "ui"); os.makedirs(_uidir, exist_ok=True)
+        open(os.path.join(_uidir, "ex2_morph.html"), "w", encoding="utf-8").write(html)
         print(f"[Ex2-morph] UI -> ex2_morph.html ({len(html)//1024}KB)", flush=True)
 
 

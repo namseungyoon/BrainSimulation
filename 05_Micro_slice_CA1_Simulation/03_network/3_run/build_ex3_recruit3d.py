@@ -100,7 +100,8 @@ def main():
     tpl_p = os.path.join(HERE, "ex3_recruit3d_tpl.html")
     if os.path.exists(tpl_p):
         html = open(tpl_p, encoding="utf-8").read().replace("__INJECT__", data)
-        outp = os.path.join(HERE, "ex3_recruit3d.html")
+        _uidir = os.path.join(ROOT, "04_experiments", "Ex3_io_inhibition", "ui"); os.makedirs(_uidir, exist_ok=True)
+        outp = os.path.join(_uidir, "ex3_recruit3d.html")
         open(outp, "w", encoding="utf-8").write(html)
         print(f"[ex3-3d] UI -> {outp} ({len(html)//1024}KB)", flush=True)
     else:
