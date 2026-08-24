@@ -67,3 +67,23 @@ def save(fig, figures_dir, name):
     plt.close(fig)
     print(f"saved: {path}")
     return path
+
+def ascii_log(ax, axis="y"):
+    """로그(또는 symlog) 축 눈금을 ASCII 로 바꾼다.
+
+    ★ 왜 필요한가: 로그 축의 기본 눈금은 **mathtext**($10^{-3}$)로 그려지고, mathtext 는
+      rcParams["axes.unicode_minus"]=False 를 따르지 않아 유니코드 마이너스(U+2212)를 쓴다.
+      Malgun Gothic 에 그 글자가 없어 네모로 나온다(실측 2026-08-24, 5-4).
+    """
+    import matplotlib.ticker as mt
+
+    def _f(v, _):
+        if v == 0:
+            return "0"
+        s = f"{v:.0e}".replace("e+0", "e").replace("e-0", "e-")
+        return s.replace("e+", "e")
+
+    a = ax.yaxis if axis == "y" else ax.xaxis
+    a.set_major_formatter(mt.FuncFormatter(_f))
+    a.set_minor_formatter(mt.NullFormatter())
+    return ax

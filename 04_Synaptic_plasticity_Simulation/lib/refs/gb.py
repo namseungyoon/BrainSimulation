@@ -42,6 +42,31 @@ def calcium(t, pre_times, post_times, p=None):
     return c
 
 
+def calcium_amp(t, pre_times, pre_amps, post_times, post_amp=None, p=None):
+    """스파이크마다 **다른 크기**의 칼슘 기여 (엔진 B/C 용).
+
+    엔진 B 는 방출량에 따라 전시냅스 칼슘이 달라진다(ca_stp=1):
+        C_pre_eff = C_pre * (1 + ca_stp*(prn - 1))
+    그 값을 pre_amps 로 받는다. post 는 크기가 고정(C_post)이다.
+    """
+    p = dict(WITTENBERG2006 if p is None else p)
+    t = np.asarray(t, dtype=float)
+    c = np.zeros_like(t)
+    pre_times = np.atleast_1d(pre_times)
+    pre_amps = np.atleast_1d(pre_amps)
+    if pre_times.size != pre_amps.size:
+        raise ValueError("pre_times 와 pre_amps 의 길이가 같아야 한다")
+    for ts, amp in zip(pre_times, pre_amps):
+        te = ts + p["D"]
+        m = t >= te
+        c[m] += float(amp) * np.exp(-(t[m] - te) / p["tau_ca"])
+    ca_post = p["C_post"] if post_amp is None else post_amp
+    for ts in np.atleast_1d(post_times) if len(np.atleast_1d(post_times)) else []:
+        m = t >= ts
+        c[m] += ca_post * np.exp(-(t[m] - ts) / p["tau_ca"])
+    return c
+
+
 def drho(rho, c, p):
     """drho/dt (1/ms). Heaviside 는 c > theta 로 (mod 와 동일한 강부등호)."""
     Hp = 1.0 if c > p["theta_p"] else 0.0

@@ -216,7 +216,7 @@ def main():
     xx = np.arange(len(rows))
     axH.bar(xx - 0.19, od, width=0.38, color="#ef6c00", label="theta_d 초과 (약화)")
     axH.bar(xx + 0.19, op, width=0.38, color="#2e7d32", label="theta_p 초과 (강화)")
-    axH.set_yscale("symlog", linthresh=1.0)
+    axH.set_yscale("symlog", linthresh=1.0); plots.ascii_log(axH)
     axH.set_xticks(xx); axH.set_xticklabels([f"{i+1}" for i in xx])
     axH.set_xlabel("프로토콜 번호 (G 패널 순서)"); axH.set_ylabel("초과 시간 (ms)")
     axH.set_title("H. 부호를 정하는 것은 두 문턱의 초과 시간\n"
