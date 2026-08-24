@@ -1,0 +1,336 @@
+{
+  "engines": [
+    "det",
+    "A",
+    "B",
+    "C",
+    "stdp"
+  ],
+  "n_engines": 5,
+  "table": [
+    {
+      "key": "det",
+      "mech": "DetAMPANMDA",
+      "label": "det (전달만)",
+      "own": false,
+      "stp": true,
+      "ltp": false,
+      "prob": false,
+      "post_nc": false,
+      "gmax_via": "weight",
+      "ref": "tm",
+      "conventions": {},
+      "freeze": {},
+      "freeze_rho0": null,
+      "note": "장기가소성 상태가 아예 없다 — 구조적 기준선(5-2)."
+    },
+    {
+      "key": "A",
+      "mech": "GBPlasticitySyn",
+      "label": "A (순수 GB)",
+      "own": false,
+      "stp": false,
+      "ltp": true,
+      "prob": false,
+      "post_nc": true,
+      "gmax_via": "param",
+      "ref": "gb",
+      "conventions": {},
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        1.0
+      ],
+      "note": "Graupner & Brunel 2012. 버스트의 네 펄스를 똑같이 취급한다."
+    },
+    {
+      "key": "B",
+      "mech": "GBPlasticityStpSyn",
+      "label": "B (GB+TM)",
+      "own": false,
+      "stp": true,
+      "ltp": true,
+      "prob": false,
+      "post_nc": true,
+      "gmax_via": "param",
+      "ref": "gb",
+      "conventions": {
+        "norm_Pr": 1,
+        "ca_stp": 0
+      },
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        1.0
+      ],
+      "note": "관례 ca_stp 가 결론을 뒤집는다(D24). 기준은 ca_stp=0."
+    },
+    {
+      "key": "C",
+      "mech": "GBPlasticityStpProbSyn",
+      "label": "C (B+확률방출)",
+      "own": false,
+      "stp": true,
+      "ltp": true,
+      "prob": true,
+      "post_nc": true,
+      "gmax_via": "param",
+      "ref": "gb",
+      "conventions": {
+        "norm_Pr": 1,
+        "ca_stp": 0
+      },
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        1.0
+      ],
+      "note": "ca_stp=0 이면 확률성이 가소성에 전혀 영향을 주지 않는다(GAPS G5)."
+    },
+    {
+      "key": "stdp",
+      "mech": "PairSTDPSyn",
+      "label": "고전 STDP",
+      "own": true,
+      "stp": false,
+      "ltp": true,
+      "prob": false,
+      "post_nc": true,
+      "gmax_via": "param",
+      "ref": "stdp",
+      "conventions": {
+        "all_to_all": 1
+      },
+      "freeze": {
+        "A_p": 0.0,
+        "A_d": 0.0
+      },
+      "freeze_rho0": null,
+      "note": "칼슘 상태가 없다 — 스파이크 짝만 본다. GB 계열의 대조군(5-6)."
+    }
+  ],
+  "syn_class": "PC->PC",
+  "protocol": {
+    "n_burst": 10,
+    "burst_hz": 5.0,
+    "n_in": 4,
+    "in_hz": 100.0,
+    "n_pulses": 40,
+    "tstop": 3000.0,
+    "dt": 0.025,
+    "rho0": 0.0
+  },
+  "uniform_loop": [
+    {
+      "key": "det",
+      "label": "det (전달만)",
+      "mech": "DetAMPANMDA",
+      "eff": 0.5,
+      "g_max_nS": 0.29815942963051634,
+      "has_rho": false
+    },
+    {
+      "key": "A",
+      "label": "A (순수 GB)",
+      "mech": "GBPlasticitySyn",
+      "eff": 0.7404170600402591,
+      "g_max_nS": 2.924763762083145,
+      "has_rho": true
+    },
+    {
+      "key": "B",
+      "label": "B (GB+TM)",
+      "mech": "GBPlasticityStpSyn",
+      "eff": 0.7404170600402591,
+      "g_max_nS": 0.5860830152772761,
+      "has_rho": true
+    },
+    {
+      "key": "C",
+      "label": "C (B+확률방출)",
+      "mech": "GBPlasticityStpProbSyn",
+      "eff": 0.7404170600402591,
+      "g_max_nS": 4.816849729133545,
+      "has_rho": true
+    },
+    {
+      "key": "stdp",
+      "label": "고전 STDP",
+      "mech": "PairSTDPSyn",
+      "eff": 0.11414206010707294,
+      "g_max_nS": 1.1110504881739536,
+      "has_rho": true
+    }
+  ],
+  "contract_post_nc": {
+    "det": "차단됨(RuntimeError)",
+    "A": "허용됨",
+    "B": "허용됨",
+    "C": "허용됨",
+    "stdp": "허용됨"
+  },
+  "contract_post_nc_ok": true,
+  "contract_seeding": {
+    "C": {
+      "미시딩": 1,
+      "시딩": 7
+    }
+  },
+  "nonprob_seed_blocked": 4,
+  "freeze": [
+    {
+      "key": "A",
+      "rho0": 0.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "A",
+      "rho0": 0.3,
+      "drho": -0.00018306639571480376,
+      "declared_ok": false,
+      "actually_flat": false
+    },
+    {
+      "key": "A",
+      "rho0": 1.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "B",
+      "rho0": 0.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "B",
+      "rho0": 0.3,
+      "drho": -0.00018306639571480376,
+      "declared_ok": false,
+      "actually_flat": false
+    },
+    {
+      "key": "B",
+      "rho0": 1.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "C",
+      "rho0": 0.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "C",
+      "rho0": 0.3,
+      "drho": -0.00018306639571480376,
+      "declared_ok": false,
+      "actually_flat": false
+    },
+    {
+      "key": "C",
+      "rho0": 1.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.3,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 1.0,
+      "drho": 0.0,
+      "declared_ok": true,
+      "actually_flat": true
+    }
+  ],
+  "freeze_consistent": true,
+  "dynamic_range": [
+    {
+      "key": "det",
+      "label": "det (전달만)",
+      "g_lo_nS": 0.3018172799044677,
+      "g_hi_nS": 0.3018172799044677,
+      "ratio": 1.0
+    },
+    {
+      "key": "A",
+      "label": "A (순수 GB)",
+      "g_lo_nS": 0.5967812096901794,
+      "g_hi_nS": 3.1518701387250516,
+      "ratio": 5.281450031513816
+    },
+    {
+      "key": "B",
+      "label": "B (GB+TM)",
+      "g_lo_nS": 0.5967812096901794,
+      "g_hi_nS": 3.1518701387250516,
+      "ratio": 5.281450031513816
+    },
+    {
+      "key": "C",
+      "label": "C (B+확률방출)",
+      "g_lo_nS": 0.5967812096901794,
+      "g_hi_nS": 3.1518701387250516,
+      "ratio": 5.281450031513816
+    },
+    {
+      "key": "stdp",
+      "label": "고전 STDP",
+      "g_lo_nS": 0.6036345602145561,
+      "g_hi_nS": 3.18806576638917,
+      "ratio": 5.2814500303892515
+    }
+  ],
+  "stp_targets": [
+    "det",
+    "B",
+    "C"
+  ],
+  "pending": "5-7 GluSynapseCa 미등록 — 미결#4(외부 소스 라이선스) 결정 대기. 레지스트리에 자리와 계약(post_nc=False · ref=glusyn)을 주석으로 미리 못박아 두었다. 등록되면 이 스크립트를 고치지 않아도 5-8·5-9·5-11 검증에 자동으로 포함된다 — 그것이 이 설계의 목표다.",
+  "finding": "능력 선언을 단일 출처(lib/engines.py)로 모으고 lib/synprobe 가 투영만 받게 했다. 같은 표를 두 곳에 두면 반드시 어긋난다. 계약은 선언만으로 부족하고 **행동으로** 검사해야 한다 — post_nc 위반은 RuntimeError 로 차단되고, 확률 미시딩은 방출 횟수로 검출되며, 동결은 rho 변화로 확인한다(D21 의 rho0 조건까지).",
+  "checks": {
+    "등록 엔진 5종이 **같은 루프**로 구동된다": true,
+    "★efficacy() 가 모두 [0,1] 안이다 (계약 1)": true,
+    "장기가소성 없는 엔진은 중립 0.5 를 준다": true,
+    "장기가소성 엔진은 rho 상태를 실제로 기록한다": true,
+    "★post_nc 계약 위반이 **오류로** 차단된다 (계약 2)": true,
+    "★확률 엔진 미시딩이 검출된다 (방출 <= 1회)": true,
+    "확률 엔진은 시딩하면 정상 작동한다": true,
+    "비확률 엔진에 seed() 를 부르면 차단된다": true,
+    "★동결 선언(freeze + freeze_rho0)이 실제 거동과 일치한다 (계약 3 · D21)": true,
+    "동적범위가 엔진마다 공시된다 (전 엔진 배율 산출)": true,
+    "★GB 계열과 고전 STDP 의 동적범위 배율이 같다 (같은 효능 축에 맞춘 결과)": true,
+    "5-9 대상(단기가소성 보유)이 선언으로 자동 결정된다": true
+  },
+  "passed": 12,
+  "total": 12
+}

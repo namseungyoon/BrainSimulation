@@ -63,7 +63,7 @@
 | **5-6** | `05_engines/6_stdp` | `5-6_stdp.py` | `5-6_stdp_window.png` | ⬜ |
 | **5-7** | `05_engines/7_glusyn` | `5-7_glusyn.py` | `5-7_spine_calcium.png` | ⬜ |
 | **5-8** | `05_engines/8_registry` | `5-8_registry.py` | `5-8_engine_matrix.png` | ⬜ |
-| **5-9** | `05_engines/9_stp_verify` | `5-9_stp_verify.py` | `5-9_ppr.png` · `5-9_train.png` · `5-9_recovery.png` | ⬜ |
+| **5-9** | `05_engines/9_stp_verify` | `5-9_stp_verify.py` | `5-9_ppr.png` · `5-9_train.png` · `5-9_recovery.png` · `5-9_stp.json` | ✅ |
 | **5-10** | `05_engines/10_calibrate` | `5-10_calibrate.py` | `5-10_first_pulse_match.png` | ⬜ |
 | **5-11** | `05_engines/11_freeze` | `5-11_freeze_contract.py` | `5-11_freeze_identity.png` | ⬜ |
 | **6-1** | `06_experiments/1_theta_phase` | `6-1_theta_phase.py` | `6-1_theta_phase.png` | ⬜ |

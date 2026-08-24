@@ -25,36 +25,9 @@ import numpy as np
 from lib.nrnenv import h
 import lib.nrnenv as nrnenv
 
-# 엔진별 능력 선언. 5-8 의 정식 레지스트리가 이 표를 이어받는다.
-#   stp   : 단기가소성 보유 (5-9 대상 자동 결정)
-#   ltp   : 장기가소성(효능 상태) 보유
-#   prob  : 확률 방출 (RNG 시딩 필요)
-#   post_nc: 후시냅스 스파이크를 전용 NetCon(weight<0)으로 통보해야 하는가
-#   states: 기록 가능한 상태변수
-#   gmax_via: 전도도를 어디로 주는가. ★두 mod 계열의 단위 규약이 다르다 —
-#     "param"  : syn.gmax 에 **uS** (= nS/1000). NetCon weight 는 전달 플래그 1.0.
-#                GB 계열: g = gmax * (B-A),  NET_RECEIVE 가 weight*w*factor 를 더한다.
-#     "weight" : NetCon weight 에 **nS 그대로**. mod 안의 상수 gmax=0.001 이 nS->uS 변환을
-#                한다(BBP 관례). gmax 가 RANGE 가 아니어서 Python 에서 못 만진다.
-#                Det/Prob 계열: g = 0.001 * (B-A),  B/A 에 weight*factor 가 더해진다.
-#     => 같은 0.6nS 를 주려면 param 엔진은 0.0006, weight 엔진은 0.6 을 넣어야 한다.
-#        틀리면 1000배 어긋나고 오류는 나지 않는다. 이름으로 분기하지 않고 이 선언을 읽는다.
-CAPS = {
-    "DetAMPANMDA":            dict(stp=True,  ltp=False, prob=False, post_nc=False,
-                                   gmax_via="weight", states=("g", "i")),
-    "ProbAMPANMDA_EMS":       dict(stp=True,  ltp=False, prob=True,  post_nc=False,
-                                   gmax_via="weight", states=("g", "i")),
-    "GBPlasticitySyn":        dict(stp=False, ltp=True,  prob=False, post_nc=True,
-                                   gmax_via="param", states=("g", "i", "c", "rho", "w")),
-    "GBPlasticityStpSyn":     dict(stp=True,  ltp=True,  prob=False, post_nc=True,
-                                   gmax_via="param", states=("g", "i", "c", "rho", "w")),
-    "GBPlasticityStpProbSyn": dict(stp=True,  ltp=True,  prob=True,  post_nc=True,
-                                   gmax_via="param", states=("g", "i", "c", "rho", "w")),
-    # 04 자체 작성 (5-6). 칼슘 상태가 없다 — 스파이크 짝만 본다(GB 계열의 대조군).
-    "PairSTDPSyn":            dict(stp=False, ltp=True,  prob=False, post_nc=True,
-                                   gmax_via="param",
-                                   states=("g", "i", "w", "rho", "x_pre", "x_post")),
-}
+# ★ 능력 선언의 단일 출처는 lib/engines.py 다. 여기서 투영만 받아 쓴다 —
+#   같은 표를 두 곳에 두면 반드시 어긋난다(D12 계열 규칙).
+from lib.engines import CAPS                       # noqa: E402,F401
 
 
 class SynProbe:
