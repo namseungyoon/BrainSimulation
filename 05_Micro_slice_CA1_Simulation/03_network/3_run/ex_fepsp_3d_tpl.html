@@ -102,12 +102,12 @@ const fe=document.getElementById('fe'), fx=fe.getContext('2d');
 const cu=document.getElementById('cu'), cx=cu.getContext('2d');
 const N=D.n, NF=D.nf, POS=D.pos, SOMA=D.soma, CUR=D.cur, T=D.t, EL=D.elec, V=D.V, ISOMA=D.Isoma, IDEND=D.Idend;
 const ECOL=['#ffd43b','#c084fc','#2dd4bf']; const SYN=D.syn||[];
-let frame=0, facc=0, speed=0.5, playing=true, yaw=0.6, pitch=0.3, drag=false, lx=0, ly=0, DPR=Math.min(2,devicePixelRatio||1);
-let eon=[true,true,true], synOn=true, autorot=true, catchment=false;
+let frame=0, facc=0, speed=0.5, playing=true, yaw=0.62, pitch=0.16, drag=false, lx=0, ly=0, DPR=Math.min(2,devicePixelRatio||1);
+let eon=[true,true,true], synOn=true, autorot=false, catchment=false;
 function hexA(h,a){return 'rgba('+parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)+','+a.toFixed(2)+')';}
 document.getElementById('nc').textContent=D.ncell;
 const seek=document.getElementById('seek'); seek.max=NF-1;
-const span=(()=>{let mx=0;for(const p of POS)mx=Math.max(mx,Math.abs(p[0]),Math.abs(p[1]),Math.abs(p[2]));for(const e of EL)mx=Math.max(mx,Math.abs(e[0]),Math.abs(e[1]),Math.abs(e[2]));return mx*2;})();
+const span=D.box?Math.max(D.box.u,D.box.r,D.box.w)*1.12:(()=>{let mx=0;for(const p of POS)mx=Math.max(mx,Math.abs(p[0]),Math.abs(p[1]),Math.abs(p[2]));for(const e of EL)mx=Math.max(mx,Math.abs(e[0]),Math.abs(e[1]),Math.abs(e[2]));return mx*2;})();
 
 function resize(){DPR=Math.min(2,devicePixelRatio||1);
   let r=gl.getBoundingClientRect(); gl.width=r.width*DPR; gl.height=r.height*DPR;
@@ -125,9 +125,38 @@ function curColor(v){const a=Math.min(1,Math.abs(v)/100);
   if(v>3) return 'rgba(255,85,85,'+(0.2+0.8*a).toFixed(2)+')';
   return 'rgba(120,130,150,0.28)';}
 
+const LAYFILL={SO:'rgba(221,132,82,.09)',SP:'rgba(76,114,176,.10)',SR:'rgba(85,168,104,.09)',SLM:'rgba(129,114,179,.09)'};
+const LAYINK={SO:'#DD8452',SP:'#6f9bd8',SR:'#55A868',SLM:'#a78bfa'};
+function drawScene(W,H,sc){
+  if(!D.box) return;
+  const bu=D.box.u/2, br=D.box.r/2, bw=D.box.w/2;
+  // 층 밴드(앞면 w=+bw)
+  for(const L of (D.layers||[])){
+    const c=[[-bu,L.r0,bw],[bu,L.r0,bw],[bu,L.r1,bw],[-bu,L.r1,bw]].map(p=>proj(p,W,H,sc));
+    gx.fillStyle=LAYFILL[L.name]||'rgba(120,130,150,.05)'; gx.beginPath();
+    c.forEach((q,i)=>i?gx.lineTo(q[0],q[1]):gx.moveTo(q[0],q[1])); gx.closePath(); gx.fill();
+    const lb=proj([-bu,(L.r0+L.r1)/2,bw],W,H,sc);
+    gx.fillStyle=LAYINK[L.name]||'#888'; gx.font='bold 12px IBM Plex Mono'; gx.textAlign='right';
+    gx.fillText(L.name, lb[0]-5, lb[1]+4); gx.textAlign='left';
+  }
+  // 박스 와이어프레임
+  const cor=[]; for(const su of[-bu,bu])for(const sr of[-br,br])for(const sw of[-bw,bw])cor.push([su,sr,sw]);
+  const ed=[[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  gx.strokeStyle='rgba(150,175,210,.3)'; gx.lineWidth=1;
+  for(const [a,b] of ed){const pa=proj(cor[a],W,H,sc),pb=proj(cor[b],W,H,sc); gx.beginPath();gx.moveTo(pa[0],pa[1]);gx.lineTo(pb[0],pb[1]);gx.stroke();}
+  // 치수 라벨
+  gx.fillStyle='#8697b0'; gx.font='10px IBM Plex Mono';
+  const ml=(p,tx)=>{const q=proj(p,W,H,sc); gx.fillText(tx,q[0],q[1]);};
+  ml([0,br+30,-bw], D.box.u+'µm (장축)'); ml([bu+15,0,-bw], D.box.r+'µm (층관통)'); ml([-bu,-br-15,0], D.box.w+'µm (두께)');
+  // 자극 locus (반대 두께면)
+  if(D.stim_locus){const q=proj(D.stim_locus,W,H,sc);
+    gx.strokeStyle='#ffc857';gx.lineWidth=2;gx.beginPath();gx.arc(q[0],q[1],7,0,6.28);gx.stroke();
+    gx.fillStyle='#ffc857';gx.font='bold 11px IBM Plex Mono';gx.fillText('⚡SC 자극',q[0]+10,q[1]+4);}
+}
 function draw3d(){
   const W=gl.width/DPR,H=gl.height/DPR; gx.setTransform(DPR,0,0,DPR,0,0); gx.clearRect(0,0,W,H);
   const sc=Math.min(W,H)/(span*1.15); const cf=CUR[frame];
+  drawScene(W,H,sc);
   const ord=[];
   for(let i=0;i<N;i++){const q=proj(POS[i],W,H,sc); ord.push([q[2],i,q]);}
   ord.sort((a,b)=>a[0]-b[0]);
@@ -146,12 +175,14 @@ function draw3d(){
   for(let j=0;j<EL.length;j++){
     if(!eon[j]) continue;
     const q=proj(EL[j],W,H,sc); const vv=V[j][frame];
-    const rr=6+Math.min(14,Math.abs(vv)/2);
-    gx.fillStyle=ECOL[j];
-    gx.beginPath(); gx.moveTo(q[0],q[1]-rr); gx.lineTo(q[0]+rr,q[1]); gx.lineTo(q[0],q[1]+rr); gx.lineTo(q[0]-rr,q[1]); gx.closePath(); gx.fill();
-    gx.strokeStyle='#fff'; gx.lineWidth=1.5; gx.stroke();
-    gx.fillStyle=ECOL[j]; gx.font='bold 11px IBM Plex Mono'; gx.textAlign='center';
-    gx.fillText(D.enames[j].split('(')[0], q[0], q[1]-rr-5);
+    const rr=Math.max(2.0, (D.elec_diam||10)/2 * sc * q[3]);   // 실제 전극 크기(지름 10µm)
+    const glow=Math.min(9, Math.abs(vv)/90);                    // 신호=작은 글로우
+    gx.fillStyle=vv<0?'rgba(74,144,255,.28)':'rgba(255,85,85,.28)';
+    gx.beginPath(); gx.arc(q[0],q[1],rr+glow,0,6.28); gx.fill();
+    gx.fillStyle=ECOL[j]; gx.beginPath(); gx.arc(q[0],q[1],rr,0,6.28); gx.fill();
+    gx.strokeStyle='#fff'; gx.lineWidth=1; gx.stroke();
+    gx.fillStyle=ECOL[j]; gx.font='bold 10px IBM Plex Mono'; gx.textAlign='center';
+    gx.fillText(D.enames[j].split('(')[0], q[0], q[1]-rr-glow-4);
   }
   gx.textAlign='left';
 }
