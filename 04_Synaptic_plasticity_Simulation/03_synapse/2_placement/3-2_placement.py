@@ -16,7 +16,7 @@
   - Crepel, Khazipov & Ben-Ari 1997 J Neurophysiol 77:2071 (PMID 9114256) — CA1 국소 재귀
     축삭은 stratum oriens 를 지나고(oriens TTX 로 다시냅스 성분 감소), 전류원밀도상 응답은
     **정단 근위 50~150um**(추체층 아래 radiatum)에서 생성.
-  - Ecker 2020 Fig.3b — E->E 연결당 시냅스 수 1.3.
+  - Ecker 2020 §3.3 — E-E 연결당 시냅스 수 1.26±0.6 (원문 확인, D15).
   => 표적 = 기저수상돌기 전체 + 정단 근위 50~150um · 유지 개수 = 2.
   ⚠️ 이전 판은 SC(Schaffer collateral) 전제로 정단 SR 100~300um 에 5개를 놓았다. SC 는 이 벤치의
      연결이 아니므로(D9) 폐기했다.
@@ -56,7 +56,7 @@ USE_BASAL = True            # 기저수상돌기 전체 (Deuchars & Thomson 1996
 SOMA_LATERAL_L = 120.0    # 소마-소마 측방거리 um (모델링 값, 수상돌기 필드 겹침 범위)
 TOUCH_R = 10.0            # 접촉(apposition) 반경 um (3D)
 ANGLE_STEP = 10           # 회전 스윕 간격 도
-N_KEEP = 2                # Deuchars 1996 재구성 쌍 = 접촉 2개 (Ecker E->E 평균 1.3)
+N_KEEP = 2                # Deuchars 1996 재구성 쌍 = 접촉 2개 (Ecker E-E 평균 1.26±0.6)
 V_COND = 0.5             # 전도속도 um/us = 0.5 m/s
 SYN_DELAY = 0.5          # 시냅스 지연 ms
 
@@ -283,7 +283,7 @@ def main():
                target_zones=dict(basal=USE_BASAL, apical_proximal_um=list(APIC_PROX)),
                n_keep=N_KEEP,
                basis="Deuchars&Thomson1996 PMID8895869 (기저 3차, 접촉 2) · "
-                     "Crepel1997 PMID9114256 (정단근위 50-150um) · Ecker2020 Fig3b (E->E 1.3)",
+                     "Crepel1997 PMID9114256 (정단근위 50-150um) · Ecker2020 §3.3/TableS3 (E-E 1.26±0.6)",
                soma_lateral_L_um=SOMA_LATERAL_L, touch_r_um=TOUCH_R, angle_step_deg=ANGLE_STEP,
                best_angle_deg=theta, best_touch_count=int(counts[best]),
                best_mean_mindist_um=round(float(meandist[best]), 1),

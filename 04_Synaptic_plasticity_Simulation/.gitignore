@@ -35,3 +35,6 @@ mechanisms/arm64/
 # 파이썬
 __pycache__/
 *.py[cod]
+
+# 논문 원문 PDF (저작권 · 대용량) — 로컬 참조용
+99_references/

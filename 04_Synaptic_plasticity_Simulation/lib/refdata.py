@@ -37,14 +37,38 @@ SAYER1990 = {
     "src": "Sayer/Friedlander/Redman 1990 J Neurosci 10(3):826 (PMID 2319304)",
 }
 
-# 참고 대조용 — Ecker 2020 Table 3 의 '실측 촉진형' 흥분성 클래스 PC->SOM+ (E1).
+# Ecker et al. 2020 서지 — 원문 확보·대조 완료 (D15, 2026-08-24)
+#   Hippocampus 30(11):1129-1145 · DOI 10.1002/hipo.23220
+#   99_references/Ecker2020_CA1_synaptic_physiology_in_silico.pdf (gitignore)
+ECKER2020 = {
+    "cite": "Ecker A, Romani A, Saray S, Kali S, Migliore M, Falck J, Lange S, Mercer A, "
+            "Thomson AM, Muller E, Reimann MW, Ramaswamy S (2020) Hippocampus 30(11):1129-1145",
+    "doi": "10.1002/hipo.23220",
+    # Table 3 "PC to PC (E2)" 원문 값 (평균 ± SD). 상첨자 a = 체감각 피질(Markram 2015)에서 일반화
+    "PC_PC": {"g_nS": (0.6, 0.1), "tau_d_AMPA": (3.0, 0.2),
+              "Use": (0.5, 0.02, "a"), "Dep_ms": (671, 17, "a"), "Fac_ms": (17, 5, "a"),
+              "Nrrp": 2, "NMDA_ratio": 1.22,
+              "NMDA_tau_r": 3.9, "NMDA_tau_d": 148.5},
+    # 연결당 시냅스 수 (본문 §3.3, Supplementary Table S3) — Fig.3b 는 실험 대조 그림
+    "nsyn_per_conn": {"E_E": (1.26, 0.6), "I_E": (8.2, 2.1),
+                      "E_I_PC_OLM": (2.8, 1.2), "I_I": (2.8, 0.2)},
+    "erev_exc_mV": -8.5, "erev_inh_mV": -73.0,   # p4, Moradi & Ascoli 2020
+    "ca_o_mM_calibration": 2.5,                   # p13: 전도도를 2.5mM PSP 진폭에 맞춰 보정
+    "note": "PC->PC 는 in vitro [Ca2+]o 2~2.5mM 에서 E2(억압), in vivo 수준 1.1~1.3mM 에서는 "
+            "E3(준선형·낮은 진폭·큰 변동·실패)이 된다(p8). 우리 Use=0.50 은 슬라이스 조건 값이다.",
+    "table3_has_no_schaffer": True,               # 16경로 전부 CA1 내부 — D9 근거
+}
+
+# 참고 대조용 — Ecker 2020 Table 3 의 촉진형 흥분성 클래스 PC->SOM+ (E1).
 #   ⚠️ 이 벤치의 연결이 아니다(표적이 개재뉴런). 억압 vs 촉진 대비를 보일 때
-#   없는 클래스를 만들지 않고 이 실측 클래스를 쓴다 (D9 원칙).
+#   없는 클래스를 만들지 않고 이 클래스를 쓴다 (D9 원칙).
+#   ⚠️ USE/D/F 는 상첨자 a = 체감각 피질 일반화값이고 SD 가 매우 크다(F 670±830).
 ECKER_E1_CONTRAST = {
     "name": "PC->SOM+ (E1)",
     "g_nS": 0.8, "tau_d_AMPA": 1.7, "NMDA_ratio": 0.28,
     "Use": 0.09, "Dep_ms": 138.0, "Fac_ms": 670.0, "Nrrp": 1,
-    "src": "Ecker 2020 Hippocampus 30:1129 Table 3 (PC->O-LM)",
+    "sd": {"g_nS": 0.05, "tau_d_AMPA": 0.14, "Use": 0.12, "Dep_ms": 211.0, "Fac_ms": 830.0},
+    "src": "Ecker 2020 Hippocampus 30(11):1129 Table 3 (PC->O-LM / PC->SOM+), DOI 10.1002/hipo.23220",
 }
 
 # CA1 추체세포(cACpyr) e-특징 대략 범위 (lo, hi)

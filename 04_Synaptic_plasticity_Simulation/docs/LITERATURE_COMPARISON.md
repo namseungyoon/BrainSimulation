@@ -2,13 +2,13 @@
 
 > **모든 "우리 값" 은 각 단계의 `figures/*.json` 실행 산출에서 읽은 것이다** (기억·추정 아님).
 > 행마다 근거 JSON 을 적었으니 재현·검증 가능하다. 갱신 시 해당 단계를 재실행한 뒤 이 표를 고친다.
-> 작성 2026-08-23 · 대상 커밋 `f76568a` (3-1~3-8 완료)
+> 작성 2026-08-23 · **갱신 2026-08-24 (D15: Ecker 2020 원문 대조)** · 3-1~3-8 완료
 
 ## 검증 상태 표기
 
 | 표기 | 뜻 |
 |---|---|
-| **✅확인** | 이 프로젝트에서 **PubMed 로 서지·수치를 직접 확인**했다 |
+| **✅확인** | 이 프로젝트에서 **PubMed 또는 원문 PDF 로 서지·수치를 직접 확인**했다 |
 | ⚠️미확인 | 계획서·다른 트랙에서 물려받은 인용. 서지/수치를 원문으로 확인하지 않았다 |
 | ❌정정 | 잘못 인용했다가 정정한 것 (아래 별도 절) |
 
@@ -59,24 +59,58 @@
 
 ## 4. 시냅스 전달 파라미터 — 3-1
 
-문헌 기준: **Ecker et al. 2020** *Hippocampus* 30:1129 Table 3 "PC→PC (E2)" + §2.3 (⚠️미확인 — DOI 미확보, 다른 트랙에서 표로 정리된 값을 사용)
+문헌 기준: **Ecker et al. 2020** *Hippocampus* **30(11):1129-1145**, DOI **10.1002/hipo.23220** — **✅확인**
+(원문을 `99_references/` 에 확보해 Table 3·§2.3·§3.3 직접 대조, **D15** 2026-08-24)
 근거: `03_synapse/1_params/figures/3-1_params.json` · `config/synapse.yaml`
 
-| 파라미터 | 우리 값 | 출처 태그 | 근거 |
-|---|---|---|---|
-| g_hat | 0.6 nS | paper | Ecker Table3 PC→PC(E2) |
-| 역전위 | -8.5 mV | paper | Moradi & Ascoli 2020 (⚠️미확인) · mod 기본 0 을 덮어씀 |
-| AMPA τr / τd | 0.2 / 3.0 ms | paper | Ecker Table3 |
-| NMDA τr / τd | 3.9 / 148.5 ms | paper | Ecker §2.3 (Q10 보정, 34℃) — **D11** |
-| NMDA:AMPA | 1.22 | paper | Ecker §2.3 |
-| Use / Dep / Fac | 0.50 / 671 / 17 ms | paper | Ecker Table3 (Fac<Dep → **억압형**) |
-| Nrrp | 2 | paper | Ecker Table3 |
+| 파라미터 | 우리 값 | 원문 값 | **출처 성격** | 근거 |
+|---|---|---|---|---|
+| g_hat | 0.6 nS | 0.6 ± 0.1 | **insilico** — 논문이 in silico 보정 | Table3, 각주 |
+| 역전위 | -8.5 mV | -8.5 | measured | p4 (Moradi & Ascoli 2020, Hippocampus 30(4):314) |
+| AMPA τr | 0.2 ms | (Suppl. S1 미보유) | mod 기본값 | ※원문 확인 불가 |
+| AMPA τd | 3.0 ms | 3 ± 0.2 | measured (문헌에서 취함) | Table3, 각주 |
+| NMDA τr / τd | 3.9 / 148.5 ms | 3.9 / 148.5 | **xpathway** — A&M 2001(SC 정단) Q10 보정 | §2.3 (Q10 2.2 / 1.7, 34℃) |
+| NMDA:AMPA | 1.22 | 1.22 | measured | §2.3 |
+| Use / Dep / Fac | 0.50 / 671 / 17 ms | 0.5±0.02ᵃ / 671±17ᵃ / 17±5ᵃ | **xregion** — 체감각 피질 일반화 | Table3, 상첨자 a |
+| Nrrp | 2 | 2 | **insilico** — 논문이 in silico 보정 | Table3, 각주 |
 
-**★ 튜닝값 0개** (`tuned_params: []`). 등록 클래스도 PC→PC 하나뿐(SC→PC 회귀 방지 단언 포함).
-단기가소성 검산: 20Hz 8펄스 정규화 방출량 **1.00 → 0.322 → … → 0.14 (억압)**.
-촉진 대조는 없는 클래스를 만들지 않고 Ecker Table3 실측 촉진 클래스 PC→SOM+ (E1) 사용 → 1.00 → 2.60.
+**수치는 8개 항목 전부 원문과 일치**했다. 그러나 **출처 성격이 달랐다.** Table 3 각주 원문:
 
-**미결#2**: Use 를 Ecker 는 0.50, HippocampusHub 는 0.65±0.1 로 준다. 0.50 채택, 불일치는 미해결로 기록.
+> "Synapse parameters either taken from the literature (τdecay), fitted directly to data
+> (USE, D, F), calibrated in silico (ĝ, NRRP) or **taken from the somatosensory cortex**
+> (Markram et al., 2015) **marked with superscript 'a'**."
+
+PC→PC 행은 **USE·D·F 세 값 모두 상첨자 a** — 해마 실측이 아니라 **체감각 피질 일반화**다.
+이유(p12): CA1 PC→PC 논문들(Deuchars & Thomson 1996 포함)이 **전시냅스 2발 이상의 원시
+트레이스를 제공하지 않아** 피질의 USE/D/F 4세트를 일반화했다.
+
+**출처 내역** (3-1 JSON `src_breakdown`): 해마 실측 **3** · 논문 in silico 보정 **2** ·
+체감각피질 일반화 **3** · 다른 경로 외삽 **2** · mod 기본 **1**.
+
+→ **우리가 임의로 정한 튜닝값은 0개**다. 하지만 "논문값 = 해마 실측" 은 아니다.
+특히 **우리 단기가소성(억압)의 크기는 피질 값**이고, **방향은 해마 값**이다
+(Deuchars & Thomson 1996 이 CA1 PC→PC 4쌍 전부에서 짝펄스 억압 관찰).
+
+단기가소성 검산: 20Hz 8펄스 정규화 방출량 **1.00 → 0.14 (억압)**.
+촉진 대조는 Ecker Table3 의 촉진 클래스 PC→SOM+ (E1) 사용 → 1.00 → **2.60**
+(※E1 의 USE/D/F 도 상첨자 a 이고 SD 가 매우 크다: F 670±830).
+
+**★ 칼슘 농도 조건 (p8·p13) — 새로 확인.** 논문은 전도도를 **[Ca²⁺]o = 2.5 mM**(in vitro
+슬라이스) PSP 진폭에 맞춰 보정했다. 그리고 PC→PC 는 **in vitro(2~2.5 mM)에서 E2(억압)** 이지만
+**in vivo 수준(1.1~1.3 mM)에서는 E3(준선형·낮은 진폭·큰 변동·실패)** 이 된다.
+→ 우리 Use=0.50 은 슬라이스 값이므로 **우리 시뮬레이션은 슬라이스 조건을 재현**한다.
+6단계에서 in vivo 조건을 논할 때 반드시 명기한다(우리 mod 에 Ca 스케일링 없음).
+
+**★ D9 근거 확정.** Table 3 의 **16개 경로에 Schaffer collateral(CA3→CA1) 행이 없다** —
+전부 CA1 내부(PC·OLM·SOM±·PVBC·CCKBC·BS·Ivy·AA·SCA·Tri·CCK±).
+※ 본문의 "Schaffer collateral-associated (SCA)" 는 **CA1 내부 개재뉴런 m-type** 이고
+CA3 축삭이 아니다 — 이름 때문에 혼동할 수 있다.
+
+**미결#2**: Use 를 Ecker 는 0.50, HippocampusHub 는 0.65±0.1 로 준다. 0.50 채택, 불일치는 미해결.
+
+**기하 참고**: Ecker 는 PC-PC 커넥텀에 touch distance **1 µm** 를 썼다(PC→개재뉴런 6 µm).
+우리 3-2 는 고립된 두 세포에서 접촉을 찾느라 **10 µm** — 목적이 달라 유지하되 느슨함을 기록.
+논문의 in silico 짝기록은 소마간 약 100 µm 표집, 우리 벤치는 120 µm 로 유사.
 
 ## 5. 시냅스 위치·개수 — 3-2
 
@@ -86,7 +120,7 @@
 |---|---|---|---|---|
 | 표적 구획 | 기저수상돌기 (dend[3]·dend[23]) | 완전 재구성 쌍의 접촉이 **3차 기저수상돌기** (스파인1·shaft1) | Deuchars & Thomson 1996, Neuroscience 74(4):1009, PMID 8895869 | **✅확인** |
 | 표적 구획 (보조) | 정단 근위 50~150µm 도 후보에 포함 | 국소 재귀 축삭은 oriens 통과 · CSD 응답은 **정단 근위 50~150µm** | Crépel, Khazipov & Ben-Ari 1997, J Neurophysiol 77:2071, PMID 9114256 | **✅확인** |
-| 연결당 시냅스 수 | **2** | Deuchars 재구성 쌍 = **2** · Ecker Fig.3b E→E 평균 **1.3** | 위 + Ecker 2020 | **✅확인** / ⚠️미확인 |
+| 연결당 시냅스 수 | **2** | Deuchars 재구성 쌍 = **2** · Ecker §3.3/Table S3 E-E 평균 **1.26 ± 0.6** | 위 + Ecker 2020 §3.3 | **✅확인** |
 | 연결 희소성 | (모델에선 1쌍 강제) | 989쌍 중 단일시냅스 연결 **9개 (~0.9%)** | Deuchars & Thomson 1996 | **✅확인** |
 | 회전각 θ* | 330° (표적 접촉 4개) | — (우리 기하 탐색값) | — | 모델링 |
 | 전도지연 | 0.76 / 0.74 ms | — (3D 거리 ÷ 0.5 m/s + 0.5 ms) | — | 모델링 |
@@ -188,7 +222,7 @@
 |---|---|---|---|
 | Sayer, Friedlander & Redman 1990, J Neurosci 10(3):826 | 2319304 (**✅확인**) | 참고 | CA3→CA1(SC) 실측: 진폭 30~665 µV(평균 131) · 상승 3.9±1.8 ms · 반치폭 19.5±8.0 ms. SC 자극 실험과 대조할 때만 사용 |
 | Andrasfalvy & Magee 2001, J Neurosci 21:9151 | 11717348 (**✅확인**) | 참고 | SC 정단 100~250 µm 에서 AMPA 수용체 수 약 2배 증가·NMDA 진폭 불변. 우리 연결이 아님 |
-| Ecker 2020 PC→SOM+ (E1) | — (⚠️미확인) | 대조 | 촉진형 대조가 필요할 때 **없는 클래스를 만들지 않고** 이 실측 클래스를 쓴다 |
+| Ecker 2020 PC→SOM+ (E1) | DOI 10.1002/hipo.23220 (**✅확인**) | 대조 | 촉진형 대조가 필요할 때 **없는 클래스를 만들지 않고** 이 실측 클래스를 쓴다 |
 
 ---
 
@@ -206,7 +240,7 @@
 | 5-7 | Chindemi et al. 2022, *Nat Commun* 13:3038 | ⚠️미확인 | 스파인 칼슘 가소성. **⚠️신피질 논문 — CA1 적용은 외삽** |
 | 5-9 | Tsodyks & Markram 1997 · Dobrunz & Stevens 1997 | ⚠️미확인 | 단기가소성 PPR·트레인 |
 | 2-4 | Hippocampome.org · Migliore 2018 | ⚠️미확인 | cACpyr 범위 (범주형 근거로만 사용) |
-| 3-1 | Moradi & Ascoli 2020 | ⚠️미확인 | 유효 역전위 -8.5 mV |
+| 3-1 | Moradi & Ascoli 2020, *Hippocampus* 30(4):314-331 | ⚠️미확인 (Ecker 가 인용한 것은 확인) | 유효 역전위 -8.5 mV |
 
 **원칙**: 단계 착수 시 그 단계의 문헌을 PubMed 로 확인해 이 표의 상태를 ⚠️→✅ 로 올린다.
 SC 오염 5건이 모두 "확인하지 않고 물려받은 인용" 에서 나왔다.

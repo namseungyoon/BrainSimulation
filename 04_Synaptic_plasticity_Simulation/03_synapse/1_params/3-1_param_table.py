@@ -32,8 +32,13 @@ from lib import plots                        # noqa: E402
 from lib import refdata                       # noqa: E402
 from lib.refs import tm                       # noqa: E402
 
-SRC_COLOR = {"paper": "#2e7d32", "tuned": "#ef6c00", "ours": "#7b1fa2", "mod": "#1565c0"}
-SRC_KO = {"paper": "측정/논문", "tuned": "튜닝값", "ours": "우리선택", "mod": "mod기본"}
+# 출처 성격 — Ecker2020 Table3 각주를 그대로 반영 (D15). '논문에 실린 값' 과
+# '해마에서 측정된 값' 은 다르다. 가소성 연구에서는 이 구분이 중요하다.
+SRC_COLOR = {"measured": "#2e7d32", "insilico": "#ef6c00", "xregion": "#c62828",
+             "xpathway": "#6a1b9a", "mod": "#1565c0", "tuned": "#ff6f00", "ours": "#7b1fa2"}
+SRC_KO = {"measured": "해마 실측", "insilico": "논문 in silico 보정",
+          "xregion": "체감각피질 일반화", "xpathway": "다른 경로 외삽",
+          "mod": "mod 기본값"}
 
 # Ecker2020 Table3 PC->PC(E2) 기대값 — config 가 조용히 바뀌면 잡는다
 EXPECT = {"g_nS": 0.6, "tau_d_AMPA": 3.0, "NMDA_ratio": 1.22,
@@ -81,16 +86,28 @@ def main():
         ax.text(0.58, y, (ref[:66] + "…") if len(ref) > 67 else ref,
                 fontsize=7.6, va="center", color="#555")
         y -= 1
-    ax.set_xlim(0, 1.24); ax.set_ylim(-2.6, n + 1.2)
-    for i, (s, ko) in enumerate(SRC_KO.items()):
-        ax.text(0.02 + i * 0.16, -1.1, f"■ {ko}", fontsize=8.5, color=SRC_COLOR[s])
-    ax.text(0.02, -1.8,
-            "★ 튜닝값 0개 — 전 파라미터가 Ecker2020 Table3/§2.3 또는 Moradi&Ascoli 2020 실측이다.",
-            fontsize=8.5, color="#2e7d32", fontweight="bold")
-    ax.text(0.02, -2.3,
-            "SC→PC 클래스는 삭제됐다(D9): Ecker Table3 에 없는 튜닝 클래스이고, CA3 세포가 없으므로 이 벤치의 연결이 아니다.",
-            fontsize=8, color="#c62828")
-    plots.stamp(fig, "3-1 | config/synapse.yaml 단일 출처 | NMDA 3.9/148.5ms = Ecker §2.3 PC→PC (D11)")
+    cnt = {}
+    for key, _ in keys:
+        cnt[pc[key]["src"]] = cnt.get(pc[key]["src"], 0) + 1
+    ax.set_xlim(0, 1.24); ax.set_ylim(-3.4, n + 1.2)
+    for i, (sname, ko) in enumerate(SRC_KO.items()):
+        ax.text(0.02 + i * 0.20, -1.1, f"■ {ko} ({cnt.get(sname, 0)})",
+                fontsize=8.2, color=SRC_COLOR[sname])
+    ax.text(0.02, -1.85,
+            "★ 우리가 임의로 정한 튜닝값은 0개다. 다만 '논문에 실린 값' 과 '해마에서 측정된 값' 은 다르다 — 아래 두 줄이 그 구분이다.",
+            fontsize=8.3, color="#333", fontweight="bold")
+    ax.text(0.02, -2.35,
+            "※ Use·Dep·Fac 는 Ecker Table3 상첨자 a = 체감각 피질(Markram 2015) 일반화값이다. CA1 PC→PC 논문에 "
+            "전시냅스 2발 이상 원시 트레이스가 없어서다(Ecker p12).",
+            fontsize=7.6, color="#c62828")
+    ax.text(0.02, -2.8,
+            "   억압 '방향' 은 Deuchars&Thomson 1996 이 CA1 PC→PC 4쌍 전부에서 짝펄스 억압을 관찰해 뒷받침한다 — 크기는 피질 값이다.",
+            fontsize=7.6, color="#c62828")
+    ax.text(0.02, -3.25,
+            "※ [Ca2+]o: 논문은 전도도를 2.5mM(슬라이스) PSP 진폭에 맞췄다. PC→PC 는 in vivo 수준(1.1~1.3mM)에서 "
+            "E3(준선형)이 된다(Ecker p8) — 우리 값은 슬라이스 조건이다.",
+            fontsize=7.6, color="#c62828")
+    plots.stamp(fig, "3-1 | config/synapse.yaml 단일 출처 | Ecker2020 원문 대조 완료(DOI 10.1002/hipo.23220, D15)")
     outdir = plots.figdir(__file__)
     plots.save(fig, outdir, "3-1_param_table.png")
 
@@ -126,13 +143,15 @@ def main():
     print(f"  (참고) {E1['name']} 20Hz: {e1_amp[0]:.2f}→{e1_amp[-1]:.2f}")
 
     mism = {k: (pc[k]["v"], v) for k, v in EXPECT.items() if abs(float(pc[k]["v"]) - v) > 1e-9}
-    tuned = [k for k, _ in keys if pc[k]["src"] == "tuned"]
+    tuned = [k for k, _ in keys if pc[k]["src"] in ("tuned", "ours")]
+    xreg = [k for k, _ in keys if pc[k]["src"] == "xregion"]
     checks = [
         ("기본 클래스 = PC->PC", cfg["default_class"] == "PC->PC"),
         ("SC->PC 클래스 없음 (D9 회귀 방지)", "SC->PC" not in classes),
         ("등록 클래스 1개뿐", len(classes) == 1),
         ("Ecker Table3/§2.3 값과 일치", not mism),
-        ("튜닝값 0개", not tuned),
+        ("우리 임의 튜닝값 0개 (논문값만 사용)", not tuned),
+        (f"출처 성격 태그로 구분됨 (체감각피질 일반화 {len(xreg)}개 명시)", len(xreg) > 0),
         ("PC->PC 는 억압 (끝 < 첫)", pc_amp[-1] < pc_amp[0]),
         ("참고 E1 은 촉진 (끝 > 첫)", e1_amp[-1] > e1_amp[0]),
     ]
@@ -142,6 +161,7 @@ def main():
         print(f"    불일치: {mism}")
     if tuned:
         print(f"    튜닝 항목: {tuned}")
+    print(f"  출처 내역: " + " · ".join(f"{SRC_KO.get(k,k)} {v}" for k, v in cnt.items()))
     n_ok = sum(1 for _, ok in checks if ok)
 
     out = dict(default_class=cfg["default_class"], classes=list(classes),
@@ -150,7 +170,12 @@ def main():
                pc_train_20hz=[round(float(x), 3) for x in pc_amp],
                e1_train_20hz=[round(float(x), 3) for x in e1_amp],
                pc_depression=bool(pc_amp[-1] < pc_amp[0]),
-               tuned_params=tuned,
+               tuned_params=tuned, xregion_params=xreg, src_breakdown=cnt,
+               ecker_verified=dict(doi=refdata.ECKER2020["doi"],
+                                   cite=refdata.ECKER2020["cite"],
+                                   table3_has_no_schaffer=refdata.ECKER2020["table3_has_no_schaffer"],
+                                   ca_o_mM=refdata.ECKER2020["ca_o_mM_calibration"],
+                                   note=refdata.ECKER2020["note"]),
                checks={k: bool(v) for k, v in checks}, passed=n_ok, total=len(checks))
     jpath = os.path.join(outdir, "3-1_params.json")
     with open(jpath, "w", encoding="utf-8") as f:

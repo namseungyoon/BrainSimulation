@@ -1,42 +1,66 @@
-# 04 시냅스 전달 파라미터 — 단일 출처 (3-1 에서 확정, 2026-08-21 / PC->PC 로 정정)
-# 각 값에 출처 태그: paper(측정/논문) · ours(우리 선택) · mod(mod 기본값)
-# ⚠️ 이 값들은 전달(AMPA/NMDA) 파라미터다. 가소성 엔진별 파라미터는 config/engines.yaml.
+# 04 시냅스 전달 파라미터 — 단일 출처
+#   3-1 에서 확정(2026-08-21) · PC->PC 로 정정(D9) · NMDA D11 · ★원문 대조 D15(2026-08-24)
 #
-# 이 벤치는 CA1 추체세포 2개를 붙인 것이다. 따라서 연결은 PC->PC 하나뿐이다.
-#   D9(2026-08-21): 이전 버전은 default_class 가 SC->PC 였다. SC->PC 는 Ecker2020 Table3 에
-#   존재하지 않는 클래스이고(Table3 = CA1 내부 연결만), 01 트랙에서 "SC 대용"으로 만들어 붙인
-#   튜닝값이었다. 04 는 독립 트랙이므로 그 값을 쓸 근거가 없고, 벤치의 실제 연결도 아니다.
-#   -> SC->PC 삭제. PC->PC (Ecker2020 Table3 실측 E2 클래스) 하나만 남긴다.
+# 이 벤치는 CA1 추체세포 2개를 붙인 것이다. 따라서 연결은 PC->PC 하나뿐이다(D9).
+#
+# ★ 출처 태그 — Ecker 2020 원문(Table 3 각주)을 그대로 반영한다. D15 에서 정정.
+#   measured  : 실측값 (해마 슬라이스에서 측정)
+#   insilico  : 논문이 **in silico 보정**으로 정한 값 (측정값 아님)
+#   xregion   : 논문이 **다른 뇌영역(체감각 피질, Markram 2015)** 에서 일반화한 값
+#   xpathway  : 논문이 **다른 경로**에서 가져온 값
+#   mod       : mod 기본값
+#   ※ 이전 판은 이 모두를 'paper' 하나로 뭉갰다. 논문에 실린 값이라는 점은 맞지만
+#      "해마에서 측정된 값"이 아니어서, 가소성 연구에서는 이 구분이 중요하다.
+#
+# ★ 칼슘 농도 맥락 (Ecker p8·p13): 논문은 전도도를 **[Ca2+]o = 2.5 mM**(in vitro 슬라이스)
+#   PSP 진폭에 맞춰 보정했다. 그리고 PC->PC 는 in vitro(2~2.5mM)에서 **E2(억압)** 이지만
+#   in vivo 수준(1.1~1.3mM)에서는 **E3(준선형, 낮은 진폭·큰 변동·실패)** 이 된다고 보고한다.
+#   => 아래 Use=0.50 은 슬라이스 조건 값이다. 우리 시뮬레이션은 **슬라이스 조건**을 재현한다.
+#      6단계에서 in vivo 조건을 논할 때는 이 사실을 반드시 명기한다(mod 에 Ca 스케일링 없음).
 
 default_class: PC->PC
 
 classes:
-  PC->PC:                         # CA1 추체세포 -> CA1 추체세포 (Ecker2020 Table3 "PC->PC (E2)", 억압형)
+  PC->PC:                         # CA1 추체세포 -> CA1 추체세포 (Ecker2020 Table3 "PC->PC (E2)")
     receptor: AMPANMDA
-    g_nS:        {v: 0.6,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2) g_hat. 3-7 에서 uEPSP 기준 재보정"}
-    e_rev_mV:    {v: -8.5,  src: paper, ref: "Moradi & Ascoli 2020 유효 역전위(§2.6). mod 기본 0 을 덮어씀"}
-    tau_r_AMPA:  {v: 0.2,   src: paper, ref: "Ecker2020 Table3 (E 계열)"}
-    tau_d_AMPA:  {v: 3.0,   src: paper, ref: "Ecker2020 Table3 PC->PC(E2) tau_d"}
-    tau_r_NMDA:  {v: 3.9,   src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"}
-    tau_d_NMDA:  {v: 148.5, src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA (Q10 보정, 34도). D11"}
-    NMDA_ratio:  {v: 1.22,  src: paper, ref: "Ecker2020 §2.3 PC->PC NMDA:AMPA"}
-    mg_mM:       {v: 1.0,   src: mod,   ref: "생리 세포외 Mg2+"}
-    # 단기가소성(TM) — Ecker2020 Table3 실측값 (억압형: Fac < Dep)
-    Use:         {v: 0.50,  src: paper, ref: "Ecker2020 Table3. ⚠️HippocampusHub 는 0.65±0.1 — DECISIONS 미결#2"}
-    Dep_ms:      {v: 671.0, src: paper, ref: "Ecker2020 Table3 PC->PC(E2)"}
-    Fac_ms:      {v: 17.0,  src: paper, ref: "Ecker2020 Table3 PC->PC(E2). Fac<Dep -> 억압"}
-    Nrrp:        {v: 2,     src: paper, ref: "Ecker2020 Table3 PC->PC(E2) 방출자리 수"}
+    g_nS:        {v: 0.6,   src: insilico, ref: "Ecker2020 Table3 PC->PC: g_hat 0.6±0.1 nS. 각주=in silico 보정(측정값 아님), [Ca2+]o 2.5mM PSP 진폭에 맞춤"}
+    e_rev_mV:    {v: -8.5,  src: measured, ref: "Ecker2020 p4: 흥분성 Erev=-8.5mV (Moradi & Ascoli 2020, Hippocampus 30(4):314). mod 기본 0 을 덮어씀"}
+    tau_r_AMPA:  {v: 0.2,   src: mod,      ref: "Ecker Supplementary Table S1 미보유 -> mod 기본값 사용. ※원문 확인 불가"}
+    tau_d_AMPA:  {v: 3.0,   src: measured, ref: "Ecker2020 Table3 PC->PC: tau_decay 3±0.2 ms. 각주=문헌에서 취함"}
+    tau_r_NMDA:  {v: 3.9,   src: xpathway, ref: "Ecker2020 p3: Andrasfalvy&Magee 2001 값의 Q10 보정(Q10=2.2). ※A&M 은 Schaffer collateral 정단 입력 측정 — 논문 자체가 경로를 외삽"}
+    tau_d_NMDA:  {v: 148.5, src: xpathway, ref: "Ecker2020 p3: 같은 출처, Q10=1.7 보정. 34도. D11/D15"}
+    NMDA_ratio:  {v: 1.22,  src: measured, ref: "Ecker2020 p3: PC-to-PC NMDAR/AMPAR peak conductance ratio = 1.22"}
+    mg_mM:       {v: 1.0,   src: mod,      ref: "생리 세포외 Mg2+. Jahr&Stevens 1990 비선형(Ecker Eq.4, LJP 보정 c1=0.062, c2=2.62)"}
+    # 단기가소성(TM) — ★ 세 값 모두 Ecker Table3 에서 상첨자 a = 체감각 피질에서 일반화
+    #   이유(Ecker p12): CA1 PC->PC 논문들(Deuchars&Thomson 1996 포함)이 전시냅스 스파이크
+    #   2발 이상의 원시 트레이스를 제공하지 않아, 피질(Markram 2015)의 USE/D/F 4세트를 일반화했다.
+    #   방향(억압)은 Deuchars&Thomson 1996 이 CA1 PC->PC 4쌍 전부에서 짝펄스 억압을 관찰해 뒷받침된다.
+    #   크기는 피질 값이다.
+    Use:         {v: 0.50,  src: xregion,  ref: "Ecker2020 Table3 PC->PC: 0.5±0.02 (상첨자a=체감각 피질). [Ca2+]o 2.5mM 기준. ※HippocampusHub 0.65±0.1 — 미결#2"}
+    Dep_ms:      {v: 671.0, src: xregion,  ref: "Ecker2020 Table3 PC->PC: 671±17 (상첨자a=체감각 피질)"}
+    Fac_ms:      {v: 17.0,  src: xregion,  ref: "Ecker2020 Table3 PC->PC: 17±5 (상첨자a=체감각 피질). Fac<Dep -> 억압"}
+    Nrrp:        {v: 2,     src: insilico, ref: "Ecker2020 Table3 PC->PC: N_RRP 2. 각주=in silico 보정(PSP 진폭 CV 적합)"}
 
 notes:
-  - "★ D11 (NMDA 동역학 확정): tau_r/tau_d = 3.9 / 148.5 ms (Ecker2020 §2.3, PC->PC, Q10 보정).
-     우리 h.celsius = 34.0 이 Ecker 시뮬 온도와 같아 보정값을 그대로 쓴다.
-     이전 값 9.0/61.0 은 출처가 'Andrasfalvy & Magee 2001' 로 적혀 있었으나 그 논문
-     (PMID 11717348)은 제목이 'Distance-dependent increase in AMPA receptor number...' 이고
-     Schaffer collateral 경로의 AMPA 수용체 개수를 다룬다. NMDA 시상수의 출처가 아니며
-     우리 연결(PC->PC)도 아니다 -> 잘못된 인용이었다(Sayer1990 과 같은 SC 오염).
-     ⚠️ 파생: NMDA 감쇠가 61 -> 148.5ms 로 약 2.4배 길어져 NMDA 전하량이 크게 늘어난다.
-     5단계 칼슘 기반 가소성 문턱은 이 값 위에서 잡아야 한다(5-1 에서 반영)."
-  - "칼슘 지연 D(13.7 vs 18.8ms)·이중안정 파라미터는 전달이 아니라 가소성 소관 -> 5-1 에서 확정."
+  - "★ D15 (2026-08-24, 원문 대조): Ecker et al. 2020 Hippocampus 30(11):1129-1145,
+     DOI 10.1002/hipo.23220 원문을 99_references/ 에 확보해 Table 3·§2.3 을 직접 대조했다.
+     우리가 쓰던 7개 값(g 0.6 · tau_d_AMPA 3.0 · Use 0.50 · Dep 671 · Fac 17 · Nrrp 2 ·
+     NMDA_ratio 1.22)과 NMDA tau 3.9/148.5 가 **전부 원문과 일치**함을 확인했다.
+     다만 출처 성격이 달랐다 -> 위 태그를 measured/insilico/xregion/xpathway 로 세분했다."
+  - "★ Table 3 에 Schaffer collateral(CA3->CA1) 행이 없음을 원문에서 확인 — D9 의 근거 확정.
+     16개 경로 전부 CA1 내부다(PC·OLM·SOM±·PVBC·CCKBC·BS·Ivy·AA·SCA·Tri·CCK±).
+     ※ 본문의 'Schaffer collateral-associated (SCA)' 는 CA1 내부 개재뉴런 m-type 이지
+        CA3 축삭이 아니다 — 혼동 주의."
+  - "D11 정정: 이전에 'Andrasfalvy&Magee 2001 은 NMDA 시상수의 출처가 될 수 없다' 고 적었으나,
+     Ecker p3 는 그 논문을 PC->PC NMDA tau 의 출처로 **명시 인용**한다(Q10 보정 전 값).
+     내 판단이 틀렸다. 다만 A&M 은 Schaffer collateral 정단 입력을 측정했으므로
+     **논문 자체가 경로를 외삽한 것**이고, 그 사실은 src: xpathway 로 남긴다.
+     채택값(3.9/148.5)은 바뀌지 않는다."
+  - "칼슘 지연 D(13.7 vs 18.8008ms)·이중안정 파라미터는 전달이 아니라 가소성 소관 -> 5-1 에서 확정."
   - "e_rev=-8.5 는 GB mod 기본 e=0 을 덮어써야 한다. 시냅스 생성 시 syn.e=-8.5 명시."
-  - "촉진형 대조가 필요해지면 Ecker Table3 의 실측 촉진 클래스(PC->SOM+ E1: Use 0.09/Dep 138/Fac 670)를
-     쓴다. 없는 클래스를 만들어 쓰지 않는다."
+  - "촉진형 대조가 필요하면 Ecker Table3 의 촉진 클래스 PC->SOM+ (E1: g 0.8 · tau_d 1.7 ·
+     Use 0.09 · Dep 138 · Fac 670 · Nrrp 1)를 쓴다. 없는 클래스를 만들어 쓰지 않는다.
+     ※ E1 의 USE/D/F 도 상첨자a(피질)이고 SD 가 매우 크다(F 670±830)."
+  - "기하 참고: Ecker 는 PC-PC 커넥텀에 touch distance 1um 를 썼다(PC->개재뉴런은 6um).
+     우리 3-2 는 고립된 두 세포에서 접촉을 찾느라 10um 를 썼다 — 목적이 달라 그대로 두되
+     '커넥텀 기준보다 느슨하다' 는 사실을 기록한다."

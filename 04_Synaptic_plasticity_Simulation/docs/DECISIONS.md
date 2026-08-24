@@ -390,6 +390,82 @@ D12 의 교훈("동일 물리량은 한 함수로")이 판정 기준에도 적�
 
 ---
 
+## D15 — Ecker 2020 원문 대조 완료: 수치는 전부 일치, 출처 성격은 정정
+
+**2026-08-24.** 사용자가 원문을 제공해 `99_references/Ecker2020_CA1_synaptic_physiology_in_silico.pdf`
+(gitignore)로 보존하고 Table 3·§2.3·§3.3 을 직접 대조했다.
+
+**서지 확정.** Ecker A, Romani A, Saray S, Kali S, Migliore M, Falck J, Lange S, Mercer A,
+Thomson AM, Muller E, Reimann MW, Ramaswamy S (2020) *Hippocampus* **30(11):1129-1145**,
+DOI **10.1002/hipo.23220**. (`lib.refdata.ECKER2020`)
+
+**수치 검증 — 우리가 쓰던 값 전부 원문과 일치.**
+Table 3 "PC to PC (E2)" 행: g_hat **0.6 ± 0.1** nS · tau_decay **3 ± 0.2** ms ·
+USE **0.5 ± 0.02** · D **671 ± 17** · F **17 ± 5** · N_RRP **2**.
+§2.3: NMDA tau_rise **3.9** / tau_decay **148.5** ms · NMDA/AMPA **1.22** · Erev **-8.5** mV.
+§3.3: E-E 연결당 시냅스 수 **1.26 ± 0.6** (우리가 "1.3" 이라 적었던 값 — 정정).
+
+**★ 그러나 출처 성격이 내 태그와 달랐다.** Table 3 각주 원문:
+> "Synapse parameters either taken from the literature (tau_decay), fitted directly to data
+> (USE, D, F), calibrated in silico (g_hat, N_RRP) or **taken from the somatosensory cortex**
+> (Markram et al., 2015) **marked with superscript 'a'**."
+
+PC→PC 행은 **USE·D·F 세 값 모두 상첨자 a** 다. 즉 해마 실측이 아니라 **체감각 피질에서 일반화**한
+값이다. 이유도 원문에 있다(p12): CA1 PC→PC 논문들(Deuchars & Thomson 1996 포함)이
+**전시냅스 스파이크 2발 이상의 원시 트레이스를 제공하지 않아** 피질의 USE/D/F 4세트를 일반화했다.
+
+=> `config/synapse.yaml` 의 출처 태그를 `paper` 하나에서 다음으로 세분했다:
+
+| 태그 | 뜻 | 개수 | 해당 |
+|---|---|---|---|
+| `measured` | 해마 실측 | 3 | e_rev · tau_d_AMPA · NMDA_ratio |
+| `insilico` | 논문이 in silico 보정으로 정함 (측정값 아님) | 2 | **g_hat · N_RRP** |
+| `xregion` | 논문이 체감각 피질에서 일반화 | 3 | **Use · Dep · Fac** |
+| `xpathway` | 논문이 다른 경로에서 외삽 | 2 | NMDA tau_r · tau_d |
+| `mod` | mod 기본값 | 1 | tau_r_AMPA (Supplementary Table S1 미보유) |
+
+**우리가 임의로 정한 튜닝값은 여전히 0개**다. 하지만 "논문값 = 해마 실측" 은 아니다.
+특히 **우리 단기가소성(억압)의 크기는 피질 값**이다. 방향(억압)은 Deuchars & Thomson 1996 이
+CA1 PC→PC 4쌍 전부에서 짝펄스 억압을 관찰해 뒷받침한다 — 방향은 해마, 크기는 피질.
+
+**★ D11 의 이유 하나를 정정한다 (내가 틀렸다).**
+D11 에서 "Andrasfalvy & Magee 2001 은 NMDA 시상수의 출처가 될 수 없다" 고 적었다. 그러나
+Ecker p3 는 그 논문을 **PC→PC NMDA tau 의 출처로 명시 인용**한다:
+> "PC-to-PC NMDAR rise and decay time constants are Q10 corrected (Q10 = 2.2 for rise and
+> 1.7 for decay) values from **Andrasfalvy and Magee (2001)**: tau_rise = 3.9 ms and
+> tau_decay = 148.5 ms."
+
+A&M 논문 제목·초록이 AMPA 수용체 수에 관한 것이라 내가 "NMDA 출처가 아니다" 로 단정했는데,
+초록에 없어도 본문에 NMDA 동역학이 있었던 것이다. **원문을 안 보고 초록만으로 판단한 오류다.**
+다만 A&M 은 **Schaffer collateral 정단 입력**을 측정했으므로 **논문 자체가 경로를 외삽**했고,
+그 사실은 `src: xpathway` 로 남긴다. **채택값(3.9/148.5)은 바뀌지 않는다.**
+
+**★ D9 의 근거는 원문에서 확정됐다.** Table 3 의 16개 경로에 **Schaffer collateral(CA3→CA1)
+행이 없다** — 전부 CA1 내부다(PC·OLM·SOM±·PVBC·CCKBC·BS·Ivy·AA·SCA·Tri·CCK±).
+※ 본문의 "Schaffer collateral-associated (SCA)" 는 **CA1 내부 개재뉴런 m-type** 이고
+CA3 축삭이 아니다 — 이름 때문에 혼동할 수 있어 명기한다.
+
+**★ 새로 알게 된 조건 — 칼슘 농도 의존 (p8·p13).**
+논문은 전도도를 **[Ca2+]o = 2.5 mM**(in vitro 슬라이스) PSP 진폭에 맞춰 보정했다. 그리고
+> "the PC-to-PC pathway exhibits an **E3 (excitatory pseudolinear)** STP profile ... at
+> **in vivo like [Ca2+]o levels (1.1-1.3 mM)** compared to the **in vitro levels (2-2.5 mM)
+> E2 (excitatory depressing)** profile."
+
+즉 **PC→PC 의 억압은 슬라이스 칼슘 농도에서만 나타나고, 생체 농도에서는 준선형(낮은 진폭·큰
+변동·실패)** 이 된다. 우리 Use=0.50 은 슬라이스 값이므로 **우리 시뮬레이션은 슬라이스 조건을
+재현한다.** 6단계에서 in vivo 조건을 논할 때 반드시 명기한다(우리 mod 에 Ca 스케일링 없음).
+
+**부수 기록.** Ecker 는 PC-PC 커넥텀에 touch distance **1 um** 를 썼다(PC→개재뉴런은 6 um).
+우리 3-2 는 고립된 두 세포에서 접촉을 찾느라 **10 um** 를 썼다 — 목적이 달라 그대로 두되
+"커넥텀 기준보다 느슨하다" 는 사실을 기록한다. 또 논문의 in silico 짝기록은 소마간 거리
+약 100 um 에서 표집했고, 우리 벤치는 120 um 로 유사하다.
+
+**교훈.** 원문 없이 물려받은 인용은 (1) 값은 맞아도 **출처 성격을 오인**하게 하고,
+(2) 초록만 보고 판단하면 **없는 오류를 만들어낸다**(D11 사례). 단계 착수 시 그 단계 문헌을
+원문으로 확인하는 것을 원칙으로 한다.
+
+---
+
 ## 미결
 
 | # | 항목 | 해결 단계 |
