@@ -92,6 +92,16 @@
 
 ---
 
+### ★★ burst 프로토콜 경고 (3-9/GAPS G2)
+
+**4펄스 100Hz TBS 버스트를 post 소마 전류로 주면 2발만 발화한다.** 6-1(theta 위상 burst)·
+6-4(post 버스트 STDP)·6-5(TBS)·6-2(theta-gamma burst)가 전부 burst 를 전제하므로
+**4단계 착수 전에 해결해야 한다.** 자극 형태 변경·시냅스 구동으로 되는지 먼저 확인한다.
+안 되면 프로토콜을 재설계하고 그 사실을 결과 해석에 명기한다. 상세는 docs/GAPS.md G2.
+
+또 활동의존 bAP 감쇠가 재현되지 않으므로(G1), burst 실험의 **원위 칼슘은 실제보다
+과대평가**된다 — 6-4·6-5·6-8 해석에 이 편향을 명기한다.
+
 ### ★ 6단계 공통 주의 — 국소 스파이크 문턱 (3-7/D13)
 
 채택 g=0.6nS 기준으로 **효능이 1.83배를 넘으면** 기저수상돌기 국소 스파이크가 난다
@@ -110,6 +120,7 @@
 | **3-2** 시냅스 위치·개수 | 표적 구획(기저/근위정단)·연결당 시냅스 수 | Deuchars&Thomson 1996 (기저 3차, 접촉 2) · Crepel 1997 (PMID 9114256, 근위정단 50~150µm) · Ecker2020 Fig.3b (E→E 1.3) | ✅ |
 | **3-7** 전도도 확정 | g 민감도 · 기준 uEPSP · 국소 스파이크 문턱 | Ecker2020 Table3(g 0.6nS) · Deuchars&Thomson 1996 | ✅ |
 | **3-8** 거리 감쇠 | 위치별 soma/국소 EPSP·케이블 지연·균일화 g | Magee & Cook 2000 (PMID 10966620) — 정단에서 g 가 거리에 따라 커져 소마 EPSP 균일화 (우리 모델엔 없음·기저는 외삽) | ✅ |
+| **3-9** bAP 프로파일 | 위치별 bAP 진폭·감쇠·침입효율 | Golding/Kath/Spruston 2001 (PMID 11731556) · Spruston/Schiller/Stuart/Sakmann 1995 (PMID 7716524) | ✅ |
 | **3-5** uEPSP | 단일 연결 EPSP 진폭·상승·반치폭 | **Deuchars & Thomson 1996** (PMID 8895869) — CA1 PC→PC 쌍 실측. ⚠️Sayer1990 은 CA3→CA1(SC)이라 이 벤치의 연결이 아님(D9) | 🔄 |
 | **3-6** 확률 방출 | 방출확률·CV·실패율 | 확률 다소포 방출 (BBP EMS, Random123) | ⬜ 재실행(PC->PC: Use 0.50·Nrrp 2) |
 | **5-9** 단기가소성 | PPR·주파수 트레인 | Tsodyks & Markram 1997 · Dobrunz & Stevens 1997 | ⬜ |

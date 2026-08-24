@@ -48,7 +48,7 @@
 | **3-6** | `03_synapse/6_stochastic` | `3-6_stochastic.py` | `3-6_amp_hist.png` | ✅ |
 | **3-7** | `03_synapse/7_calibrate` | `3-7_calibrate_g.py` | `3-7_g_sweep.png` · `3-7_calibrate.json` | ✅ |
 | **3-8** | `03_synapse/8_distance` | `3-8_attenuation.py` | `3-8_attenuation.png` · `3-8_attenuation.json` | ✅ |
-| **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` | ⬜ |
+| **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` · `3-9_bap.json` | ✅ |
 | **4-1** | `04_drive/1_modes` | `4-1_drive_modes.py` | `4-1_drive_modes.png` | ⬜ |
 | **4-2** | `04_drive/2_natural_theta` | `4-2_natural_theta.py` | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` | ⬜ |
 | **4-3** | `04_drive/3_imposed_theta` | `4-3_imposed_theta.py` | `4-3_imposed_theta.png` | ⬜ |
