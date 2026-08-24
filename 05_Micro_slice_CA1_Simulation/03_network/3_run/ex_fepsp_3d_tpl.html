@@ -4,77 +4,114 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
   :root{ --bg:#080b12; --panel:#0f141f; --panel2:#141b28; --edge:#243044; --ink:#e7eef7; --muted:#8697b0; --dim:#5a6a84;
-    --e1:#33d6c4; --e2:#5b93ff; --e3:#ff6b6b; --sink:#4a90ff; --source:#ff5555; --gold:#ffc857; }
+    --e1:#ffd43b; --e2:#c084fc; --e3:#2dd4bf; --sink:#4a90ff; --source:#ff5555; --gold:#ffc857;
+    --soma:#ffb454; --dend:#5fd08a; }
   *{box-sizing:border-box} html,body{margin:0;height:100%}
   body{background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:14px; display:flex; flex-direction:column; height:100vh; overflow:hidden; -webkit-font-smoothing:antialiased}
   .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
-  header{padding:12px 20px 10px; border-bottom:1px solid var(--edge); background:linear-gradient(180deg,var(--panel),var(--panel2))}
+  header{padding:11px 20px 9px; border-bottom:1px solid var(--edge); background:linear-gradient(180deg,var(--panel),var(--panel2))}
   header h1{margin:0 0 3px; font-size:16px; font-weight:700}
   header .sub{color:var(--muted); font-size:11.5px}
   .wrap{flex:1; display:flex; min-height:0}
   .stage{flex:1; position:relative; min-width:0}
   canvas#gl{width:100%; height:100%; display:block; cursor:grab} canvas#gl:active{cursor:grabbing}
-  .side{width:300px; border-left:1px solid var(--edge); background:var(--panel); padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:14px}
+  .side{width:308px; border-left:1px solid var(--edge); background:var(--panel); padding:13px; overflow-y:auto; display:flex; flex-direction:column; gap:12px}
   .lab{font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--dim); margin-bottom:5px}
-  .ctrl{display:flex; gap:8px; align-items:center}
-  button{background:var(--panel2); border:1px solid var(--edge); color:var(--ink); border-radius:8px; padding:8px 12px; font-size:12.5px; cursor:pointer}
+  .ctrl{display:flex; gap:7px; align-items:center}
+  button{background:var(--panel2); border:1px solid var(--edge); color:var(--ink); border-radius:8px; padding:7px 11px; font-size:12.5px; cursor:pointer}
   button:hover{border-color:var(--gold)}
   input[type=range]{width:100%; accent-color:var(--gold)}
-  .chart{border:1px solid var(--edge); border-radius:10px; background:var(--panel2); padding:8px}
-  canvas#fe{width:100%; height:130px; display:block}
-  .tiles{display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px}
-  .tile{background:var(--panel2); border:1px solid var(--edge); border-radius:9px; padding:8px 6px; text-align:center}
-  .tile .t{font-size:9.5px; color:var(--dim)} .tile .v{font-size:14px; font-weight:600; font-family:"IBM Plex Mono",monospace; margin-top:2px}
-  .lg{font-size:11px; color:var(--muted); line-height:1.7}
+  .seg{display:flex; gap:5px}
+  .seg button{flex:1; padding:6px 0; font-size:11.5px; font-family:"IBM Plex Mono",monospace}
+  .seg button.on{background:linear-gradient(180deg,#20304a,#182338); border-color:var(--gold); color:var(--gold)}
+  .etog{display:flex; gap:6px}
+  .etog button{flex:1; padding:7px 0; font-size:12px; font-weight:600; opacity:.4}
+  .etog button.on{opacity:1}
+  .chart{border:1px solid var(--edge); border-radius:10px; background:var(--panel2); padding:7px}
+  .chart canvas{width:100%; height:112px; display:block}
+  .tiles{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px}
+  .tile{background:var(--panel2); border:1px solid var(--edge); border-radius:9px; padding:7px 5px; text-align:center}
+  .tile.off{opacity:.35}
+  .tile .t{font-size:9.5px} .tile .v{font-size:13.5px; font-weight:600; font-family:"IBM Plex Mono",monospace; margin-top:2px}
+  .lg{font-size:10.5px; color:var(--muted); line-height:1.65}
   .lg .sw{display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:5px}
-  .note{font-size:10.5px; color:var(--dim); line-height:1.5}
+  .note{font-size:10px; color:var(--dim); line-height:1.5}
 </style>
 <header>
   <h1>fEPSP 발생 원리 — 막전류 → 전극 신호 (3D)</h1>
-  <div class="sub">locus 근처 <b id="nc" class="mono"></b> 추체세포 · SC volley(t=0) → 세그먼트 <b>막전류</b>(색) → 전극 <b>fEPSP</b> 실시간. <span style="color:var(--sink)">파랑=sink(유입)</span> · <span style="color:var(--source)">빨강=source(유출)</span></div>
+  <div class="sub">locus 근처 <b id="nc" class="mono"></b> 추체세포 · SC volley(t=0) → 세그먼트 <b>막전류</b>(색) → 전극 <b>fEPSP</b>. <span style="color:var(--sink)">파랑=sink</span> · <span style="color:var(--source)">빨강=source</span></div>
 </header>
 <div class="wrap">
   <div class="stage"><canvas id="gl"></canvas></div>
   <div class="side">
     <div>
-      <div class="lab">재생 · 시간</div>
-      <div class="ctrl"><button id="play">⏸ 일시정지</button><span id="tnow" class="mono" style="font-size:13px;color:var(--gold)">0.0 ms</span></div>
+      <div class="lab">재생 · 시간 <span id="tnow" class="mono" style="font-size:12px;color:var(--gold);float:right">0.0 ms</span></div>
+      <div class="ctrl"><button id="play" style="flex:1">⏸ 일시정지</button><button id="rot" class="on" style="flex:1;border-color:var(--gold);color:var(--gold)">↻ 자동회전</button></div>
       <input type="range" id="seek" min="0" max="100" value="0" style="margin-top:8px">
     </div>
+    <div>
+      <div class="lab">재생 속도</div>
+      <div class="seg" id="spd">
+        <button data-s="0.1">0.1×</button><button data-s="0.25">0.25×</button>
+        <button data-s="0.5" class="on">0.5×</button><button data-s="1">1×</button>
+      </div>
+    </div>
+    <div>
+      <div class="lab">전극 표시 (토글)</div>
+      <div class="etog" id="etog">
+        <button data-e="0" class="on" style="border-color:var(--e1);color:var(--e1)">E1 SO</button>
+        <button data-e="1" class="on" style="border-color:var(--e2);color:var(--e2)">E2 SP</button>
+        <button data-e="2" class="on" style="border-color:var(--e3);color:var(--e3)">E3 SR</button>
+      </div>
+    </div>
+    <div>
+      <div class="lab">자극 시냅스 (토글)</div>
+      <div class="etog"><button id="syntog" class="on" style="border-color:var(--gold);color:var(--gold)">◆ SC 시냅스 표시</button></div>
+    </div>
+    <div>
+      <div class="lab">전극 기여영역 (뉴런=가장 가까운 전극 색)</div>
+      <div class="etog"><button id="catch" style="opacity:.45">전극색 모드 (catchment)</button></div>
+    </div>
     <div class="chart">
-      <div class="lab" style="margin-bottom:2px">전극 fEPSP (µV) · 세로선=현재</div>
+      <div class="lab" style="margin-bottom:2px">전극 fEPSP (µV)</div>
       <canvas id="fe"></canvas>
+    </div>
+    <div class="chart">
+      <div class="lab" style="margin-bottom:2px">막전류 (nA) · <span style="color:var(--dend)">수상돌기</span> ↔ <span style="color:var(--soma)">소마</span> (합≈0=다이폴)</div>
+      <canvas id="cu"></canvas>
     </div>
     <div>
       <div class="lab">현재 전극 신호 (µV)</div>
       <div class="tiles">
-        <div class="tile"><div class="t" style="color:var(--e1)">E1 SO</div><div class="v" id="v0">0</div></div>
-        <div class="tile"><div class="t" style="color:var(--e2)">E2 SP</div><div class="v" id="v1">0</div></div>
-        <div class="tile"><div class="t" style="color:var(--e3)">E3 SR</div><div class="v" id="v2">0</div></div>
+        <div class="tile" id="t0"><div class="t" style="color:var(--e1)">E1 SO</div><div class="v" id="v0">0</div></div>
+        <div class="tile" id="t1"><div class="t" style="color:var(--e2)">E2 SP</div><div class="v" id="v1">0</div></div>
+        <div class="tile" id="t2"><div class="t" style="color:var(--e3)">E3 SR</div><div class="v" id="v2">0</div></div>
       </div>
     </div>
     <div class="lg">
-      <div><span class="sw" style="background:var(--sink)"></span>막전류 sink (세포 안으로 유입)</div>
-      <div><span class="sw" style="background:var(--source)"></span>막전류 source (세포 밖으로 유출)</div>
-      <div><span class="sw" style="background:var(--gold);border-radius:50%"></span>기록 전극 E1/E2/E3</div>
+      <div><span class="sw" style="background:var(--sink)"></span>막전류 sink (안으로 유입)</div>
+      <div><span class="sw" style="background:var(--source)"></span>막전류 source (밖으로 유출)</div>
     </div>
-    <div class="note">한 세포 막전류 합 ≈ 0 (다이폴). 전극은 모든 세그먼트 전류의 거리가중합을 봄. 드래그=회전.</div>
+    <div class="note">한 세포 막전류 합≈0(다이폴). 전극=모든 세그먼트 전류의 거리가중합. 드래그=회전.</div>
   </div>
 </div>
 <script>
 const D=__INJECT__;
 const gl=document.getElementById('gl'), gx=gl.getContext('2d');
 const fe=document.getElementById('fe'), fx=fe.getContext('2d');
-const N=D.n, NF=D.nf, POS=D.pos, SOMA=D.soma, CUR=D.cur, T=D.t, EL=D.elec, V=D.V;
-const ECOL=['#33d6c4','#5b93ff','#ff6b6b'];
-let frame=0, playing=true, yaw=0.6, pitch=0.3, drag=false, lx=0, ly=0, DPR=Math.min(2,devicePixelRatio||1);
+const cu=document.getElementById('cu'), cx=cu.getContext('2d');
+const N=D.n, NF=D.nf, POS=D.pos, SOMA=D.soma, CUR=D.cur, T=D.t, EL=D.elec, V=D.V, ISOMA=D.Isoma, IDEND=D.Idend;
+const ECOL=['#ffd43b','#c084fc','#2dd4bf']; const SYN=D.syn||[];
+let frame=0, facc=0, speed=0.5, playing=true, yaw=0.6, pitch=0.3, drag=false, lx=0, ly=0, DPR=Math.min(2,devicePixelRatio||1);
+let eon=[true,true,true], synOn=true, autorot=true, catchment=false;
+function hexA(h,a){return 'rgba('+parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)+','+a.toFixed(2)+')';}
 document.getElementById('nc').textContent=D.ncell;
 const seek=document.getElementById('seek'); seek.max=NF-1;
 const span=(()=>{let mx=0;for(const p of POS)mx=Math.max(mx,Math.abs(p[0]),Math.abs(p[1]),Math.abs(p[2]));for(const e of EL)mx=Math.max(mx,Math.abs(e[0]),Math.abs(e[1]),Math.abs(e[2]));return mx*2;})();
 
 function resize(){DPR=Math.min(2,devicePixelRatio||1);
   let r=gl.getBoundingClientRect(); gl.width=r.width*DPR; gl.height=r.height*DPR;
-  let r2=fe.getBoundingClientRect(); fe.width=r2.width*DPR; fe.height=r2.height*DPR;}
+  for(const cv of [fe,cu]){let q=cv.getBoundingClientRect(); cv.width=q.width*DPR; cv.height=q.height*DPR;}}
 function proj(p,W,H,sc){
   const cY=Math.cos(yaw),sY=Math.sin(yaw),cP=Math.cos(pitch),sP=Math.sin(pitch);
   let X=p[0],Y=p[1],Z=p[2];
@@ -90,58 +127,73 @@ function curColor(v){const a=Math.min(1,Math.abs(v)/100);
 
 function draw3d(){
   const W=gl.width/DPR,H=gl.height/DPR; gx.setTransform(DPR,0,0,DPR,0,0); gx.clearRect(0,0,W,H);
-  const sc=Math.min(W,H)/(span*1.15);
-  const cf=CUR[frame];
-  // 세그먼트 정렬(뒤→앞)
+  const sc=Math.min(W,H)/(span*1.15); const cf=CUR[frame];
   const ord=[];
   for(let i=0;i<N;i++){const q=proj(POS[i],W,H,sc); ord.push([q[2],i,q]);}
   ord.sort((a,b)=>a[0]-b[0]);
   for(const [,i,q] of ord){
     const v=cf[i]; const r=(SOMA[i]?2.6:1.4)*(0.85+0.35*q[3]);
-    gx.fillStyle=curColor(v); gx.beginPath(); gx.arc(q[0],q[1],r,0,6.28); gx.fill();
+    let col;
+    if(catchment){ let bi=-1,bd=1e18; for(let j=0;j<EL.length;j++){ if(!eon[j])continue;
+        const dx=POS[i][0]-EL[j][0],dy=POS[i][1]-EL[j][1],dz=POS[i][2]-EL[j][2]; const d=dx*dx+dy*dy+dz*dz; if(d<bd){bd=d;bi=j;} }
+      col = bi<0 ? 'rgba(120,130,150,0.15)' : hexA(ECOL[bi], 0.18+0.45*Math.min(1,Math.abs(v)/100)); }
+    else col=curColor(v);
+    gx.fillStyle=col; gx.beginPath(); gx.arc(q[0],q[1],r,0,6.28); gx.fill();
   }
-  // 전극
+  if(synOn){ for(const s of SYN){const q=proj(s,W,H,sc);
+    gx.fillStyle='rgba(255,200,87,.85)'; gx.beginPath(); gx.arc(q[0],q[1],1.5*(0.85+0.35*q[3]),0,6.28); gx.fill();
+    gx.strokeStyle='rgba(255,200,87,.35)'; gx.lineWidth=.5; gx.stroke(); } }
   for(let j=0;j<EL.length;j++){
+    if(!eon[j]) continue;
     const q=proj(EL[j],W,H,sc); const vv=V[j][frame];
     const rr=6+Math.min(14,Math.abs(vv)/2);
-    gx.fillStyle=vv<0?'rgba(74,144,255,.85)':'rgba(255,85,85,.85)';
+    gx.fillStyle=ECOL[j];
     gx.beginPath(); gx.moveTo(q[0],q[1]-rr); gx.lineTo(q[0]+rr,q[1]); gx.lineTo(q[0],q[1]+rr); gx.lineTo(q[0]-rr,q[1]); gx.closePath(); gx.fill();
-    gx.strokeStyle=ECOL[j]; gx.lineWidth=2.5; gx.stroke();
+    gx.strokeStyle='#fff'; gx.lineWidth=1.5; gx.stroke();
     gx.fillStyle=ECOL[j]; gx.font='bold 11px IBM Plex Mono'; gx.textAlign='center';
     gx.fillText(D.enames[j].split('(')[0], q[0], q[1]-rr-5);
   }
   gx.textAlign='left';
 }
-function drawFe(){
-  const W=fe.width/DPR,H=fe.height/DPR; fx.setTransform(DPR,0,0,DPR,0,0); fx.clearRect(0,0,W,H);
-  const P={l:30,r:6,t:6,b:16};
-  let vmax=1e-6; for(let j=0;j<3;j++)for(const x of V[j])vmax=Math.max(vmax,Math.abs(x));
+function lineChart(ctx,cv,series,cursorFrame){
+  const W=cv.width/DPR,H=cv.height/DPR; ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  const P={l:32,r:6,t:6,b:15};
+  let mx=1e-9; for(const s of series){if(!s.on)continue; for(const y of s.data)mx=Math.max(mx,Math.abs(y));}
   const px=f=>P.l+f/(NF-1)*(W-P.l-P.r);
-  const py=v=>H-P.b-((v+vmax)/(2*vmax))*(H-P.t-P.b);
-  fx.strokeStyle='rgba(120,150,190,.14)'; fx.lineWidth=1; fx.beginPath(); fx.moveTo(P.l,py(0)); fx.lineTo(W-P.r,py(0)); fx.stroke();
-  // stim 세로선 (t=0)
+  const py=v=>H-P.b-((v+mx)/(2*mx))*(H-P.t-P.b);
+  ctx.strokeStyle='rgba(120,150,190,.14)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(P.l,py(0)); ctx.lineTo(W-P.r,py(0)); ctx.stroke();
   let f0=0; for(let f=0;f<NF;f++){if(T[f]>=0){f0=f;break;}}
-  fx.strokeStyle='rgba(255,200,87,.5)'; fx.setLineDash([3,3]); fx.beginPath(); fx.moveTo(px(f0),P.t); fx.lineTo(px(f0),H-P.b); fx.stroke(); fx.setLineDash([]);
-  for(let j=0;j<3;j++){fx.strokeStyle=ECOL[j]; fx.lineWidth=1.6; fx.beginPath();
-    for(let f=0;f<NF;f++){const X=px(f),Y=py(V[j][f]); f?fx.lineTo(X,Y):fx.moveTo(X,Y);} fx.stroke();}
-  // 현재 프레임 커서
-  fx.strokeStyle='rgba(255,255,255,.55)'; fx.lineWidth=1; fx.beginPath(); fx.moveTo(px(frame),P.t); fx.lineTo(px(frame),H-P.b); fx.stroke();
-  fx.fillStyle='#5a6a84'; fx.font='8.5px IBM Plex Mono'; fx.fillText((+vmax).toFixed(1),1,P.t+7); fx.fillText('-'+(+vmax).toFixed(1),1,H-P.b);
+  ctx.strokeStyle='rgba(255,200,87,.5)'; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(px(f0),P.t); ctx.lineTo(px(f0),H-P.b); ctx.stroke(); ctx.setLineDash([]);
+  for(const s of series){ if(!s.on)continue; ctx.strokeStyle=s.col; ctx.lineWidth=1.6; ctx.beginPath();
+    for(let f=0;f<NF;f++){const X=px(f),Y=py(s.data[f]); f?ctx.lineTo(X,Y):ctx.moveTo(X,Y);} ctx.stroke(); }
+  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(px(cursorFrame),P.t); ctx.lineTo(px(cursorFrame),H-P.b); ctx.stroke();
+  ctx.fillStyle='#5a6a84'; ctx.font='8px IBM Plex Mono'; ctx.fillText(mx.toPrecision(2),1,P.t+7); ctx.fillText('t=0',px(f0)+2,H-4);
 }
 function updateReadout(){
   document.getElementById('tnow').textContent=T[frame].toFixed(1)+' ms';
   for(let j=0;j<3;j++){const el=document.getElementById('v'+j); const vv=V[j][frame];
-    el.textContent=(vv>0?'+':'')+vv.toFixed(1); el.style.color=vv<0?'#4a90ff':vv>0?'#ff5555':'#8697b0';}
+    el.textContent=(vv>0?'+':'')+vv.toFixed(1); el.style.color=vv<0?'#4a90ff':vv>0?'#ff5555':'#8697b0';
+    document.getElementById('t'+j).classList.toggle('off',!eon[j]);}
   seek.value=frame;
 }
 function loop(){
-  if(playing){frame=(frame+1)%NF;}
-  if(!drag) yaw+=0.0022;
-  draw3d(); drawFe(); updateReadout();
+  if(playing){facc+=speed; while(facc>=1){frame=(frame+1)%NF; facc-=1;}}
+  if(autorot && !drag) yaw+=0.0022;
+  draw3d();
+  lineChart(fx,fe,[{data:V[0],col:ECOL[0],on:eon[0]},{data:V[1],col:ECOL[1],on:eon[1]},{data:V[2],col:ECOL[2],on:eon[2]}],frame);
+  lineChart(cx,cu,[{data:IDEND,col:'#5fd08a',on:true},{data:ISOMA,col:'#ffb454',on:true}],frame);
+  updateReadout();
   requestAnimationFrame(loop);
 }
 document.getElementById('play').onclick=function(){playing=!playing; this.textContent=playing?'⏸ 일시정지':'▶ 재생';};
 seek.oninput=function(){frame=+this.value; playing=false; document.getElementById('play').textContent='▶ 재생';};
+document.getElementById('spd').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return;
+  speed=+b.dataset.s; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));});
+document.getElementById('etog').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return;
+  const j=+b.dataset.e; eon[j]=!eon[j]; b.classList.toggle('on',eon[j]);});
+document.getElementById('syntog').onclick=function(){synOn=!synOn; this.classList.toggle('on',synOn);};
+document.getElementById('rot').onclick=function(){autorot=!autorot; this.classList.toggle('on',autorot);};
+document.getElementById('catch').onclick=function(){catchment=!catchment; this.classList.toggle('on',catchment); this.style.opacity=catchment?1:.45;};
 gl.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
 window.addEventListener('mouseup',()=>drag=false);
 window.addEventListener('mousemove',e=>{if(!drag)return; yaw+=(e.clientX-lx)*0.008; pitch=Math.max(-0.5,Math.min(1.0,pitch+(e.clientY-ly)*0.006)); lx=e.clientX; ly=e.clientY;});

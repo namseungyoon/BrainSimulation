@@ -71,11 +71,12 @@ def main():
     vstim = {}
     for f in fibers:
         vs = h.VecStim(); tv = h.Vector([STIM]); vs.play(tv); vstim[int(f)] = vs; keep.append((vs, tv))
-    nsyn = 0
+    nsyn = 0; syn_pos = []
     for g in cand:
         cell = cells[g]; tree, ref = seg_kdtree(cell); rot = Rot.from_quat(Q[g][[1, 2, 3, 0]]); soma = cell.soma[0]
         for si in scsel[scpost[scsel] == g]:
             mp = rot.inv().apply(scxyz[si] - XYZ[g]); _, k = tree.query(mp, k=1); sec, x = ref[k]
+            syn_pos.append(scxyz[si])
             syn = h.GBPlasticityStpProbSyn(sec(x))
             syn.Use = 0.14; syn.Dep = 186.0; syn.Fac = 129.0; syn.Nrrp = 12; syn.gmax = 0.8 / 1000.0 * GSCALE
             syn.gamma_p = 0.0; syn.gamma_d = 0.0; syn.setRNG(int(g) + 1, int(si) + 1, 3)
@@ -142,6 +143,9 @@ def main():
         cmax = float(np.percentile(np.abs(Im[:, fidx]), 99.5)) or 1.0
         cur = np.clip(np.round(Isub / cmax * 100), -100, 100).astype(int)
         Vf = V[:, fidx]                                            # (3, nframe) mV
+        somai = np.where(soma)[0]; dendi = np.where(~soma)[0]
+        Isoma_t = Im[np.ix_(somai, fidx)].sum(axis=0)              # 소마 총 막전류 (nA)
+        Idend_t = Im[np.ix_(dendi, fidx)].sum(axis=0)              # 수상돌기 총 막전류 (nA)
         out = {
             "n": int(len(sidx)), "nf": int(len(fidx)),
             "pos": [[round(float(P[i, 0]), 1), round(float(P[i, 1]), 1), round(float(P[i, 2]), 1)] for i in range(len(P))],
@@ -151,6 +155,10 @@ def main():
             "elec": [[round(float(x), 1) for x in (elec[i] - c)] for i in range(len(elec))],
             "enames": enames,
             "V": [[round(float(Vf[i, f] * 1000), 3) for f in range(Vf.shape[1])] for i in range(3)],  # µV
+            "Isoma": [round(float(x), 3) for x in Isoma_t],        # 소마 총 막전류 (nA)
+            "Idend": [round(float(x), 3) for x in Idend_t],        # 수상돌기 총 막전류 (nA)
+            "syn": [[round(float(v), 1) for v in (np.array(syn_pos)[k] - c)]
+                    for k in range(0, len(syn_pos), max(1, len(syn_pos) // 2500))],  # 자극 시냅스 위치(서브샘플)
             "cmax_nA": round(cmax, 4), "nfired": int(nfired), "ncell": int(len(cand)), "stim": 0.0,
         }
         data = json.dumps(out, separators=(",", ":"))
