@@ -59,7 +59,7 @@
 | **5-2** | `05_engines/2_det` | `5-2_engine_det.py` | `5-2_engine_det.png` · `5-2_det.json` | ✅ |
 | **5-3** | `05_engines/3_gb_a` | `5-3_engine_a.py` | `5-3_engine_a.png` · `5-3_gb_a.json` | ✅ |
 | **5-4** | `05_engines/4_gb_b` | `5-4_engine_b.py` | `5-4_engine_b.png` · `5-4_gb_b.json` | ✅ |
-| **5-5** | `05_engines/5_gb_c` | `5-5_engine_c.py` | `5-5_engine_c.png` | ⬜ |
+| **5-5** | `05_engines/5_gb_c` | `5-5_engine_c.py` | `5-5_engine_c.png` · `5-5_gb_c.json` | ✅ |
 | **5-6** | `05_engines/6_stdp` | `5-6_stdp.py` | `5-6_stdp_window.png` | ⬜ |
 | **5-7** | `05_engines/7_glusyn` | `5-7_glusyn.py` | `5-7_spine_calcium.png` | ⬜ |
 | **5-8** | `05_engines/8_registry` | `5-8_registry.py` | `5-8_engine_matrix.png` | ⬜ |
