@@ -25,11 +25,13 @@ except ImportError:  # 패키지로 import될 때
 
 
 class FEPSPRecorder:
-    def __init__(self, elec_xyz, sigma=mf.SIGMA, rmin=mf.RMIN, skip=("axon", "node", "myelin")):
+    def __init__(self, elec_xyz, sigma=mf.SIGMA, rmin=mf.RMIN, skip=("axon", "node", "myelin"), stride=1):
         self.elec = np.asarray(elec_xyz, float).reshape(-1, 3)
         self.sigma = sigma
         self.rmin = rmin
         self.skip = skip
+        self.stride = int(stride)    # 세그먼트 서브샘플(대규모 setup O(n²) 회피). W를 stride배 보정
+        self._ctr = 0
         self._pos = []       # 세그먼트 global 중심 xyz
         self._refs = []      # 세그먼트 객체(i_membrane_ 접근용)
         self._soma = []      # 세그먼트가 soma인가 (시각화용)
@@ -51,6 +53,9 @@ class FEPSPRecorder:
             zs = np.array([sec.z3d(i) for i in range(n)])
             issoma = "soma" in nm
             for seg in sec:
+                self._ctr += 1
+                if self.stride > 1 and (self._ctr % self.stride) != 0:
+                    continue                                  # 서브샘플: 이 세그먼트 건너뜀
                 a = seg.x * Lt
                 loc = np.array([np.interp(a, arc, xs), np.interp(a, arc, ys), np.interp(a, arc, zs)])
                 self._pos.append(xyz_global + rot.apply(loc))
@@ -68,6 +73,7 @@ class FEPSPRecorder:
         segxyz = np.array(self._pos) if self._pos else np.zeros((0, 3))
         self.W = (mf.psa_weights(self.elec, segxyz, self.sigma, self.rmin)
                   if len(segxyz) else np.zeros((len(self.elec), 0)))
+        self.W = self.W * self.stride    # 서브샘플 보정: 기록 세그먼트가 stride개를 대표
         if rec_tvec is not None:
             self.tvec = rec_tvec
             self.vecs = [h.Vector() for _ in self._refs]

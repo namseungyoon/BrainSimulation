@@ -197,14 +197,14 @@ def main():
         import fepsp_record as fr
         elec = np.array([e["xyz_um"] for e in cfg["electrodes"]["list"]], float)
         enames = [e["id"] + "(" + e["layer"] + ")" for e in cfg["electrodes"]["list"]]
-        frec = fr.FEPSPRecorder(elec)
+        FSTRIDE = int(sys.argv[sys.argv.index("--fstride") + 1]) if "--fstride" in sys.argv else 4
+        frec = fr.FEPSPRecorder(elec, stride=FSTRIDE)            # 세그먼트 1/stride 기록(대규모 setup 회피)
         for g in mine:
             frec.add_cell(B.cells[g], XYZ[g], Rot.from_quat(Q[g][[1, 2, 3, 0]]))
-        rec_tvec = h.Vector(np.arange(STIM_T - 2.0, TSTOP + 0.05, 0.1).tolist())   # 관측창만 0.1ms 기록
-        frec.finalize(rec_tvec=rec_tvec)
+        frec.finalize(rec_dt=0.1)                                    # scalar 간격(설정 빠름). 전 시뮬 0.1ms 기록 → settle 짧게
         nseg_tot = int(pc.allreduce(frec.n_seg(), 1))
         if rank == 0:
-            print(f"[fEPSP] 기록 세그먼트 {nseg_tot:,} · 전극 {len(elec)} · 창 {STIM_T-2:.0f}~{TSTOP:.0f}ms @0.1ms", flush=True)
+            print(f"[fEPSP] 기록 세그먼트 {nseg_tot:,} · 전극 {len(elec)} · rec_dt 0.1ms · 전구간(settle {SETTLE:.0f}+관측)", flush=True)
 
     if rank == 0:
         print(f"      구동 시작", flush=True)
