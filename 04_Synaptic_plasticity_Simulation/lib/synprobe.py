@@ -50,6 +50,10 @@ CAPS = {
                                    gmax_via="param", states=("g", "i", "c", "rho", "w")),
     "GBPlasticityStpProbSyn": dict(stp=True,  ltp=True,  prob=True,  post_nc=True,
                                    gmax_via="param", states=("g", "i", "c", "rho", "w")),
+    # 04 자체 작성 (5-6). 칼슘 상태가 없다 — 스파이크 짝만 본다(GB 계열의 대조군).
+    "PairSTDPSyn":            dict(stp=False, ltp=True,  prob=False, post_nc=True,
+                                   gmax_via="param",
+                                   states=("g", "i", "w", "rho", "x_pre", "x_post")),
 }
 
 
