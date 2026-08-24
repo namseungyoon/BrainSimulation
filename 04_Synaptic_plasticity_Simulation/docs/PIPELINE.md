@@ -57,7 +57,7 @@
 | **4-6** | `04_drive/6_budget` | `4-6_runtime_budget.py` | `4-6_runtime_budget.png` | ⬜ |
 | **5-1** | `05_engines/1_ref` | `5-1_refs.py` | `5-1_refs.png` · `5-1_refs.json` | ✅ |
 | **5-2** | `05_engines/2_det` | `5-2_engine_det.py` | `5-2_engine_det.png` · `5-2_det.json` | ✅ |
-| **5-3** | `05_engines/3_gb_a` | `5-3_engine_a.py` | `5-3_engine_a.png` | ⬜ |
+| **5-3** | `05_engines/3_gb_a` | `5-3_engine_a.py` | `5-3_engine_a.png` · `5-3_gb_a.json` | ✅ |
 | **5-4** | `05_engines/4_gb_b` | `5-4_engine_b.py` | `5-4_engine_b.png` | ⬜ |
 | **5-5** | `05_engines/5_gb_c` | `5-5_engine_c.py` | `5-5_engine_c.png` | ⬜ |
 | **5-6** | `05_engines/6_stdp` | `5-6_stdp.py` | `5-6_stdp_window.png` | ⬜ |
