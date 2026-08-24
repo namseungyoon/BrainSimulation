@@ -1,0 +1,187 @@
+{
+  "dt_ms": 0.025,
+  "A_tm": {
+    "n": 8,
+    "hz": 50.0,
+    "PC_PC": {
+      "Use": 0.5,
+      "Dep_ms": 671.0,
+      "Fac_ms": 17.0,
+      "ppr": 0.594,
+      "profile": [
+        1.0,
+        0.594,
+        0.2835,
+        0.1481,
+        0.0936,
+        0.0719,
+        0.0632,
+        0.0598
+      ]
+    },
+    "E1": {
+      "Use": 0.09,
+      "Dep_ms": 138.0,
+      "Fac_ms": 670.0,
+      "ppr": 1.7366,
+      "profile": [
+        1.0,
+        1.7366,
+        2.1239,
+        2.2106,
+        2.1122,
+        1.9423,
+        1.7765,
+        1.6481
+      ]
+    }
+  },
+  "B_calcium": [
+    {
+      "case": "pre 단독",
+      "c_max": 0.9995,
+      "over_theta_d_ms": 0.0,
+      "over_theta_p_ms": 0.0
+    },
+    {
+      "case": "post 단독",
+      "c_max": 0.2757,
+      "over_theta_d_ms": 0.0,
+      "over_theta_p_ms": 0.0
+    },
+    {
+      "case": "짝 dt=+10ms (pre->post)",
+      "c_max": 1.2298,
+      "over_theta_d_ms": 10.125,
+      "over_theta_p_ms": 0.0
+    },
+    {
+      "case": "짝 dt=-10ms (post->pre)",
+      "c_max": 1.1524,
+      "over_theta_d_ms": 6.95,
+      "over_theta_p_ms": 0.0
+    },
+    {
+      "case": "버스트 4발 100Hz (pre) + post 1발",
+      "c_max": 3.1308,
+      "over_theta_d_ms": 84.975,
+      "over_theta_p_ms": 62.925
+    }
+  ],
+  "C_bistable": {
+    "fixed_points": [
+      [
+        0.0,
+        "stable"
+      ],
+      [
+        0.5,
+        "unstable"
+      ],
+      [
+        1.0,
+        "stable"
+      ]
+    ],
+    "relax": {
+      "0.4": 0.24062,
+      "0.49": 0.47032,
+      "0.51": 0.52968,
+      "0.6": 0.75938
+    },
+    "t_relax_ms": 3000000.0
+  },
+  "D_stdp": {
+    "params": {
+      "A_p": 1.0,
+      "A_d": 1.0,
+      "tau_p": 16.8,
+      "tau_d": 33.7
+    },
+    "freq_hz": [
+      1.0,
+      5.0,
+      20.0,
+      50.0
+    ],
+    "per_pair_dw": [
+      0.551431,
+      0.548227,
+      0.276794,
+      -0.117485
+    ],
+    "isolated_pair_dw": 0.55143126,
+    "isolated_pair_exact": 0.55143126,
+    "isolated_pair_err": 0.0,
+    "lowfreq_rel_spread": 0.00581,
+    "sign_flip_at_50hz": true,
+    "gb_by_freq": [
+      {
+        "hz": 1.0,
+        "c_max": 1.2298,
+        "over_theta_p_ms": 0.0
+      },
+      {
+        "hz": 5.0,
+        "c_max": 1.2506,
+        "over_theta_p_ms": 0.0
+      },
+      {
+        "hz": 20.0,
+        "c_max": 1.9191,
+        "over_theta_p_ms": 161.0
+      },
+      {
+        "hz": 50.0,
+        "c_max": 3.5987,
+        "over_theta_p_ms": 209.75
+      }
+    ]
+  },
+  "gb_params": {
+    "tau_ca": 48.8373,
+    "C_pre": 1.0,
+    "C_post": 0.275865,
+    "D": 18.8008,
+    "theta_d": 1.0,
+    "theta_p": 1.3,
+    "gamma_d": 313.0965,
+    "gamma_p": 1645.59,
+    "tau": 688355.0,
+    "rho_star": 0.5,
+    "b": 5.28145,
+    "w0": 1.0
+  },
+  "mod_param_count": 21,
+  "mod_mismatch": {},
+  "mod_missing": [],
+  "resolved": {
+    "issue": "칼슘 지연 D = 13.7 vs 18.8008 ms 모순 (docs/DECISIONS 미결#1)",
+    "finding": "04 트랙 안에는 13.7 이 존재하지 않는다 — 다른 트랙 문서에서 온 값이다. 04 의 GBPlasticitySyn.mod 와 lib/refs/gb.py 는 모두 D=18.8008ms 하나만 쓰며, 이 값은 mod 헤더가 밝힌 대로 Wittenberg&Wang 2006 해마 슬라이스 적합(G&B 2012 Table S2)이다. G&B 논문은 데이터셋마다 다른 적합값을 주므로 13.7 은 다른 데이터셋(신피질 계열) 적합값으로 보인다 — 원문 미확보(확인요).",
+    "decision": "04 는 해마 슬라이스 적합값 18.8008ms 단일 사용. 다른 값은 쓰지 않는다."
+  },
+  "notes": [
+    "Bi&Poo 1998 tau_p/tau_d 는 널리 인용되는 값이나 원문 미확보 — 5-6 전 확정",
+    "GluSynapse(스파인 칼슘) 참조는 5-7 로 미룬다 — 외부 소스 라이선스 미결(#4)"
+  ],
+  "checks": {
+    "TM: PC->PC 는 억압 (PPR < 1)": true,
+    "TM: E1 은 촉진 (PPR > 1)": true,
+    "GB: pre 단독은 theta_p 를 못 넘는다 (강화 안 됨)": true,
+    "GB: post 단독은 theta_d 도 못 넘는다 (변화 없음)": true,
+    "GB: pre->post 짝이 pre 단독보다 칼슘이 크다": true,
+    "GB: 버스트가 단일 짝보다 칼슘이 크다 (누적)": true,
+    "GB: 이중우물 고정점이 0(안정)·rho*(불안정)·1(안정)": true,
+    "GB: rho0=0.49 -> DOWN · 0.51 -> UP": true,
+    "STDP: dt>0 은 양수 · dt<0 은 음수 · dt=0 은 0": true,
+    "STDP: 고립 단일 짝은 dt 만으로 정해진다 (해석해와 일치, 차 < 1e-12)": true,
+    "STDP: 저주파(1~5Hz)에서는 짝당 dw 가 거의 같다 (상대차 < 1%)": true,
+    "STDP: 고빈도(50Hz)에서는 창 겹침으로 **부호가 뒤집힌다** (LTP -> LTD)": true,
+    "★GB: 같은 dt 에서 저빈도는 LTD(theta_p 미달) · 고빈도는 LTP(theta_p 초과) 로 **전환**": true,
+    "★단일 짝은 dt 부호와 무관하게 LTD 쪽 (Wittenberg&Wang 2006 해마 관측과 일치)": true,
+    "★버스트는 theta_p 를 넘어 LTP 쪽 (단일 짝과 부호가 갈린다)": true,
+    "참조 파라미터가 mod 와 일치 (불일치 0)": true
+  },
+  "passed": 16,
+  "total": 16
+}

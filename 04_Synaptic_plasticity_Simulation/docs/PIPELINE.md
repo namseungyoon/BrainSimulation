@@ -55,7 +55,7 @@
 | **4-4** | `04_drive/4_gamma` | `4-4_gamma.py` | `4-4_theta_gamma.png` | ⬜ |
 | **4-5** | `04_drive/5_phase_align` | `4-5_phase_align.py` | `4-5_phase_align.png` | ⬜ |
 | **4-6** | `04_drive/6_budget` | `4-6_runtime_budget.py` | `4-6_runtime_budget.png` | ⬜ |
-| **5-1** | `05_engines/1_ref` | `5-1_refs.py` | `5-1_refs.png` | ⬜ |
+| **5-1** | `05_engines/1_ref` | `5-1_refs.py` | `5-1_refs.png` · `5-1_refs.json` | ✅ |
 | **5-2** | `05_engines/2_det` | `5-2_engine_det.py` | `5-2_engine_det.png` | ⬜ |
 | **5-3** | `05_engines/3_gb_a` | `5-3_engine_a.py` | `5-3_engine_a.png` | ⬜ |
 | **5-4** | `05_engines/4_gb_b` | `5-4_engine_b.py` | `5-4_engine_b.png` | ⬜ |

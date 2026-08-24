@@ -227,11 +227,13 @@ def main():
              label=f"최적 {BD}ms/{BA}nA → {len(sp_best)}발")
     for k, tt in enumerate(tgt_best):
         axW.axvline(tt - t0, color="#90a4ae", ls=":", lw=1.0)
-        axW.text(tt - t0, 46, f"{k+1}", fontsize=8, color="#607d8b", ha="center")
+        axW.text(tt - t0, 0.97, f"{k+1}", fontsize=8, color="#607d8b", ha="center",
+                 va="top", transform=axW.get_xaxis_transform())
     axW.set_xlim(-5, (tgt_best[-1] - t0) + 45)
     axW.set_xlabel("첫 목표 시각 기준 시간 (ms)"); axW.set_ylabel("post 소마 Vm (mV)")
     axW.set_title(f"B. 같은 목표({BURST_N}펄스 {BURST_HZ:.0f}Hz)에 대한 두 자극의 결과\n"
-                  "점선 = 목표 시각. 3ms 펄스는 다음 목표를 덮어 발화를 막는다",
+                  "점선 = 목표 시각. 1.2nA 는 펄스 끝(3ms)에야 역치에 닿아 늦게 발화하고 "
+                  "3·4번째는 실패한다",
                   fontsize=9.5, loc="left")
     axW.legend(fontsize=8.5, loc="upper right")
 
