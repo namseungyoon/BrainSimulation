@@ -14,7 +14,7 @@ plt.rcParams["axes.unicode_minus"] = False
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-FIG = os.path.join(HERE, "figures"); os.makedirs(FIG, exist_ok=True)
+FIG = os.path.join(HERE, "..", "..", "04_experiments", "Ex2_schaffer", "figures"); os.makedirs(FIG, exist_ok=True)
 
 d = np.load(os.path.join(ROOT, "scratch", "ex2_uepsp.npz"), allow_pickle=True)
 J = json.load(open(os.path.join(ROOT, "scratch", "ex2_uepsp.json"), encoding="utf-8"))

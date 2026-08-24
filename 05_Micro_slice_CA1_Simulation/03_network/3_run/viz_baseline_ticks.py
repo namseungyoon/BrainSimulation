@@ -9,7 +9,7 @@ import logging
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 plt.rcParams["font.family"] = ["NanumGothic", "Malgun Gothic", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
-FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
+FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "04_experiments", "Ex1_baseline", "figures")
 
 # 구동 틱(자극기준 ms, 누적 스파이크) — mpi_baseline.log 실측
 t = np.array([-5, 0, 5, 10, 15, 20])

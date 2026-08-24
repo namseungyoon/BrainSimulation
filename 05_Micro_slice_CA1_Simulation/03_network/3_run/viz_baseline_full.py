@@ -18,7 +18,7 @@ plt.rcParams["axes.unicode_minus"] = False
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 DERIVED = os.path.join(ROOT, "data", "derived")
-FIG = os.path.join(HERE, "figures"); os.makedirs(FIG, exist_ok=True)
+FIG = os.path.join(HERE, "..", "..", "04_experiments", "Ex1_baseline", "figures"); os.makedirs(FIG, exist_ok=True)
 NPZ = os.path.join(ROOT, "scratch", "mpi_baseline.npz")
 
 # ── 데이터 로드 ────────────────────────────────────────────────────────────
