@@ -22,7 +22,12 @@
   post_nc  후시냅스 스파이크를 weight<0 sentinel NetCon 으로 받아야 하는가
   gmax_via 전도도 단위 규약 "param"(syn.gmax, uS) / "weight"(NetCon weight, nS) — D22(1)
   states   기록 가능한 상태변수
-  freeze   가소성을 끄는 파라미터 (D21 에 따라 rho0 조건은 freeze_rho0 로 따로)
+  freeze   가소성을 끄는 파라미터
+  freeze_rho0        동결이 **실제로 불변**인 rho0 (자율항의 고정점 전부)
+  freeze_rho0_robust 그 중 **안정**한 것만 — 대조군으로 써도 되는 값.
+                     rho*=0.5 는 고정점이지만 **불안정**하다(칼날 균형). 결정론 실행에서는
+                     움직이지 않아 계약 검사는 통과하지만 조금만 흔들려도 어느 우물로든
+                     떨어지므로 **대조군으로 쓰면 안 된다**. 둘을 구분해 선언한다(D21·5-11).
   ref      대조할 numpy 참조 모듈 이름 (lib.refs.*)
   own      04 가 직접 작성한 mod 인가
 """
@@ -36,7 +41,7 @@ ENGINES = {
         stp=True, ltp=False, prob=False, post_nc=False, gmax_via="weight",
         states=("g", "i"),
         stp_keys=("Use", "Dep", "Fac"),
-        freeze={}, freeze_rho0=None,
+        freeze={}, freeze_rho0=None, freeze_rho0_robust=None,
         ref="tm",
         note="장기가소성 상태가 아예 없다 — 구조적 기준선(5-2).",
     ),
@@ -45,7 +50,8 @@ ENGINES = {
         stp=False, ltp=True, prob=False, post_nc=True, gmax_via="param",
         states=("g", "i", "c", "rho", "w"),
         stp_keys=(),
-        freeze={"gamma_p": 0.0, "gamma_d": 0.0}, freeze_rho0=(0.0, 1.0),
+        freeze={"gamma_p": 0.0, "gamma_d": 0.0},
+        freeze_rho0=(0.0, 0.5, 1.0), freeze_rho0_robust=(0.0, 1.0),
         ref="gb",
         note="Graupner & Brunel 2012. 버스트의 네 펄스를 똑같이 취급한다.",
     ),
@@ -54,7 +60,8 @@ ENGINES = {
         stp=True, ltp=True, prob=False, post_nc=True, gmax_via="param",
         states=("g", "i", "c", "rho", "w", "pr_last", "ca_last"),
         stp_keys=("Use", "Dep", "Fac"),
-        freeze={"gamma_p": 0.0, "gamma_d": 0.0}, freeze_rho0=(0.0, 1.0),
+        freeze={"gamma_p": 0.0, "gamma_d": 0.0},
+        freeze_rho0=(0.0, 0.5, 1.0), freeze_rho0_robust=(0.0, 1.0),
         ref="gb",
         conventions={"norm_Pr": 1, "ca_stp": 0},     # D24: 기준은 논문 원본 칼슘
         note="관례 ca_stp 가 결론을 뒤집는다(D24). 기준은 ca_stp=0.",
@@ -65,7 +72,8 @@ ENGINES = {
         states=("g", "i", "c", "rho", "w", "pr_last", "ca_last",
                 "ves_last", "n_pre", "n_rel"),
         stp_keys=("Use", "Dep", "Fac", "Nrrp"),
-        freeze={"gamma_p": 0.0, "gamma_d": 0.0}, freeze_rho0=(0.0, 1.0),
+        freeze={"gamma_p": 0.0, "gamma_d": 0.0},
+        freeze_rho0=(0.0, 0.5, 1.0), freeze_rho0_robust=(0.0, 1.0),
         ref="gb",
         conventions={"norm_Pr": 1, "ca_stp": 0},
         note="ca_stp=0 이면 확률성이 가소성에 전혀 영향을 주지 않는다(GAPS G5).",
@@ -76,7 +84,8 @@ ENGINES = {
         states=("g", "i", "w", "rho", "x_pre", "x_post", "dw_last",
                 "n_pre", "n_post"),
         stp_keys=(),
-        freeze={"A_p": 0.0, "A_d": 0.0}, freeze_rho0=None,   # 자율항이 없다
+        freeze={"A_p": 0.0, "A_d": 0.0},
+        freeze_rho0=None, freeze_rho0_robust=None,   # 자율항이 없다
         ref="stdp",
         conventions={"all_to_all": 1},
         note="칼슘 상태가 없다 — 스파이크 짝만 본다. GB 계열의 대조군(5-6).",
@@ -165,9 +174,22 @@ def apply_params(syn, key, P, rho0=None, frozen=False, conventions=True):
 
 
 def freeze_ok(key, rho0):
-    """이 rho0 에서 동결이 정말 불변인가 (D21). 자율항이 없는 엔진은 항상 True."""
+    """이 rho0 에서 동결이 **실제로 불변**인가 (자율항의 고정점인가). D21·5-11."""
     e = get(key)
     lim = e["freeze_rho0"]
+    if lim is None:
+        return True
+    return any(abs(rho0 - v) < 1e-12 for v in lim)
+
+
+def freeze_robust(key, rho0):
+    """대조군으로 **써도 되는** rho0 인가 — 고정점이면서 **안정**해야 한다.
+
+    rho*=0.5 는 고정점이라 결정론 실행에서는 움직이지 않지만 불안정하다(칼날 균형).
+    대조군은 견고해야 하므로 여기서는 False 를 준다.
+    """
+    e = get(key)
+    lim = e["freeze_rho0_robust"]
     if lim is None:
         return True
     return any(abs(rho0 - v) < 1e-12 for v in lim)
@@ -184,5 +206,6 @@ def table():
                          ref=e["ref"],
                          conventions=e.get("conventions") or {},
                          freeze=e["freeze"], freeze_rho0=e["freeze_rho0"],
+                         freeze_rho0_robust=e["freeze_rho0_robust"],
                          note=e["note"]))
     return rows

@@ -1,0 +1,391 @@
+{
+  "ltp_engines": [
+    "A",
+    "B",
+    "C",
+    "stdp"
+  ],
+  "rho0_tested": [
+    0.0,
+    0.3,
+    0.5,
+    1.0
+  ],
+  "syn_class": "PC->PC",
+  "protocol": {
+    "n_burst": 10,
+    "burst_hz": 5.0,
+    "n_in": 4,
+    "in_hz": 100.0,
+    "n_pulses": 40,
+    "tstop": 3000.0,
+    "dt": 0.025
+  },
+  "first_pulse_identity": [
+    {
+      "key": "A",
+      "rho0": 0.0,
+      "frozen": 0.0005967812096901794,
+      "plastic": 0.0005967812096901794,
+      "diff": 0.0
+    },
+    {
+      "key": "A",
+      "rho0": 0.3,
+      "frozen": 0.0013633047711141125,
+      "plastic": 0.0013633047711141125,
+      "diff": 0.0
+    },
+    {
+      "key": "A",
+      "rho0": 0.5,
+      "frozen": 0.001874325670396134,
+      "plastic": 0.001874325670396134,
+      "diff": 0.0
+    },
+    {
+      "key": "A",
+      "rho0": 1.0,
+      "frozen": 0.0031518701387250516,
+      "plastic": 0.0031518701387250516,
+      "diff": 0.0
+    },
+    {
+      "key": "B",
+      "rho0": 0.0,
+      "frozen": 0.0005967812096901794,
+      "plastic": 0.0005967812096901794,
+      "diff": 0.0
+    },
+    {
+      "key": "B",
+      "rho0": 0.3,
+      "frozen": 0.0013633047711141125,
+      "plastic": 0.0013633047711141125,
+      "diff": 0.0
+    },
+    {
+      "key": "B",
+      "rho0": 0.5,
+      "frozen": 0.001874325670396134,
+      "plastic": 0.001874325670396134,
+      "diff": 0.0
+    },
+    {
+      "key": "B",
+      "rho0": 1.0,
+      "frozen": 0.0031518701387250516,
+      "plastic": 0.0031518701387250516,
+      "diff": 0.0
+    },
+    {
+      "key": "C",
+      "rho0": 0.0,
+      "frozen": 0.0005967812096901794,
+      "plastic": 0.0005967812096901794,
+      "diff": 0.0
+    },
+    {
+      "key": "C",
+      "rho0": 0.3,
+      "frozen": 0.0013633047711141125,
+      "plastic": 0.0013633047711141125,
+      "diff": 0.0
+    },
+    {
+      "key": "C",
+      "rho0": 0.5,
+      "frozen": 0.001874325670396134,
+      "plastic": 0.001874325670396134,
+      "diff": 0.0
+    },
+    {
+      "key": "C",
+      "rho0": 1.0,
+      "frozen": 0.0031518701387250516,
+      "plastic": 0.0031518701387250516,
+      "diff": 0.0
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.0,
+      "frozen": 0.0006036345602145561,
+      "plastic": 0.0006036345602145561,
+      "diff": 0.0
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.3,
+      "frozen": 0.0013789639189440896,
+      "plastic": 0.0013789639189440896,
+      "diff": 0.0
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.5,
+      "frozen": 0.0018958501595841845,
+      "plastic": 0.0018958501595841845,
+      "diff": 0.0
+    },
+    {
+      "key": "stdp",
+      "rho0": 1.0,
+      "frozen": 0.00318806576638917,
+      "plastic": 0.00318806576638917,
+      "diff": 0.0
+    }
+  ],
+  "exact": true,
+  "efficacy": [
+    {
+      "key": "A",
+      "rho0": 0.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.7404170533274332,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "A",
+      "rho0": 0.3,
+      "drho_frozen": -0.00018309081554479523,
+      "drho_plastic": 0.4685899035987539,
+      "declared_ok": false,
+      "declared_robust": false,
+      "flat": false,
+      "changed": true
+    },
+    {
+      "key": "A",
+      "rho0": 0.5,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.2873701366950153,
+      "declared_ok": true,
+      "declared_robust": false,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "A",
+      "rho0": 1.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": -0.1657049000277333,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "B",
+      "rho0": 0.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.7404170533274332,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "B",
+      "rho0": 0.3,
+      "drho_frozen": -0.00018309081554479523,
+      "drho_plastic": 0.4685899035987539,
+      "declared_ok": false,
+      "declared_robust": false,
+      "flat": false,
+      "changed": true
+    },
+    {
+      "key": "B",
+      "rho0": 0.5,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.2873701366950153,
+      "declared_ok": true,
+      "declared_robust": false,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "B",
+      "rho0": 1.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": -0.1657049000277333,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "C",
+      "rho0": 0.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.7404170533274332,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "C",
+      "rho0": 0.3,
+      "drho_frozen": -0.00018309081554479523,
+      "drho_plastic": 0.4685899035987539,
+      "declared_ok": false,
+      "declared_robust": false,
+      "flat": false,
+      "changed": true
+    },
+    {
+      "key": "C",
+      "rho0": 0.5,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.2873701366950153,
+      "declared_ok": true,
+      "declared_robust": false,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "C",
+      "rho0": 1.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": -0.1657049000277333,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.11414206010707294,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.3,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.08911383850891225,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 0.5,
+      "drho_frozen": 0.0,
+      "drho_plastic": 0.08911383850891219,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    },
+    {
+      "key": "stdp",
+      "rho0": 1.0,
+      "drho_frozen": 0.0,
+      "drho_plastic": -0.014509766607038732,
+      "declared_ok": true,
+      "declared_robust": true,
+      "flat": true,
+      "changed": true
+    }
+  ],
+  "declaration_consistent": true,
+  "declarations": [
+    {
+      "key": "det",
+      "ltp": false,
+      "freeze": {},
+      "freeze_rho0": null,
+      "freeze_rho0_robust": null
+    },
+    {
+      "key": "A",
+      "ltp": true,
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "freeze_rho0_robust": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "key": "B",
+      "ltp": true,
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "freeze_rho0_robust": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "key": "C",
+      "ltp": true,
+      "freeze": {
+        "gamma_p": 0.0,
+        "gamma_d": 0.0
+      },
+      "freeze_rho0": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "freeze_rho0_robust": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "key": "stdp",
+      "ltp": true,
+      "freeze": {
+        "A_p": 0.0,
+        "A_d": 0.0
+      },
+      "freeze_rho0": null,
+      "freeze_rho0_robust": null
+    }
+  ],
+  "finding": "동결 계약은 두 조건이다: (1) 전달이 가소런과 **정확히** 같아야 하고 (2) 효능이 시간불변이어야 한다. (1)은 전 조건에서 부동소수 차이 0 으로 성립한다 — 동결은 갱신 항만 끄고 초기 가중치를 건드리지 않기 때문이다. (2)는 **rho0 에 달렸다**(D21): GB 계열은 자율항이 살아 있어 rho0 가 0 또는 1 이 아니면 표류한다. 레지스트리가 그 제약을 선언으로 담고, 이 스크립트가 선언과 실제 거동이 일치하는지 검사한다.",
+  "finding_ceiling": "★rho0=1(UP)에서 같은 theta 버스트가 **LTD 를 만든다** (A/B/C 전부 -0.166 · stdp -0.0145). GB 의 강화 항은 gamma_p*(1-rho) 라서 rho=1 에서 정확히 0 이 되는데 약화 항은 -gamma_d*rho 로 최대다 — **비대칭 포화**다. 고전 STDP 도 하드 상한 때문에 LTP 기여가 잘리고 LTD 만 남는다. rho0=0 에서는 같은 자극이 LTP(+0.740)다. => 6단계에서 rho0 가 **결과의 부호를 정한다**(D23 강화). '이 프로토콜은 LTP 프로토콜이다' 라는 말은 rho0 를 밝히지 않으면 성립하지 않는다.",
+  "vacuity_note": "대조군 검증은 '가소런이 실제로 변한다' 를 함께 확인해야 의미가 있다. 안 변하는 자극으로는 '동결과 같다' 가 당연해서 아무것도 증명하지 못한다. 그래서 효능을 크게 바꾸는 theta 버스트를 썼다. 다만 rho0=1 에서는 이중우물 상한이라 가소런도 변하지 않는다 — 그 조건은 대조 검증에 쓸 수 없다.",
+  "checks": {
+    "★동결런과 가소런의 첫 펄스 전달이 **정확히 같다** (차이 = 0.0)": true,
+    "★동결 선언(freeze + freeze_rho0)이 실제 거동과 일치한다 (D21)": true,
+    "안전 rho0 에서 동결런의 효능 변화가 정확히 0": true,
+    "★고정점이 아닌 rho0 에서는 동결런도 표류한다 (그래서 계약에 rho0 조건이 있다)": true,
+    "★rho*=0.5 는 고정점이지만 **불안정**이라 대조군 불가로 선언한다 (3조건)": true,
+    "가소런은 실제로 효능을 바꾼다 (대조가 공허하지 않다)": true,
+    "★rho0=1 에서 LTP 프로토콜이 오히려 **LTD 를 만든다** (비대칭 포화)": true,
+    "rho0=0 에서는 같은 자극이 LTP 를 만든다 (부호가 rho0 로 뒤집힌다)": true,
+    "자율항이 없는 엔진(stdp)은 rho0 제약이 없다고 선언한다": true,
+    "GB 계열 3종은 **견고한** rho0 를 따로 선언한다": true,
+    "동결 파라미터가 엔진마다 선언돼 있다": true,
+    "장기가소성 없는 엔진은 동결 파라미터가 비어 있다": true
+  },
+  "passed": 12,
+  "total": 12
+}
