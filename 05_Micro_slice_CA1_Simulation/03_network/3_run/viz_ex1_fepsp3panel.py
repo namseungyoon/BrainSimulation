@@ -52,8 +52,8 @@ def main():
     for L, (lo, hi) in bands.items():
         ax.text(-1.6, (lo + hi) / 2, L, color=LAYER_COL[L], fontsize=11, fontweight="bold", va="center", ha="right")
     ax.set_ylabel("neuron (by layer)"); ax.set_ylim(-.5, N + .5)
-    ax.set_title(f"Ex1 volley — raster + PSTH + fEPSP (전체망 {N}세포 · R=150)\n"
-                 f"발화 {int(b['fired'].sum())}/{N} · PC=점, 억제=마름모", fontsize=11)
+    ax.set_title(f"Ex4 fEPSP — full network {N} cells · R=150 (raster + PSTH + fEPSP)\n"
+                 f"fired {int(b['fired'].sum())}/{N} · PC=dot, interneuron=diamond", fontsize=11)
     ax.tick_params(labelbottom=False)
     leg = [Line2D([0], [0], marker='o', color='w', markerfacecolor=LAYER_COL[L], markersize=8, label=L) for L in LAYER_ORDER]
     ax.legend(handles=leg, loc='upper right', fontsize=8, ncol=4)
