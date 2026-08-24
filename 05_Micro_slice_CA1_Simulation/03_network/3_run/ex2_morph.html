@@ -57,7 +57,7 @@
   </header>
   <div id="stage">
     <canvas id="view"></canvas>
-    <div class="ov" id="tnow"><div class="big mono" id="tbig">0.0</div><div class="lab">ms · 자극기준</div></div>
+    <div class="ov" id="tnow"><div class="big mono" id="tbig">0.0</div><div class="lab" id="lab">ms · 자극기준</div></div>
     <div class="ov" id="legend">
       <div class="row"><span style="color:var(--syn); font-size:13px">◎</span> SC 시냅스 자리(SR)</div>
       <div class="row"><span style="width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent)"></span> 소마(SP)</div>
@@ -137,6 +137,14 @@
     ctx.shadowBlur=0;
     // synapse rings
     for(const si of synIdx){const p=pr[si]; ctx.strokeStyle='#ffc857'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p[0],p[1],7,0,6.283); ctx.stroke();}
+    // ⚡ 단발 자극 순간(t≈0): 시냅스에서 금색 링 확산 플래시
+    const tn=T[frame|0];
+    if(tn>=-0.3 && tn<=3.6){
+      const ph=Math.max(0,1-(tn+0.3)/3.9);
+      for(const si of synIdx){const p=pr[si];
+        ctx.strokeStyle='rgba(255,200,87,'+(0.9*ph).toFixed(2)+')'; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.arc(p[0],p[1],8+(1-ph)*22,0,6.283); ctx.stroke();}
+    }
     // soma marker
     if(somaIdx.length){let sx=0,sy=0;for(const s of somaIdx){sx+=pr[s][0];sy+=pr[s][1];}sx/=somaIdx.length;sy/=somaIdx.length;
       ctx.fillStyle='#33d6c4'; ctx.shadowColor='#33d6c4'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(sx,sy,5,0,6.283); ctx.fill(); ctx.shadowBlur=0;}
@@ -149,7 +157,10 @@
     $('s-syn').textContent=(dsyn>=0?'+':'')+dsyn.toFixed(1)+' mV';
     $('s-soma').textContent=(dsoma>=0?'+':'')+dsoma.toFixed(2)+' mV';
     $('s-att').textContent=(dsoma>0.01?(dsyn/dsoma).toFixed(1)+'×':'–');
-    $('tbig').textContent=(T[fi]>=0?'+':'')+T[fi].toFixed(1);
+    const stim=(T[fi]>=-0.3 && T[fi]<=3.6);
+    $('tbig').textContent=(stim?'⚡':'')+(T[fi]>=0?'+':'')+T[fi].toFixed(1);
+    $('tbig').style.color=stim?'#ffc857':'';
+    $('lab').textContent=stim?'ms · ⚡ 단발 자극!':'ms · 자극기준';
     $('pos').textContent=(T[fi]>=0?'+':'')+T[fi].toFixed(1)+' ms';
     $('scrub').value=Math.round(fi/(NF-1)*1000);
   }
