@@ -98,6 +98,18 @@ class Wiring:
             nc = h.NetCon(vs, syn); nc.weight[0] = 1.0; nc.delay = spec["delay_ms"]
             self.pre_ncs.append(nc); self.keep.append(nc)
 
+    def connect_pre(self):
+        """pre 소마 -> 시냅스 배선만 따로 건다.
+
+        drive_pre_iclamp() 는 이걸 자동으로 부른다. IClamp 를 스크립트에서 직접
+        만들어 쓰는 경우(4-1 처럼 여러 조건을 켜고 끄는 스윕)에는 이 메서드를
+        명시적으로 불러야 한다 — 안 부르면 pre 가 발화해도 시냅스로 전달되지 않는다.
+        NetCon 생성은 정착 상태와 무관하므로 settle() 전에 부르는 것이 안전하다.
+        """
+        if self.pre_ncs:
+            return                      # 중복 배선 방지
+        self._connect_pre()
+
     def _connect_pre(self):
         """pre 소마 전압 문턱 검출 -> 각 시냅스로 거리기반 지연 전달."""
         for syn, spec in self.syns:
@@ -144,7 +156,13 @@ class Wiring:
         return ts
 
     def restore(self):
-        """settle() 로 저장한 정착 상태로 복원(t 포함) + 기록 벡터 초기화."""
+        """settle() 로 저장한 정착 상태로 복원(t 포함) + 기록 벡터 초기화.
+
+        ⚠️ SaveState 는 **상태변수뿐 아니라 파라미터도 정착 시점 값으로 되돌린다.**
+        조건마다 gmax 등을 바꾸려면 반드시 restore() **뒤에** 설정해야 한다.
+        앞에 두면 조용히 지워진다(오류 없음). 실측 2026-08-24: 4-1 (D) 가 이 순서
+        때문에 시냅스 g 를 20nS 로 올려도 EPSP 가 0 이었다.
+        """
         if self._ss is None:
             raise RuntimeError("settle() 을 먼저 호출해야 한다")
         self._ss.restore(1)          # 1 = t 까지 복원

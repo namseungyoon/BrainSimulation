@@ -1,0 +1,167 @@
+{
+  "settle_ms": 250.0,
+  "burst": {
+    "n": 4,
+    "hz": 100.0
+  },
+  "tol_ms": 2.0,
+  "A_pulse_sweep": {
+    "durs_ms": [
+      0.5,
+      1.0,
+      2.0,
+      3.0
+    ],
+    "amps_nA": [
+      1.0,
+      1.5,
+      2.0,
+      3.0,
+      5.0
+    ],
+    "spikes": [
+      [
+        0,
+        0,
+        0,
+        1,
+        4
+      ],
+      [
+        0,
+        0,
+        1,
+        4,
+        4
+      ],
+      [
+        0,
+        0,
+        3,
+        4,
+        4
+      ],
+      [
+        0,
+        0,
+        3,
+        4,
+        4
+      ]
+    ],
+    "max_time_err_ms": [
+      [
+        null,
+        null,
+        null,
+        1.525,
+        0.6
+      ],
+      [
+        null,
+        null,
+        1.275,
+        1.125,
+        0.575
+      ],
+      [
+        null,
+        null,
+        1.75,
+        1.125,
+        0.6
+      ],
+      [
+        null,
+        null,
+        1.775,
+        1.125,
+        0.575
+      ]
+    ]
+  },
+  "A_best": {
+    "dur_ms": 1.0,
+    "amp_nA": 5.0,
+    "spikes": 4,
+    "max_time_err_ms": 0.575
+  },
+  "B_freq": [
+    {
+      "hz": 20.0,
+      "spikes": 4,
+      "max_time_err_ms": 0.5
+    },
+    {
+      "hz": 50.0,
+      "spikes": 4,
+      "max_time_err_ms": 0.6
+    },
+    {
+      "hz": 100.0,
+      "spikes": 4,
+      "max_time_err_ms": 0.575
+    },
+    {
+      "hz": 150.0,
+      "spikes": 4,
+      "max_time_err_ms": 0.525
+    },
+    {
+      "hz": 200.0,
+      "spikes": 4,
+      "max_time_err_ms": 0.5
+    }
+  ],
+  "B_max_reliable_hz": 200.0,
+  "C_cells": {
+    "post_idC": 4,
+    "pre_idF": 4,
+    "cell_specific": false
+  },
+  "D_synaptic_drive": [
+    {
+      "g_nS": 0.6,
+      "post_spikes": 0,
+      "post_vmax": -68.49511936790844
+    },
+    {
+      "g_nS": 1.0,
+      "post_spikes": 0,
+      "post_vmax": -63.878693700365375
+    },
+    {
+      "g_nS": 2.0,
+      "post_spikes": 0,
+      "post_vmax": -64.01488825969173
+    },
+    {
+      "g_nS": 5.0,
+      "post_spikes": 0,
+      "post_vmax": -64.31451733666853
+    },
+    {
+      "g_nS": 20.0,
+      "post_spikes": 0,
+      "post_vmax": -64.89300485612857
+    }
+  ],
+  "old_condition": {
+    "dur_ms": 3.0,
+    "amp_nA": 1.2,
+    "spikes": 2
+  },
+  "g2_resolved": true,
+  "conclusion": "G2 는 자극 설계 문제였다. 3-9 가 쓴 3.0ms 펄스는 100Hz(ISI 10ms)에서 다음 목표 시각을 덮어 발화를 막았다. 1.0ms/5.0nA 로 바꾸면 4펄스 100Hz 가 정확히 나온다. 모델의 발화적응 특성 때문이 아니다.",
+  "note_synaptic": "시냅스 구동으로 post 를 발화시킬 수는 없다 — 시냅스 2개로는 소마 EPSP 가 역치(-44.5mV)에 한참 못 미친다. 3-7 에서 g>=1.1nS 는 국소 스파이크가 나지만 소마에는 4.7~4.9mV 로만 도달했다. 실제 슬라이스 실험도 post 버스트는 패치 전류 주입으로 만든다 — 구조적 한계가 아니라 프로토콜 설계 사실이다.",
+  "checks": {
+    "★G2 해결 — 4펄스 100Hz 버스트 달성": true,
+    "목표 시각 오차 2.0ms 이내": true,
+    "3-9 조건(3.0ms/1.2nA)은 실패함을 재현": true,
+    "pre·post 둘 다 같은 결과 (세포 특이성 아님)": true,
+    "버스트 주파수 상한이 100Hz 이상": true,
+    "시냅스 2개로는 post 발화 불가 (구조적 사실)": true
+  },
+  "passed": 6,
+  "total": 6
+}

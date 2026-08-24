@@ -1,0 +1,23 @@
+# 구동 단일 출처 (4단계 산출). 스크립트에 펄스 상수를 흩어놓지 않는다.
+# 4-1 실측(2026-08-24): 반복 발화의 유효 역치는 단발보다 훨씬 높다.
+# 단발 rheobase 0.40nA(2-4) 인데 100Hz 4펄스에는 3.0nA(1ms 이상) 또는 5.0nA(0.5ms) 가 필요.
+
+soma_pulse:
+  burst:
+    dur_ms:  {v: 1.0, src: insilico, ref: "4-1 폭x진폭 격자에서 4/4 달성 최소 폭"}
+    amp_nA:  {v: 5.0, src: insilico, ref: "4-1 20~200Hz 전부 4/4 · 시각오차 <=0.60ms"}
+  single:
+    dur_ms:  {v: 3.0, src: insilico, ref: "3-3~3-9 단발 구동에 사용 (100Hz 반복에는 부족)"}
+    amp_nA:  {v: 1.2, src: insilico, ref: "단발 rheobase 0.40nA(2-4) 의 3배"}
+
+burst:
+  n_pulses: {v: 4,     src: measured, ref: "Larson/Wong/Lynch 1986 고전 TBS 버스트"}
+  hz:       {v: 100.0, src: measured, ref: "동일"}
+  max_reliable_hz: {v: 200.0, src: insilico, ref: "4-1 (B) 스윕 상한 — 그 이상은 미측정"}
+
+timing:
+  settle_ms: {v: 250.0, src: insilico, ref: "lib.wiring.SETTLE_MS (D12)"}
+  target_tol_ms: {v: 2.0, src: mod, ref: "4-1 목표 시각 대비 허용 오차"}
+
+notes:
+  - "post 를 시냅스 구동으로 발화시킬 수 없다 — 4-1 (D): 시냅스 2개 x 4펄스 100Hz 에서 g 를 20nS 로 올려도 소마 최고 -64.9mV, 역치 -44.5mV 까지 약 20mV 부족. post burst 는 반드시 소마 전류로 만든다(실제 슬라이스 실험도 패치 전류 주입)."

@@ -61,7 +61,8 @@ def main():
     w.record(rec_dt=REC_DT, local_v=True, currents=False)   # 국소 수상돌기 전압으로 스파이크 판별
     t_event = T_SPIKE + b.syn_specs[0]["delay_ms"]
 
-    # 정착 1회 -> 각 g 마다 복원해서 실행 (gmax 는 파라미터라 정착 상태와 무관)
+    # 정착 1회 -> 각 g 마다 복원해서 실행.
+    # ⚠️ gmax 설정은 반드시 restore() 뒤에. SaveState 는 파라미터도 되돌린다.
     w.settle()
     amps, traces, vlocs, dsp = [], [], [], []
     for g in G_SWEEP:
