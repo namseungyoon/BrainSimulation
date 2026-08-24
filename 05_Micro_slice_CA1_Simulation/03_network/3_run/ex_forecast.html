@@ -49,10 +49,10 @@ const CARDS=[
  {id:'Ex2',nm:'SC 단발 uEPSP',st:'done',type:'bars',
   data:{labels:['EPSP1','EPSP2\n(ISI 50)'],vals:[1.10,2.32],unit:'mV',cols:[C.blue,C.red]},
   pred:'<b>실측:</b> uEPSP <span class="m">0.43 mV</span> · <b>PPR 2.11 촉진</b> · 실패 7% (Sayer 1990 추세 일치).'},
- {id:'Ex3',nm:'SC I-O 곡선 + 억제 차단',st:'fore',type:'io',
-  data:{x:[50,100,150,200,250],normal:[5,20,39,55,65],block:[15,45,70,85,92]},
+ {id:'Ex3',nm:'SC I-O (fiber volley → fEPSP slope)',st:'fore',type:'io',
+  data:{x:[10,25,50,75,100],normal:[8,24,48,68,80],block:[12,36,68,90,100]},
   legend:[['정상(억제 O)',C.blue],['억제 차단',C.red]],
-  pred:'<b>예상:</b> 자극세기↑ → 발화% <b>시그모이드</b>. <b>억제 차단 시 위로 이동</b>(억제가 반응을 눌러왔음). R=150 앵커(<span class="m">39%</span>, Ex1).'},
+  pred:'<b>예상:</b> <b>x=fiber volley(발화섬유%)</b> ↑ → <b>y=fEPSP slope</b> ↑ (포화). 억제 차단 시 <b>더 가파르고 높게</b>(탈억제). 전시냅스 모집만 변화 · gsyn 0.8nS 고정 · 실측 I-O 포맷.'},
  {id:'Ex4',nm:'fEPSP (LSA/MoI)',st:'fore',type:'fepsp',
   legend:[['E3 SR(sink)',C.red],['E2 SP',C.blue],['E1 SO',C.teal]],
   pred:'<b>예상:</b> SC 자극 → <b>E3(SR)에 음성 sink</b>(시냅스 전류), E2/E1은 층따라 극성·크기 변화 = 깊이 프로파일/CSD.'},
@@ -108,7 +108,7 @@ function draw(card,cv){
       d.x.forEach((xv,i)=>{const[px,py]=plot((xv-xmin)/(xmax-xmin),d[k][i]/100);x.fillStyle=col;x.beginPath();x.arc(px,py,3,0,6.28);x.fill();});});
     [0,25,50,75,100].forEach(v=>{const[,py]=plot(0,v/100);txt(x,v+'',P.l-4,py+3,C.dim,8.5,'right');});
     d.x.forEach(xv=>{const[px]=plot((xv-xmin)/(xmax-xmin),0);txt(x,xv+'',px,H-P.b+12,C.dim,8.5,'center');});
-    txt(x,'발화%',P.l-4,P.t+2,C.dim,8.5,'right');txt(x,'자극세기 R(µm)',W-P.r,H-P.b+22,C.dim,9,'right');}
+    txt(x,'fEPSP slope %',P.l-4,P.t+2,C.dim,8.5,'right');txt(x,'fiber volley (발화섬유 %)',W-P.r,H-P.b+22,C.dim,9,'right');}
   else if(card.type==='fepsp'){axes(x,W,H,P);const T=100;
     const wave=(amp,tp,dk,col,dash)=>{x.strokeStyle=col;x.lineWidth=2;x.setLineDash(dash||[]);x.beginPath();
       for(let i=0;i<=T;i++){const t=i;const v=0.5 - amp*Math.max(0,(t-15))/tp*Math.exp(1-(t-15)/tp)*(t>15?1:0);const[px,py]=plot(i/T,v);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);};

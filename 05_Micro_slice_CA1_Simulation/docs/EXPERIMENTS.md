@@ -37,6 +37,18 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **프로토콜**: ① 단발(1 스파이크) → uEPSP. ② 페어펄스 ISI 50ms → PPR=EPSP2/EPSP1 (SC→PC 촉진성 → >1 기대). 확률시냅스(Nrrp>1)라 **다수 시행 평균**.
 - **검증지표**: 소마 uEPSP 진폭(mV)·지연(ms)·상승시간·감쇠τ · PPR. **대조**: 04 벤치(Sayer 1990) · gsyn 규칙(HippocampusHub).
 
+## Ex3 상세 — SC I-O + 억제 차단 (설계 확정 2026-08-24)
+**목표**: basal 시냅스 전달의 **I-O 곡선**(실측 MEA 포맷)을 재현. **y=fEPSP slope, x=fiber volley(발화 섬유 진폭)**의 전달함수.
+- **세기축의 정체**: 실측에서 자극 전류↑ = **더 많은 SC 축삭 모집**(recruitment). fiber volley 진폭 ∝ 발화 섬유 수. 전도도(gsyn)는 생물물리 상수 → **세기축 아님**. ⇒ 우리 세기축 = **발화 섬유 비율**.
+- **핵심 결정**:
+  - **locus(자극 영역) 고정** — 전극 안 옮김. 직경 5종 × 세기 5종(=25) 방식 폐기.
+  - 세기 = locus 안에서 **발화시키는 섬유 비율** 5단계 `[10,25,50,75,100]%` (locus 근처 축삭부터 문턱 넘음 → 범위 고정, 밀도만 변화).
+  - **gsyn 0.8 nS 고정** (Ex2 검증값). 전도도 스케일 안 씀.
+  - ×2: **정상 / 억제 차단**(GABA_A off, bicuculline 대응) ⇒ **총 10회**. 전체망 **1회 조립 재사용**(재빌드 0).
+- **측정**: 전극 E1·E2·E3 **fEPSP slope**(LSA/MoI) · 발화 세포% · **반응 구름 반경**(세기↑ 시 발화 뉴런이 locus에서 퍼지는 범위 = 출력).
+- **예상**(문헌): 정상 = 포화형 상승, 억제차단 = 더 가파르고 높음(탈억제). r=100%에서 발화 39%(Ex1 volley 앵커).
+- **예보 UI**: `03_network/3_run/ex_forecast.html`(Ex3 카드 I-O) · `ex3_recruit3d.html`(실제 커넥텀 3D 모집 구름, `build_ex3_recruit3d.py`). 실행 후 실측으로 대체.
+
 ## Ex8 상세 — LTP/LTD 유도 프로토콜 (가능성 확인 ✅)
 - **인프라**: `../shared/mechanisms/GBPlasticity{Syn,StpSyn,StpProbSyn}.mod`(Graupner-Brunel 칼슘 가소성). c(t)→ρ 이중안정→w=w0+ρ(w1−w0).
 - **Ex8-HFS (LTP)**: 100 Hz × 1초 테타너스 → LTP. 근거 Bliss & Lømo 1973; Bliss & Collingridge 1993. (짧아 CPU-MPI 3-4일 예산 가능)
