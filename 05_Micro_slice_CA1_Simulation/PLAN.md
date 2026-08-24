@@ -71,15 +71,15 @@
 | 0 데이터준비 | `data/` + `01_tissue/1_inspect` | 압축해제·SONATA/atlas 구조·세포수 확인 | V0(N=456,378·E:I 89:11·층4·mtype12) | ✅ |
 | 1 슬라이스 bbox | `01_tissue/2_bbox` | 마이크로 창 정의(층관통_v1 500×800×400µm)·전극배치·config 내보내기 | V1a(창·전극 확정) | ✅ |
 | 2 아틀라스 전처리 | `01_tissue/3_atlas_prep` | Romani atlas 창 크롭(78×97×80) + 국소질의 lib(층·nd) | V2p(전극 층검증·대응그림) | ✅ |
-| 3 좌표·방향 벡터화 | `01_tissue/4_vectorize` | 좌표(l/t/r)+방사 방향장 | V1b 방사벡터 수직 | ⬜ |
-| 4 층 구분 | `01_tissue/5_layers` | SO/SP/SR/SLM 경계·두께 | V1c | ⬜ |
-| 4b 세포 조성 | `02_neurons/1_composition` | 층별 m/e-type·밀도·E:I | V2a 밀도·E:I | ⬜ |
-| 5 배치 | `02_neurons/2_placement` | 창 내 전 뉴런 추출·좌표 배치 | V2b | ⬜ |
-| 5b me-model 매핑 | `02_neurons/3_memodel_map` | (m,e)→완전형태 모델 매핑(대표축소 금지) | V2c (m,e) 100% | ⬜ |
-| 6 방향성 주입 | `02_neurons/4_orientation` | 평행이동+quaternion 회전 | V2d 길이불변 | ⬜ |
-| 7 커넥텀 | `03_network/1_connectome` | 9클래스 거리의존 연결 | V3 수렴발산 | ⬜ |
-| 8 시냅스 | `03_network/2_synapses` | Ecker Table3 EMS 시냅스 주입 | V4 PSP/CV/STP | ⬜ |
-| 9 구동 | `03_network/3_run` | build→wire→drive→run(고정 dt 0.025) | V5 raster·E/I | ⬜ |
+| 3 좌표·방향 벡터화 | `01_tissue/4_vectorize` | 좌표(l/t/r)+방사 방향장 | V1b 방사벡터 수직 | ✅ |
+| 4 층 구분 | `01_tissue/5_layers` | SO/SP/SR/SLM 경계·두께 | V1c | ✅ |
+| 4b 세포 조성 | `02_neurons/1_composition` | 층별 m/e-type·밀도·E:I | V2a 밀도·E:I | ✅ |
+| 5 배치 | `02_neurons/2_placement` | 창 내 전 뉴런 추출·좌표 배치 | V2b | ✅ **5,610세포** |
+| 5b me-model 매핑 | `02_neurons/3_memodel_map` | (m,e)→완전형태 모델 매핑(대표축소 금지) | V2c (m,e) 100% | ✅ |
+| 6 방향성 주입 | `02_neurons/4_orientation` | 평행이동+quaternion 회전 | V2d 길이불변 | ✅ |
+| 7 커넥텀 | `03_network/1_connectome` | 9클래스 거리의존 연결 | V3 수렴발산 | ✅ SC 10k섬유·1.07M |
+| 8 시냅스 | `03_network/2_synapses` | Ecker Table3 EMS 시냅스 주입 | V4 PSP/CV/STP | ✅ **총 5.9M 시냅스** |
+| 9 구동 | `03_network/3_run` | build→wire→drive→run(고정 dt 0.025) | V5 raster·E/I | ✅ MPI -np5·CPU |
 
 - 마이크로 창 특성: 작아서 **전세포 완전모델 인스턴스화 가능**. 단 **경계효과**(가장자리 세포 연결 절단) 주의.
 
@@ -87,20 +87,24 @@
 
 > 상세 레지스트리(Notion번호↔경로↔그림)는 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md). 완료는 결과까지, 미실행은 계획만.
 
+> **명명(2026-08-22)**: 전극=E1/E2/E3(SO/SP/SR), 실험=**Ex1~Ex12**(과거 E→Ex, 전극과 충돌 해소). 폴더도 `Ex*`로 개명 완료.
+
 | ID | 실험 | 폴더 | 상태 |
 |---|---|---|---|
-| E1 | baseline 발화율·구동 검증 | `04_experiments/E1_baseline` | ⬜ |
-| E2 | Schaffer collateral(CA3→CA1) | `04_experiments/E2_schaffer` | ⬜ |
-| E3 | SC I-O + 억제 차단 | `04_experiments/E3_io_inhibition` | ⬜ |
-| E4 | fEPSP 계산기(LSA) | `04_experiments/E4_fepsp` | ⬜ |
-| E4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/E4b_mea_band` | ⬜ |
-| E5 | theta 변조 입력 + PAC | `04_experiments/E5_theta_pac` | ⬜ |
-| E6 | 내측중격(MS) theta | `04_experiments/E6_ms_theta` | ⬜ |
-| E7 | ACh 신경조절 | `04_experiments/E7_ach` | ⬜ |
-| E8 | LTP/LTD(칼슘 가소성) | `04_experiments/E8_ltp` | ⬜ |
-| E9 | 실측 MEA 대조(최종) | `04_experiments/E9_realdata_mea` | ⬜ |
-| E10 | STDP 곡선(Wittenberg 2006) | `04_experiments/E10_stdp` | ⬜ |
-| E11 | cholinergic theta 위상의존 양방향 가소성(Huerta & Lisman 1995) | `04_experiments/E11_chol_theta_plasticity` | ⬜ |
+| Ex1 | baseline 발화율·구동 검증 | `04_experiments/Ex1_baseline` | ✅ volley 39%·자발 0Hz |
+| Ex2 | Schaffer collateral(CA3→CA1) uEPSP | `04_experiments/Ex2_schaffer` | ✅ uEPSP 0.43mV·PPR 2.11 |
+| Ex3 | SC I-O + 억제 차단 | `04_experiments/Ex3_io_inhibition` | 🔄 설계완료·미실행 |
+| Ex4 | fEPSP 계산기(LSA/PSA) | `04_experiments/Ex4_fepsp` | 🔄 인프라 구축·검증완료(mea_forward+fepsp_record) |
+| Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | ⬜ |
+| Ex4c | CSD/kCSD 분석 + 정답 검증(3단계) | `04_experiments/Ex4c_csd` | ⬜ |
+| Ex5 | theta 변조 입력 + PAC | `04_experiments/Ex5_theta_pac` | ⬜ |
+| Ex6 | 내측중격(MS) theta | `04_experiments/Ex6_ms_theta` | ⬜ |
+| Ex7 | ACh 신경조절 | `04_experiments/Ex7_ach` | ⬜ |
+| Ex8 | LTP/LTD(칼슘 가소성) | `04_experiments/Ex8_ltp` | ⬜ |
+| Ex9 | 실측 MEA 대조(최종) | `04_experiments/Ex9_realdata_mea` | ⬜ |
+| Ex10 | STDP 곡선(Wittenberg 2006) | `04_experiments/Ex10_stdp` | ⬜ |
+| Ex11 | cholinergic theta 위상의존 양방향 가소성(Huerta & Lisman 1995) | `04_experiments/Ex11_chol_theta_plasticity` | ⬜ |
+| Ex12 | 인터랙티브 SC 자극 워크벤치(UI) | `04_experiments/Ex12_ui_workbench` | 🔄 프로토타입 |
 
 - fEPSP 3기법(공용, `lib/mea_forward.py`): **PSA**(점원)·**LSA**(선원, Holt&Koch 1999)·**MoI**(영상법 3층, Ness 2015).
 - E8/E10 장기가소성 mod(GBPlasticity류)는 `../shared/mechanisms` 참조(05에서 신규 작성 안 함).
@@ -133,10 +137,10 @@
 
 ## 10. 로드맵 · 마일스톤
 
-1. **파이프라인 구축**(0~9) → 조용한 baseline 슬라이스.
-2. **SC 경로 + fEPSP**(E2·E4·E4b) → MEA식 유발 fEPSP. *(현재: 국소 SC 시냅스 직접 자극)*
-3. **LTP/LTD·STDP**(E8·E10) → 가소성 재현.
-4. **실측 대조**(E9) → 정규화 비교·스케일 보정.
-5. **(전환) 전시냅스 섬유 자극 모델**(별도 트랙 `06_Presynaptic_SC_Stimulation/`) 완성 → 국소 직접자극 → **섬유 실체 자극**으로 전환. 논문·특허 후보. 이후 E1~E11에 소급 적용.
+1. **파이프라인 구축**(0~9) → 조용한 baseline 슬라이스. **✅ 완료**(5,610세포·5.9M 시냅스).
+2. **SC 경로 + fEPSP**(Ex2·Ex4·Ex4b·Ex4c) → MEA식 유발 fEPSP. **🔄 현재 위치** — Ex1✅·Ex2✅ 완료, fEPSP 인프라(mea_forward+fepsp_record) 구축·검증완료, **Ex1+fEPSP 전체망 런 진행 중**(오프셋 판정). 다음: Ex3(I-O)·Ex4b(MoI)·Ex4c(CSD 3단계 검증). *(현재: 국소 SC 시냅스 직접 자극)*
+3. **LTP/LTD·STDP**(Ex8·Ex10) → 가소성 재현.
+4. **실측 대조**(Ex9) → 정규화 비교·스케일 보정.
+5. **(전환) 전시냅스 섬유 자극 모델**(별도 트랙 `06_Presynaptic_SC_Stimulation/`) 완성 → 국소 직접자극 → **섬유 실체 자극**으로 전환. 논문·특허 후보. 이후 Ex1~Ex11에 소급 적용.
 
 각 단계·실험 끝에 ✅검증 그림/수치로 하나씩 확인 후 진행.

@@ -13,6 +13,7 @@
 | Ex3 | SC I-O + 억제 차단 | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | TBD | ⬜ |
+| Ex4c | CSD/kCSD 분석 + 정답 검증 | `04_experiments/Ex4c_csd` | TBD | ⬜ |
 | Ex5 | theta 변조 입력 + PAC | `04_experiments/Ex5_theta_pac` | TBD | ⬜ |
 | Ex6 | 내측중격(MS) theta | `04_experiments/Ex6_ms_theta` | TBD | ⬜ |
 | Ex7 | ACh 신경조절 | `04_experiments/Ex7_ach` | TBD | ⬜ |
@@ -48,6 +49,18 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **측정**: 전극 E1·E2·E3 **fEPSP slope**(LSA/MoI) · 발화 세포% · **반응 구름 반경**(세기↑ 시 발화 뉴런이 locus에서 퍼지는 범위 = 출력).
 - **예상**(문헌): 정상 = 포화형 상승, 억제차단 = 더 가파르고 높음(탈억제). r=100%에서 발화 39%(Ex1 volley 앵커).
 - **예보 UI**: `03_network/3_run/ex_forecast.html`(Ex3 카드 I-O) · `ex3_recruit3d.html`(실제 커넥텀 3D 모집 구름, `build_ex3_recruit3d.py`). 실행 후 실측으로 대체.
+
+## Ex4·Ex4b·Ex4c 상세 — fEPSP forward → CSD → 검증 (설계 2026-08-24)
+**사슬:** 세그먼트 막전류 → [forward] → 전극 fEPSP → [inverse=CSD] → sink/source 밴드.
+
+- **Ex4 (fEPSP forward)**: `lib/mea_forward.py` PSA/LSA(무한 균질 매질). 세그먼트 막전류(fast_imem, `lib/fepsp_record.py`) → 전극 V(t). ✅ 인프라 구축·검증 완료(2026-08-24). [[전체망 Ex1+fEPSP 런]]으로 실측 스케일 확인 중.
+- **Ex4b (MoI forward, 경계보정)**: 슬라이스 3층(식염수/조직/유리 MEA)의 경계 반사를 **method of images**(Ness 2015)로 보정한 forward. 무한매질 가정의 오차를 잡아 **실측 슬라이스와 맞는** fEPSP·깊이 프로파일("밴드") 산출. `mea_forward`에 MoI 옵션 추가 예정.
+- **Ex4c (CSD/kCSD 역분석 + 정답 검증, 신규)**: 전위 → sink/source **역추정**.
+  - **naive CSD**: `-σ·∂²V/∂z²` (등간격 전극 2차미분). 3전극(SO/SP/SR, 간격 200µm)이면 가운데(SP) 한 점.
+  - **kCSD**(Potworowski 2012, `kCSD-python`): 희소·불규칙 전극에서 커널 정규화로 **연속 CSD 재구성**(보강). 경계인식 변형은 MoI와 결합.
+  - ⭐ **시뮬 정답 검증(실측 불가, 우리만 가능)**: ① **정답 CSD** = 실제 막전류를 깊이별 binning(전극 불필요) · ② 조밀 가상전극 → forward → naive CSD · ③ 3전극 → kCSD 보강. **②③를 ①과 대조** → forward+CSD 정당성 + **kCSD 희소전극 보강 정확도 정량**. `mea_forward`가 임의 위치 fEPSP를 주므로 가상전극 무한 증설 가능.
+  - **근거**: Nicholson & Freeman 1975, Pettersen & Einevoll(CSD), Potworowski et al. 2012(kCSD), Ness et al. 2015(MoI). **방법론 기여 가능**(상세모델 정답 기반 CSD 방법 벤치마크).
+  - **부호**: sink(전류 유입)→음성 CSD, source→양성.
 
 ## Ex8 상세 — LTP/LTD 유도 프로토콜 (가능성 확인 ✅)
 - **인프라**: `../shared/mechanisms/GBPlasticity{Syn,StpSyn,StpProbSyn}.mod`(Graupner-Brunel 칼슘 가소성). c(t)→ρ 이중안정→w=w0+ρ(w1−w0).

@@ -61,17 +61,24 @@ class FEPSPRecorder:
     def n_seg(self):
         return len(self._refs)
 
-    def finalize(self, rec_dt=0.1):
-        """fast_imem 활성 + 전극 가중치 계산 + 세그먼트 막전류 기록 벡터 부착. finitialize 前 호출."""
+    def finalize(self, rec_dt=0.1, rec_tvec=None):
+        """fast_imem 활성 + 전극 가중치 계산 + 세그먼트 막전류 기록 벡터 부착. finitialize 前 호출.
+        rec_tvec(h.Vector, 명시 시각들) 주면 그 시각만 기록(관측창만 → 메모리 절약)."""
         h.cvode.use_fast_imem(1)
         segxyz = np.array(self._pos) if self._pos else np.zeros((0, 3))
         self.W = (mf.psa_weights(self.elec, segxyz, self.sigma, self.rmin)
                   if len(segxyz) else np.zeros((len(self.elec), 0)))
-        self.tvec = h.Vector(); self.tvec.record(h._ref_t, rec_dt)
-        self.vecs = []
-        for seg in self._refs:
-            v = h.Vector(); v.record(seg._ref_i_membrane_, rec_dt)
-            self.vecs.append(v)
+        if rec_tvec is not None:
+            self.tvec = rec_tvec
+            self.vecs = [h.Vector() for _ in self._refs]
+            for v, seg in zip(self.vecs, self._refs):
+                v.record(seg._ref_i_membrane_, rec_tvec)
+        else:
+            self.tvec = h.Vector(); self.tvec.record(h._ref_t, rec_dt)
+            self.vecs = []
+            for seg in self._refs:
+                v = h.Vector(); v.record(seg._ref_i_membrane_, rec_dt)
+                self.vecs.append(v)
         return self
 
     def potential_local(self):

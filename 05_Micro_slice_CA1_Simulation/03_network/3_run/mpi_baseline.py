@@ -27,7 +27,8 @@ FIBER_OFFSET = 10_000_000
 RADIUS = float(sys.argv[sys.argv.index("--r") + 1]) if "--r" in sys.argv else 150.0
 USE_GPU = "--gpu" in sys.argv   # CoreNEURON GPU 실행(단일 psolve, 균일 dt)
 NOSTIM = "--nostim" in sys.argv  # 자극 없음(자발 발화율 baseline)
-SETTLE = 300.0
+FEPSP = "--fepsp" in sys.argv    # 막전류→전극 fEPSP 기록(fast_imem + mea_forward)
+SETTLE = float(sys.argv[sys.argv.index("--settle") + 1]) if "--settle" in sys.argv else 300.0
 if NOSTIM:
     # 무자극 자발 baseline: settle 후 OBS(기본 1000ms) 관측, 자극 없음
     OBS = float(sys.argv[sys.argv.index("--obs") + 1]) if "--obs" in sys.argv else 1000.0
@@ -190,6 +191,21 @@ def main():
             print(f"[WRITE] CoreNEURON 모델 저장 -> {WRITE_DIR} · tstop {TSTOP}ms · {time.time()-t0:.0f}s", flush=True)
         pc.barrier(); pc.done(); h.quit(); return
 
+    # ── fEPSP 기록 준비 (--fepsp): fast_imem + 세그먼트 막전류 → 전극 (finitialize 前) ──
+    frec = None; elec = None; enames = None
+    if FEPSP:
+        import fepsp_record as fr
+        elec = np.array([e["xyz_um"] for e in cfg["electrodes"]["list"]], float)
+        enames = [e["id"] + "(" + e["layer"] + ")" for e in cfg["electrodes"]["list"]]
+        frec = fr.FEPSPRecorder(elec)
+        for g in mine:
+            frec.add_cell(B.cells[g], XYZ[g], Rot.from_quat(Q[g][[1, 2, 3, 0]]))
+        rec_tvec = h.Vector(np.arange(STIM_T - 2.0, TSTOP + 0.05, 0.1).tolist())   # 관측창만 0.1ms 기록
+        frec.finalize(rec_tvec=rec_tvec)
+        nseg_tot = int(pc.allreduce(frec.n_seg(), 1))
+        if rank == 0:
+            print(f"[fEPSP] 기록 세그먼트 {nseg_tot:,} · 전극 {len(elec)} · 창 {STIM_T-2:.0f}~{TSTOP:.0f}ms @0.1ms", flush=True)
+
     if rank == 0:
         print(f"      구동 시작", flush=True)
 
@@ -223,6 +239,17 @@ def main():
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     at = comm.gather(list(tspk), root=0); ai = comm.gather(list(idspk), root=0)
+    fep = None
+    if FEPSP:
+        Vloc = frec.potential_local(); Vtot = comm.allreduce(Vloc, op=MPI.SUM)
+        tfe = np.array(frec.times()); nt = len(tfe)
+        pos = np.array(frec._pos); soma = np.array(frec._soma, dtype=int)
+        Im = np.array([np.array(v)[:nt] for v in frec.vecs]) if frec.n_seg() else np.zeros((0, nt))
+        stride = max(1, frec.n_seg() // 2500)
+        gp = comm.gather(pos[::stride], root=0); gs = comm.gather(soma[::stride], root=0); gI = comm.gather(Im[::stride], root=0)
+        if rank == 0:
+            SP = np.vstack([a for a in gp if len(a)]); SS = np.concatenate([a for a in gs if len(a)]); SI = np.vstack([a for a in gI if len(a)])
+            fep = dict(V=Vtot, t=tfe, SP=SP, SS=SS, SI=SI)
     if rank == 0:
         st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])
         sid = np.concatenate([np.array(x) for x in ai]).astype(int) if any(len(x) for x in ai) else np.array([], int)
@@ -251,6 +278,18 @@ def main():
                    "obs_ms": obs_ms, "rate_hz": rate},
                   open(os.path.join(ROOT, "scratch", f"mpi_baseline{TAG}.json"), "w"))
         print(f"[저장] scratch/mpi_baseline{TAG}.npz · 총 {time.time()-t0:.0f}s", flush=True)
+        if fep is not None:
+            base = fep["V"][:, fep["t"] < STIM_T].mean(axis=1)
+            m = fep["t"] >= STIM_T
+            print("[fEPSP] 전극별 자극후 피크:", flush=True)
+            for i, nm in enumerate(enames):
+                seg = fep["V"][i] - base[i]; k = int(np.argmax(np.abs(seg[m])))
+                print(f"   {nm}: {seg[m][k]:+.4f} mV @ {fep['t'][m][k]-STIM_T:.1f}ms", flush=True)
+            np.savez_compressed(os.path.join(ROOT, "scratch", f"mpi_fepsp{TAG}.npz"),
+                                V=fep["V"], t=fep["t"], elec=elec, enames=np.array(enames),
+                                segpos=fep["SP"], segsoma=fep["SS"], segI=fep["SI"],
+                                stim_t=STIM_T, settle=SETTLE)
+            print(f"[fEPSP] 저장 scratch/mpi_fepsp{TAG}.npz · 세그먼트 {len(fep['SP']):,}", flush=True)
     pc.barrier(); pc.done(); h.quit()
 
 
