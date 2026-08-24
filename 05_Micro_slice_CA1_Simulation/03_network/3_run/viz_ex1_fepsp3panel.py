@@ -79,8 +79,8 @@ def main():
     axf.set_xlabel("time from stim [ms]"); axf.set_ylabel("fEPSP [µV]")
     axf.set_xlim(-2, XMAX); axf.legend(fontsize=8, ncol=3, loc='lower right')
 
-    outd = os.path.join(ROOT, "04_experiments", "Ex1_baseline", "figures"); os.makedirs(outd, exist_ok=True)
-    p = os.path.join(outd, "ex1_fepsp_3panel.png"); fig.savefig(p, dpi=140, bbox_inches="tight")
+    outd = os.path.join(ROOT, "04_experiments", "Ex4_fepsp", "figures"); os.makedirs(outd, exist_ok=True)
+    p = os.path.join(outd, "ex4_fepsp_3panel.png"); fig.savefig(p, dpi=140, bbox_inches="tight")
     print(f"[3panel] 저장 {p}", flush=True)
     # fEPSP 피크 요약
     for i, nm in enumerate(enames):

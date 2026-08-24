@@ -123,7 +123,7 @@ def main():
     ax.set_xlabel("time from stim [ms]"); ax.set_ylabel("field potential [mV]")
     ax.set_title(f"fEPSP infra test — {len(cand)} PC near locus, {nfired} fired\n(E3/SR should dip negative = synaptic sink)")
     ax.legend(); ax.set_xlim(-2, OBS)
-    FIG = os.path.join(HERE, "figures"); os.makedirs(FIG, exist_ok=True)
+    FIG = os.path.join(ROOT, "04_experiments", "Ex4_fepsp", "figures"); os.makedirs(FIG, exist_ok=True)
     p = os.path.join(FIG, "fepsp_test.png"); fig.savefig(p, dpi=140, bbox_inches="tight")
     print(f"[fepsp-test] 그림 {p} · 총 {time.time()-t0:.0f}s", flush=True)
 
@@ -166,8 +166,8 @@ def main():
         tpl = os.path.join(HERE, "ex_fepsp_3d_tpl.html")
         if os.path.exists(tpl):
             html = open(tpl, encoding="utf-8").read().replace("__INJECT__", data)
-            uidir = os.path.join(ROOT, "04_experiments", "00_overview", "ui"); os.makedirs(uidir, exist_ok=True)
-            outp = os.path.join(uidir, "fepsp_3d.html"); open(outp, "w", encoding="utf-8").write(html)
+            uidir = os.path.join(ROOT, "04_experiments", "Ex4_fepsp", "ui"); os.makedirs(uidir, exist_ok=True)
+            outp = os.path.join(uidir, "fepsp_3d_50cell.html"); open(outp, "w", encoding="utf-8").write(html)
             print(f"[fepsp-test] 3D UI -> {outp} ({len(html)//1024}KB · 세그 {out['n']} · 프레임 {out['nf']})", flush=True)
 
 

@@ -59,7 +59,7 @@ def main():
     data = json.dumps(out, separators=(",", ":"))
     tpl = os.path.join(HERE, "ex_fepsp_3d_tpl.html")
     html = open(tpl, encoding="utf-8").read().replace("__INJECT__", data)
-    outd = os.path.join(ROOT, "04_experiments", "Ex1_baseline", "ui"); os.makedirs(outd, exist_ok=True)
+    outd = os.path.join(ROOT, "04_experiments", "Ex4_fepsp", "ui"); os.makedirs(outd, exist_ok=True)
     outp = os.path.join(outd, "fepsp_3d_full.html"); open(outp, "w", encoding="utf-8").write(html)
     print(f"[fepsp3d-full] {outp} ({len(html)//1024}KB · 세그 {out['n']} · 프레임 {out['nf']} · 시냅스 {len(synP)} · cmax {cmax:.3f}nA)", flush=True)
 
