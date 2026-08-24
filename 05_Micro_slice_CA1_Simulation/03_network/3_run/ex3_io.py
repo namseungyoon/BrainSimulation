@@ -31,10 +31,12 @@ FIBER_OFFSET = 10_000_000
 
 FRACS = [0.10, 0.25, 0.50, 0.75, 1.00]           # 모집 비율 (fiber volley 축)
 CONDS = [("normal", False), ("block", True)]       # (이름, 억제차단?)
-SETTLE = 200.0                                      # 안정화(ms)
+SETTLE = float(sys.argv[sys.argv.index("--settle") + 1]) if "--settle" in sys.argv else 30.0  # 무음망→짧게
 STIM_T = SETTLE + 10.0
-OBS = 30.0                                          # 자극 후 관측(ms)
+OBS = float(sys.argv[sys.argv.index("--obs") + 1]) if "--obs" in sys.argv else 30.0  # 자극 후 관측(ms)
 TSTOP = STIM_T + OBS
+FEPSP = "--fepsp" in sys.argv                       # 조건마다 전극 fEPSP 기록(fast_imem+mea_forward)
+FSTRIDE = int(sys.argv[sys.argv.index("--fstride") + 1]) if "--fstride" in sys.argv else 4
 
 SC2 = {"SP_CCKBC", "SR_SCA", "SLM_PPA", "SP_Ivy"}
 PERI = {"SP_PVBC", "SP_CCKBC", "SP_AA"}; SLM = {"SO_OLM", "SO_BS", "SO_BP", "SLM_PPA"}; SR = {"SR_SCA"}
@@ -187,7 +189,20 @@ def main():
     totE = int(np.sum(is_pc)); totI = int(N - totE)
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
-    results = []
+    results = []; fep_all = []; spk_all = []
+
+    # ── fEPSP 기록기(조건 전체 재사용, 1회 설정) ──
+    frec = None; elec = None; enames = None
+    if FEPSP:
+        import fepsp_record as fr
+        elec = np.array([e["xyz_um"] for e in cfg["electrodes"]["list"]], float)
+        enames = [e["id"] + "(" + e["layer"] + ")" for e in cfg["electrodes"]["list"]]
+        frec = fr.FEPSPRecorder(elec, stride=FSTRIDE)
+        for g in mine:
+            frec.add_cell(B.cells[g], XYZ[g], Rot.from_quat(Q[g][[1, 2, 3, 0]]))
+        frec.finalize(rec_dt=0.1)                                    # 매 조건 finitialize마다 재기록
+        if rank == 0:
+            print(f"[fEPSP] 기록기 준비(stride {FSTRIDE}) · 조건마다 E1/E2/E3 fEPSP 기록", flush=True)
 
     for cname, block in CONDS:
         # 억제 weight 설정
@@ -205,6 +220,10 @@ def main():
             h.dt = 0.025; pc.psolve(TSTOP)          # 자극+관측(고운)
             dt_run = time.time() - tr
             at = comm.gather(list(tspk), root=0); ai = comm.gather(list(idspk), root=0)
+            Vtot = None; tfe = None
+            if FEPSP:                                                # 전 랭크 집합통신
+                Vtot = comm.allreduce(frec.potential_local(), op=MPI.SUM)
+                tfe = np.array(frec.times())
             if rank == 0:
                 st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])
                 sid = np.concatenate([np.array(x) for x in ai]).astype(int) if any(len(x) for x in ai) else np.array([], int)
@@ -218,10 +237,20 @@ def main():
                        "fired": int(fm.sum()), "firedE": nE, "firedI": nI,
                        "pctE": 100.0 * nE / totE, "pctI": 100.0 * nI / max(totI, 1),
                        "run_s": dt_run}
+                spk_all.append({"cond": cname, "frac": frac, "st": st.astype(np.float32), "sid": sid.astype(np.int32)})
+                if FEPSP:
+                    base = Vtot[:, tfe < STIM_T].mean(axis=1) if (tfe < STIM_T).any() else Vtot[:, 0]
+                    mm = tfe >= STIM_T
+                    slope = fr.FEPSPRecorder.fepsp_slope(Vtot - base[:, None], tfe, win=(0.3, 1.5), t0=STIM_T)
+                    peak = np.array([(Vtot[i] - base[i])[mm].min() for i in range(len(elec))])  # sink 최저
+                    rec["fepsp_slope_uV_ms"] = [round(float(s) * 1000, 3) for s in slope]        # µV/ms
+                    rec["fepsp_peak_uV"] = [round(float(p) * 1000, 2) for p in peak]
+                    fep_all.append({"cond": cname, "frac": frac, "V": (Vtot * 1000).astype(np.float32), "t": tfe.astype(np.float32)})  # µV
                 results.append(rec)
+                fpk = (" · fEPSP E3 " + f"{rec['fepsp_peak_uV'][2]:+.1f}µV") if FEPSP else ""
                 print(f"  [{cname:6s}] volley {int(frac*100):3d}% (섬유 {len(drv):5d}) -> "
                       f"추체 {nE:4d}/{totE} ({rec['pctE']:4.1f}%) · 억제 {nI:3d} ({rec['pctI']:4.1f}%) · "
-                      f"스파이크 {len(st):5d} · {dt_run:.0f}s", flush=True)
+                      f"스파이크 {len(st):5d}{fpk} · {dt_run:.0f}s", flush=True)
                 json.dump({"conds": [c for c, _ in CONDS], "fracs": FRACS, "settle": SETTLE,
                            "stim_t": STIM_T, "tstop": TSTOP, "totE": totE, "totI": totI,
                            "results": results},
@@ -231,12 +260,25 @@ def main():
     if rank == 0:
         R = results
         arr = lambda k: np.array([r[k] for r in R])
+        extra = {}
+        if FEPSP:
+            extra["fepsp_slope"] = np.array([r["fepsp_slope_uV_ms"] for r in R])   # (ncond, 3) µV/ms
+            extra["fepsp_peak"] = np.array([r["fepsp_peak_uV"] for r in R])        # (ncond, 3) µV
+            extra["enames"] = np.array(enames)
         np.savez_compressed(os.path.join(ROOT, "scratch", "ex3_io.npz"),
                             cond=np.array([r["cond"] for r in R]), frac=arr("frac"),
                             volley_pct=arr("volley_pct"), recruited=arr("recruited_fibers"),
                             firedE=arr("firedE"), firedI=arr("firedI"),
                             pctE=arr("pctE"), pctI=arr("pctI"), spikes=arr("spikes"),
-                            totE=totE, totI=totI, stim_t=STIM_T, settle=SETTLE)
+                            totE=totE, totI=totI, stim_t=STIM_T, settle=SETTLE, **extra)
+        # 트레이스(raster·fEPSP 파형)는 별도 파일(가변길이 → object)
+        np.savez(os.path.join(ROOT, "scratch", "ex3_io_traces.npz"),
+                 spk=np.array(spk_all, dtype=object),
+                 fep=np.array(fep_all, dtype=object),
+                 elec=(elec if elec is not None else np.zeros((0, 3))),
+                 enames=(np.array(enames) if enames else np.array([])), stim_t=STIM_T)
+        print(f"[Ex3] 트레이스 저장 scratch/ex3_io_traces.npz (raster {len(spk_all)}조건" +
+              (f" · fEPSP {len(fep_all)}조건)" if FEPSP else ")"), flush=True)
         print(f"\n[Ex3 완료] {len(R)}회 · 총 {time.time()-t0:.0f}s · scratch/ex3_io.npz", flush=True)
     pc.barrier(); pc.done(); h.quit()
 
