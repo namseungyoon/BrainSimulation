@@ -17,6 +17,7 @@ def arg(f, d):
     return type(d)(sys.argv[sys.argv.index(f) + 1]) if f in sys.argv else d
 
 TR = arg("--traces", os.path.join(ROOT, "scratch", "ex3_io_traces_saturated.npz"))
+OUTNAME = arg("--out", "ex3_io_3d.html")           # 출력 파일명(덮어쓰기 방지 위해 분리 가능)
 
 
 def main():
@@ -74,7 +75,7 @@ def main():
     tpl = os.path.join(HERE, "ex3_io_3d_tpl.html")
     html = open(tpl, encoding="utf-8").read().replace("__INJECT__", data)
     outd = os.path.join(ROOT, "04_experiments", "Ex3_io_inhibition", "ui"); os.makedirs(outd, exist_ok=True)
-    outp = os.path.join(outd, "ex3_io_3d.html"); open(outp, "w", encoding="utf-8").write(html)
+    outp = os.path.join(outd, OUTNAME); open(outp, "w", encoding="utf-8").write(html)
     print(f"[ex3-ui] {outp} ({len(html)//1024}KB · {N}세포 · {len(conds)}조건 · {NF}프레임)", flush=True)
 
 

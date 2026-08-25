@@ -156,7 +156,7 @@ document.getElementById('play').onclick=function(){playing=!playing;this.textCon
 document.getElementById('rot').onclick=function(){autorot=!autorot;this.style.color=autorot?'#ffc857':'';};
 document.getElementById('seek').oninput=function(){frame=+this.value;playing=false;document.getElementById('play').textContent='▶ 재생';};
 gl.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;}); window.addEventListener('mouseup',()=>drag=false);
-window.addEventListener('mousemove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*0.008;pitch=Math.max(-0.5,Math.min(1.0,pitch+(e.clientY-ly)*0.006));lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*0.008;pitch=Math.max(-1.5,Math.min(1.55,pitch+(e.clientY-ly)*0.006));lx=e.clientX;ly=e.clientY;});
 window.addEventListener('resize',resize);
 resize(); curVol=volleys.includes(50)?50:volleys[0]; selectCond(); loop();
 </script>

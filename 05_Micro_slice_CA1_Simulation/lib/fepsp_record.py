@@ -96,10 +96,20 @@ class FEPSPRecorder:
         return self.W @ I
 
     def potential_allreduce(self, comm):
-        """전 랭크 합산 V (n_elec, n_t) [mV]."""
+        """전 랭크 합산 V (n_elec, n_t) [mV] — mpi4py comm."""
         from mpi4py import MPI
         Vloc = self.potential_local()
         return comm.allreduce(Vloc, op=MPI.SUM)
+
+    def potential_allreduce_pc(self, pc):
+        """전 랭크 합산 V (n_elec, n_t) [mV] — NEURON ParallelContext(mpi4py 불요).
+        각 랭크 (n_elec, n_t)는 전극·시간축이 전역이라 형상 동일 → 원소별 allreduce."""
+        from neuron import h
+        Vloc = self.potential_local()
+        shp = Vloc.shape
+        vec = h.Vector(Vloc.reshape(-1).astype(float))
+        pc.allreduce(vec, 1)                    # type 1 = sum, Vector 원소별
+        return np.array(vec).reshape(shp)
 
     def times(self):
         return np.array(self.tvec)

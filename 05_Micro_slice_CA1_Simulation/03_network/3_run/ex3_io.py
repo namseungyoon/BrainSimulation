@@ -187,9 +187,7 @@ def main():
     tspk = h.Vector(); idspk = h.Vector(); pc.spike_record(-1, tspk, idspk)
     is_pc = np.array([mt[g] == "SP_PC" for g in range(N)])
     totE = int(np.sum(is_pc)); totI = int(N - totE)
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    results = []; fep_all = []; spk_all = []
+    results = []; fep_all = []; spk_all = []           # 집합통신은 NEURON pc 사용(mpi4py 불요)
 
     # ── fEPSP 기록기(조건 전체 재사용, 1회 설정) ──
     frec = None; elec = None; enames = None
@@ -219,10 +217,10 @@ def main():
             h.dt = 0.25; pc.psolve(SETTLE)          # 안정화(거친)
             h.dt = 0.025; pc.psolve(TSTOP)          # 자극+관측(고운)
             dt_run = time.time() - tr
-            at = comm.gather(list(tspk), root=0); ai = comm.gather(list(idspk), root=0)
+            at = pc.py_gather(list(tspk), 0); ai = pc.py_gather(list(idspk), 0)
             Vtot = None; tfe = None
-            if FEPSP:                                                # 전 랭크 집합통신
-                Vtot = comm.allreduce(frec.potential_local(), op=MPI.SUM)
+            if FEPSP:                                                # 전 랭크 집합통신(NEURON pc)
+                Vtot = frec.potential_allreduce_pc(pc)
                 tfe = np.array(frec.times())
             if rank == 0:
                 st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])

@@ -10,7 +10,7 @@
 | Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
 | Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
 | Ex2 | Schaffer collateral(CA3→CA1) 단발 uEPSP | `04_experiments/Ex2_schaffer` | 05페이지 | ✅ **uEPSP 0.43mV·PPR 2.11·τ9.95ms (Sayer1990 추세일치)** |
-| Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
+| Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | 포화판 slope·tpeak·peak 표+3D UI, 창발반응 5/7 문헌일치 | 🔄 저세기 재실행중 |
 | Ex3b | SC 페어펄스/train — 억제 동역학 | `04_experiments/Ex3b_paired_train` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | TBD | ⬜ |
@@ -50,6 +50,38 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **측정**: 전극 E1·E2·E3 **fEPSP slope**(LSA/MoI) · 발화 세포% · **반응 구름 반경**(세기↑ 시 발화 뉴런이 locus에서 퍼지는 범위 = 출력).
 - **예상**(문헌): 정상 = 포화형 상승, 억제차단 = 더 가파르고 높음(탈억제). r=100%에서 발화 39%(Ex1 volley 앵커).
 - **예보 UI**: `03_network/3_run/ex_forecast.html`(Ex3 카드 I-O) · `ex3_recruit3d.html`(실제 커넥텀 3D 모집 구름, `build_ex3_recruit3d.py`). 실행 후 실측으로 대체.
+
+### Ex3 실측 결과 — 포화판(10~100%) · 2026-08-25
+전체망(5610세포·5.9M시냅스) w=0 중앙자극. E3(SR) fEPSP 지표 (`ex3_metrics_saturated.md`, 생성: `ex3_metrics_table.py`):
+
+| 세기(volley%) | slope N (µV/ms) | slope B | tpeak N (ms) | tpeak B | peak N (µV) | peak B | 발화 N | 발화 B |
+|---|---|---|---|---|---|---|---|---|
+| 10 | -2977 | -3291 | 4.20 | 4.40 | -3181 | -3149 | 2173 (38%) | 2151 (38%) |
+| 25 | -8091 | -8641 | 3.60 | 3.80 | -6090 | -6242 | 3877 (69%) | 3906 (69%) |
+| 50 | -14441 | -16582 | 3.60 | 3.60 | -8607 | -8770 | 5268 (93%) | 5259 (93%) |
+| 75 | -15326 | -14876 | 3.10 | 3.20 | -9707 | -9726 | 5475 (97%) | 5480 (97%) |
+| 100 | -20076 | -20451 | 3.10 | 3.10 | -10170 | -10187 | 5521 (98%) | 5524 (98%) |
+
+**소견**:
+- **tpeak 세기의존 단축 4.2→3.1ms**: 약자극=순수 시냅스 sink(늦은 peak) → 강자극=**집단스파이크**(SP 소마 Na sink) 중첩으로 빨라짐. 교과서적 I-O 소견.
+- **S자 포화**: 10%에서 이미 38% 발화 → 50%에서 93%. w=0 중앙자극이 강해 역치 위 포화.
+- **억제차단(block) 고세기서 무효**(normal≈block): (a) 단시냅스 흥분 ~3ms가 이중시냅스 억제 ~5–8ms를 앞섬, (b) 포화 천장. ⇒ **저세기 재실행 필요**(아래).
+- **발화 '띠'(band)**: 10% 발화세포 분포 u(장축)std146·r(SR)std38·w(두께)std67 = **장축으로 길고 SR에 얇은 라미나**. SC 섬유가 u축 다발(`sc_fibers.npz` by-construction) → 초점자극이 라미나 활성. 방향의 해부학적 타당성은 06(실제 궤적)에서 검증.
+
+**창발 반응 vs 문헌 스코어카드** (우리가 코딩하지 않았는데 나온 것):
+
+| 창발 반응 | 관찰 | 문헌 | 판정 |
+|---|---|---|---|
+| SR(E3) sink 최음성 | E3 −3~−10mV | SC→SR 수상돌기 sink | ✅ |
+| 세기↑ 집단스파이크·tpeak 단축 | 4.2→3.1ms | 교과서 I-O | ✅ |
+| S자 포화 I-O | 38→93% | Andersen 등 | ✅ |
+| 단시냅스 잠복 ~3ms | tpeak 3~4ms | SC 단시냅스 | ✅ |
+| SR 라미나 얇은 활성 | r std 38 | SC=SR 표적 | ✅ |
+| 억제차단 고세기 무효 | N≈B | 포화+타이밍 | ⚠️ 저세기 검증중 |
+| 활성 띠 방향(u) | u로 김 | SC 종/횡 성분 | ❓ 06 검증 |
+
+- **3D UI**: `04_experiments/Ex3_io_inhibition/ui/ex3_io_3d.html`(세기선택·정상/차단토글·발화구름·fEPSP흐름, 회전 −86~+89°).
+- **저세기 재실행**(0.5~8%, 50~800섬유): 역치 근방에서 발화가 gradual하고 억제차단 차이가 나타나는지 = **E-I 회로 기능검증**. 환경수정: mpi4py 의존 제거→NEURON `pc.py_gather`/`pc.allreduce`, 실행=**WSL conda ca1sim**(`mpirun -np 5`, cwd=scratch/mechbuild).
 
 ## Ex3b 상세 — SC 페어펄스/train, 억제 동역학 (설계 2026-08-25)
 **목표**: 단발 I-O(Ex3)에서 억제가 안 보인 이유(흥분 단일시냅스 ~3ms > 억제 이중시냅스 ~5–8ms, 강자극 포화)를 넘어, **연속 자극으로 억제의 시간 동역학**을 측정 = **E-I 회로 기능 검증**.
