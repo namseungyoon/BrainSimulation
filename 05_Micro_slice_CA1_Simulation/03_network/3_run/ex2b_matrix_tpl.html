@@ -1,0 +1,153 @@
+<title>CA1 Connection Matrix</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --ink:#1a2130; --mut:#5d6b82; --line:#e4e9f2; --grid:#eef2f8;
+    --E1:#f59e0b; --E2:#ef4444; --I1:#14b8a6; --I2:#3b82f6; --I3:#8b5cf6;
+    --exc:#e11d48; --inh:#334155; --ext:#0e9f6e;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0e1220; --panel:#161c2c; --ink:#e7ecf5; --mut:#94a3b8; --line:#26304a; --grid:#1b2337;
+    --E1:#fbbf24; --E2:#f87171; --I1:#2dd4bf; --I2:#60a5fa; --I3:#a78bfa;
+    --exc:#fb7185; --inh:#cbd5e1; --ext:#34d399;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e1220; --panel:#161c2c; --ink:#e7ecf5; --mut:#94a3b8; --line:#26304a; --grid:#1b2337;
+    --E1:#fbbf24; --E2:#f87171; --I1:#2dd4bf; --I2:#60a5fa; --I3:#a78bfa;
+    --exc:#fb7185; --inh:#cbd5e1; --ext:#34d399;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 18px 40px}
+  h1{font-size:20px;margin:0 0 3px;letter-spacing:-.2px}
+  header p{margin:0;color:var(--mut);font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 4px}
+  .bar .lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+  button{font:inherit;font-size:12px;padding:5px 11px;border-radius:999px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);transition:.12s}
+  button:hover{border-color:var(--mut)} button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  button.cls{display:inline-flex;align-items:center;gap:6px} button.cls .sw{width:10px;height:10px;border-radius:3px}
+  .scroll{overflow-x:auto;margin-top:10px}
+  table{border-collapse:collapse;font-size:11px}
+  th.corner{text-align:right;color:var(--mut);font-weight:600;padding:4px 8px;white-space:nowrap}
+  th.col{height:96px;vertical-align:bottom;padding:0 0 6px}
+  th.col div{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-weight:600;color:var(--ink)}
+  th.row{text-align:right;padding:0 8px;white-space:nowrap;font-weight:600;color:var(--ink)}
+  th.row .n{color:var(--mut);font-weight:400;font-size:10px}
+  td{width:30px;height:30px;text-align:center;border:1px solid var(--grid);cursor:default;position:relative}
+  td.hit{cursor:pointer}
+  td .cnt{font-size:8.5px;color:#fff;mix-blend-mode:normal;font-weight:600}
+  .eiband{width:5px;padding:0}
+  .tip{position:fixed;pointer-events:none;z-index:9;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:250px;opacity:0;transition:opacity .1s}
+  .tip b{color:var(--ink)} .tip .k{color:var(--mut)}
+  .lg{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12px;color:var(--mut)}
+  .lg .it{display:inline-flex;align-items:center;gap:6px} .lg .sw{width:14px;height:11px;border-radius:3px}
+  .foot{margin-top:12px;color:var(--mut);font-size:12px;line-height:1.6}
+  .dim{opacity:.12}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>CA1 연결 매트릭스 — pre × post</h1>
+    <p>세로=전시냅스(pre) · 가로=후시냅스(post). 칸 색=시냅스 클래스, 진하기=연결수(log). 빈칸=연결 없음. 132 내부경로 + SC 입력.</p>
+  </header>
+  <div class="bar">
+    <span class="lbl">클래스</span>
+    <button class="on" id="all" onclick="setCls('all')">전체</button>
+    <button class="cls" data-c="E1" onclick="setCls('E1')"><span class="sw" style="background:var(--E1)"></span>E1</button>
+    <button class="cls" data-c="E2" onclick="setCls('E2')"><span class="sw" style="background:var(--E2)"></span>E2</button>
+    <button class="cls" data-c="I1" onclick="setCls('I1')"><span class="sw" style="background:var(--I1)"></span>I1</button>
+    <button class="cls" data-c="I2" onclick="setCls('I2')"><span class="sw" style="background:var(--I2)"></span>I2</button>
+    <button class="cls" data-c="I3" onclick="setCls('I3')"><span class="sw" style="background:var(--I3)"></span>I3</button>
+    <span style="flex:1"></span>
+    <button id="numb" onclick="toggleNum()">연결수 표시</button>
+  </div>
+  <div class="scroll"><table id="tbl"></table></div>
+  <div class="tip" id="tip"></div>
+  <div class="lg">
+    <span class="it"><span class="sw" style="background:var(--E2)"></span>흥분(E1·E2)</span>
+    <span class="it"><span class="sw" style="background:var(--I2)"></span>억제(I1·I2·I3)</span>
+    <span class="it">진할수록 연결 많음</span>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const D=__DATA__;
+const CLSV={E1:'--E1',E2:'--E2',I1:'--I1',I2:'--I2',I3:'--I3'};
+let curCls='all', showNum=false;
+function cv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+// mtype 순서: SC, PC(흥분), 그다음 억제(층순)
+const lorder=['SP','SO','SR','SLM'];
+const inh=D.nodes.filter(n=>n.id!=='SC'&&n.ei==='I').sort((a,b)=>(lorder.indexOf(a.layer)-lorder.indexOf(b.layer))||(b.n-a.n));
+const preList=['SC','SP_PC',...inh.map(n=>n.id)];
+const postList=['SP_PC',...inh.map(n=>n.id)];
+const info={}; D.nodes.forEach(n=>info[n.id]=n);
+// 엣지 맵
+const M={}; D.edges.forEach(e=>M[e.pre+'|'+e.post]=e);
+D.sc_edges.forEach(e=>M[e.pre+'|'+e.post]={...e,ext:true});
+let maxN=1; Object.values(M).forEach(e=>maxN=Math.max(maxN,e.n));
+
+function alpha(n){return 0.18+0.82*(Math.log10(n+1)/Math.log10(maxN+1));}
+const tip=document.getElementById('tip');
+
+function build(){
+  const t=document.getElementById('tbl'); t.innerHTML='';
+  // 헤더행
+  const hr=document.createElement('tr');
+  hr.appendChild(el('th','corner','post →<br>pre ↓',true));
+  hr.appendChild(el('th','eiband','',false));
+  postList.forEach(pm=>{const th=el('th','col','');const d=document.createElement('div');
+    d.innerHTML=pm.replace('_','·'); th.appendChild(d);
+    th.firstChild.style.color=info[pm].ei==='E'?cv('--exc'):cv('--inh'); hr.appendChild(th);});
+  t.appendChild(hr);
+  preList.forEach(rm=>{
+    const tr=document.createElement('tr');
+    const rh=el('th','row',`${rm.replace('_','·')} <span class="n">${info[rm].n||'ext'}</span>`,true);
+    rh.firstChild&&(rh.style.color=info[rm].ei==='E'?cv('--exc'):cv('--inh')); tr.appendChild(rh);
+    // E/I 밴드
+    const band=el('td','eiband','',false);
+    band.style.background=(rm==='SC')?cv('--ext'):(info[rm].ei==='E'?cv('--exc'):cv('--inh'));
+    band.style.border='none'; tr.appendChild(band);
+    postList.forEach(cm=>{
+      const e=M[rm+'|'+cm]; const td=document.createElement('td');
+      if(e){
+        td.className='hit'; td._e=e;
+        const col=e.ext?cv('--ext'):cv(CLSV[e.cls]||'--I2');
+        td.style.background=hexA(col,alpha(e.n));
+        if(showNum){const s=document.createElement('span');s.className='cnt';s.textContent=e.n>=1000?(e.n/1000).toFixed(0)+'k':e.n;td.appendChild(s);}
+        td.addEventListener('mousemove',ev=>showTip(ev,e));
+        td.addEventListener('mouseleave',()=>tip.style.opacity=0);
+      }
+      applyOne(td,e);
+      tr.appendChild(td);
+    });
+    t.appendChild(tr);
+  });
+}
+function applyOne(td,e){
+  if(!e){td.classList.remove('dim');return;}
+  const vis = curCls==='all' || (e.ext?curCls==='E2':e.cls===curCls);
+  td.classList.toggle('dim',!vis);
+}
+function el(tag,cls,html,isHTML){const x=document.createElement(tag);x.className=cls;if(html)x.innerHTML=html;return x;}
+function hexA(hex,a){hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+  const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a.toFixed(3)})`;}
+function showTip(ev,e){
+  const stp=e.U!=null?`<div><span class="k">U/D/F</span> ${e.U} / ${e.D} / ${e.F}</div>`:'';
+  const g=e.g!=null?`<div><span class="k">gsyn</span> ${e.g} nS</div>`:'';
+  tip.innerHTML=`<b>${e.pre.replace('_','·')} → ${e.post.replace('_','·')}</b>`+
+    `<div><span class="k">클래스</span> ${e.ext?'SC(외부입력)':e.cls}</div>`+
+    `<div><span class="k">연결쌍</span> ${e.n.toLocaleString()}${e.nsyn?` · 시냅스 ${e.nsyn.toLocaleString()}`:''}</div>`+stp+g;
+  tip.style.opacity=1; tip.style.left=Math.min(innerWidth-260,ev.clientX+12)+'px'; tip.style.top=Math.max(6,ev.clientY-8)+'px';
+}
+function setCls(c){curCls=c;document.getElementById('all').classList.toggle('on',c==='all');
+  document.querySelectorAll('button.cls').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+  document.querySelectorAll('#tbl td.hit').forEach(td=>applyOne(td,td._e));}
+function toggleNum(){showNum=!showNum;document.getElementById('numb').classList.toggle('on',showNum);build();}
+(function(){const byc={};D.edges.forEach(e=>byc[e.cls]=(byc[e.cls]||0)+1);
+  document.getElementById('foot').innerHTML=`<b>${D.edges.length}경로</b> · 클래스 `+
+    Object.entries(byc).sort().map(([k,v])=>`${k}:${v}`).join(' · ')+
+    `. 대각선=자기연결(예: PVBC→PVBC). PC 열이 가장 진함=대부분 억제가 추체로 수렴.`;})();
+build();
+</script>

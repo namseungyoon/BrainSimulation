@@ -1,0 +1,246 @@
+<title>CA1 Connectome</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --ink:#1a2130; --mut:#5d6b82; --line:#e2e7f0;
+    --E1:#f59e0b; --E2:#ef4444; --I1:#14b8a6; --I2:#3b82f6; --I3:#8b5cf6;
+    --exc:#e11d48; --inh:#334155; --ext:#0e9f6e; --hair:#c9d2e0;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1220; --panel:#161c2c; --ink:#e7ecf5; --mut:#94a3b8; --line:#26304a;
+      --E1:#fbbf24; --E2:#f87171; --I1:#2dd4bf; --I2:#60a5fa; --I3:#a78bfa;
+      --exc:#fb7185; --inh:#cbd5e1; --ext:#34d399; --hair:#2b3650;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1220; --panel:#161c2c; --ink:#e7ecf5; --mut:#94a3b8; --line:#26304a;
+    --E1:#fbbf24; --E2:#f87171; --I1:#2dd4bf; --I2:#60a5fa; --I3:#a78bfa;
+    --exc:#fb7185; --inh:#cbd5e1; --ext:#34d399; --hair:#2b3650;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;overflow-x:hidden}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 18px 40px}
+  header h1{font-size:20px;margin:0 0 3px;letter-spacing:-.2px}
+  header p{margin:0;color:var(--mut);font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 6px}
+  .bar .lbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+  button{font:inherit;font-size:12px;padding:5px 11px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);transition:.12s}
+  button:hover{border-color:var(--mut)}
+  button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  button.cls{display:inline-flex;align-items:center;gap:6px}
+  button.cls .sw{width:10px;height:10px;border-radius:3px}
+  .stage{position:relative;margin-top:8px;background:radial-gradient(120% 120% at 50% 40%,var(--panel),var(--bg));
+    border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  svg{display:block;width:100%;height:auto;touch-action:none}
+  .edge{fill:none;stroke-linecap:round;transition:opacity .12s}
+  .node-dot{stroke:var(--panel);stroke-width:1.5}
+  .node-lab{font-size:11px;fill:var(--ink);font-weight:600}
+  .node-sub{font-size:9px;fill:var(--mut)}
+  .dim{opacity:.06}
+  .hl{opacity:1}
+  .tip{position:absolute;pointer-events:none;z-index:9;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:240px;opacity:0;transition:opacity .1s}
+  .tip b{color:var(--ink)} .tip .k{color:var(--mut)}
+  .lg{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--mut)}
+  .lg .it{display:inline-flex;align-items:center;gap:6px}
+  .lg .sw{width:14px;height:5px;border-radius:3px}
+  .lg .dot{width:11px;height:11px;border-radius:50%}
+  .foot{margin-top:14px;color:var(--mut);font-size:12px;line-height:1.6}
+  .foot code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:11px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>CA1 마이크로슬라이스 — 원형 커넥토그램</h1>
+    <p>13 세포형 · <b id="np">132</b> 내부경로 (+ SC 입력) · 진짜 2세포 검증 대상. 선=경로(색=시냅스 클래스, 굵기=연결수). 노드에 마우스 올리면 그 세포의 연결만.</p>
+  </header>
+
+  <div class="bar">
+    <span class="lbl">클래스</span>
+    <button class="on" id="all" onclick="setCls('all')">전체</button>
+    <button class="cls" data-c="E1" onclick="setCls('E1')"><span class="sw" style="background:var(--E1)"></span>E1</button>
+    <button class="cls" data-c="E2" onclick="setCls('E2')"><span class="sw" style="background:var(--E2)"></span>E2</button>
+    <button class="cls" data-c="I1" onclick="setCls('I1')"><span class="sw" style="background:var(--I1)"></span>I1</button>
+    <button class="cls" data-c="I2" onclick="setCls('I2')"><span class="sw" style="background:var(--I2)"></span>I2</button>
+    <button class="cls" data-c="I3" onclick="setCls('I3')"><span class="sw" style="background:var(--I3)"></span>I3</button>
+    <span style="flex:1"></span>
+    <button id="scb" class="on" onclick="toggleSC()">SC 입력 표시</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <svg id="svg" viewBox="0 0 900 760" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="ar-E1" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--E1)"/></marker>
+        <marker id="ar-E2" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--E2)"/></marker>
+        <marker id="ar-I1" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--I1)"/></marker>
+        <marker id="ar-I2" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--I2)"/></marker>
+        <marker id="ar-I3" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--I3)"/></marker>
+        <marker id="ar-ext" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,3 L0,6 Z" style="fill:var(--ext)"/></marker>
+      </defs>
+    </svg>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <div class="lg">
+    <span class="it"><span class="sw" style="background:var(--E1)"></span>E1</span>
+    <span class="it"><span class="sw" style="background:var(--E2)"></span>E2 (흥분)</span>
+    <span class="it"><span class="sw" style="background:var(--I1)"></span>I1</span>
+    <span class="it"><span class="sw" style="background:var(--I2)"></span>I2</span>
+    <span class="it"><span class="sw" style="background:var(--I3)"></span>I3 (억제)</span>
+    <span style="width:14px"></span>
+    <span class="it"><span class="dot" style="background:var(--exc)"></span>흥분 세포(PC)</span>
+    <span class="it"><span class="dot" style="background:var(--inh)"></span>억제 세포</span>
+    <span class="it"><span class="dot" style="background:var(--ext)"></span>SC(외부)</span>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const D=__DATA__;
+const svg=document.getElementById('svg'), tip=document.getElementById('tip'), stage=document.getElementById('stage');
+const NS='http://www.w3.org/2000/svg';
+const CX=450, CY=390, R=270;
+const CLSV={E1:'--E1',E2:'--E2',I1:'--I1',I2:'--I2',I3:'--I3'};
+let curCls='all', showSC=true, hoverNode=null;
+
+// ── 노드 원형 배치 (층 그룹 + 층간 간격) ──
+const order=D.layer_order;
+const byLayer={}; D.nodes.forEach(n=>{(byLayer[n.layer]=byLayer[n.layer]||[]).push(n)});
+for(const k in byLayer) byLayer[k].sort((a,b)=>b.n-a.n);
+let seq=[]; order.forEach(L=>{ if(byLayer[L]) byLayer[L].forEach(n=>seq.push(n)); });
+const GAP=0.13, groups=order.filter(L=>byLayer[L]).length;
+const span=2*Math.PI - GAP*groups, per=span/seq.length;
+const pos={}; let ang=-Math.PI/2+GAP/2, prevL=null;
+seq.forEach((n)=>{ if(prevL!==null && n.layer!==prevL) ang+=GAP; prevL=n.layer;
+  const a=ang; pos[n.id]={a, x:CX+R*Math.cos(a), y:CY+R*Math.sin(a)}; ang+=per; });
+
+function cv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function edgeW(n){return 0.6+1.7*Math.log10(n+1);}     // 연결수 → 굵기
+const NR={}; D.nodes.forEach(n=>NR[n.id]=n.id==='SC'?9:(6+2.6*Math.log10(n.n+1)));  // 노드 반경
+
+// ── 엣지 path (pre→post, 중심으로 당긴 2차 베지어, 끝점=post 노드 앞에서 단축) ──
+function edgePath(p,q,back){
+  const mx=(p.x+q.x)/2, my=(p.y+q.y)/2;
+  const t=0.55;                                        // 중심 쪽으로 당김
+  const cx=mx+(CX-mx)*t, cy=my+(CY-my)*t;
+  let ex=q.x, ey=q.y;
+  if(back){const dx=q.x-cx, dy=q.y-cy, L=Math.hypot(dx,dy)||1; ex=q.x-dx/L*back; ey=q.y-dy/L*back;}
+  return `M${p.x.toFixed(1)} ${p.y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
+}
+
+const gEdge=document.createElementNS(NS,'g'), gNode=document.createElementNS(NS,'g');
+svg.appendChild(gEdge); svg.appendChild(gNode);
+let edgeEls=[];
+
+function buildEdges(){
+  gEdge.innerHTML=''; edgeEls=[];
+  const all=D.edges.map(e=>({...e})).concat(showSC?D.sc_edges.map(e=>({...e,U:null})):[]);
+  // 굵은(연결많은) 것 먼저, 얇은 것 위에
+  all.sort((a,b)=>b.n-a.n);
+  all.forEach(e=>{
+    const p=pos[e.pre], q=pos[e.post]; if(!p||!q) return;
+    const pa=document.createElementNS(NS,'path');
+    pa.setAttribute('class','edge'); pa.setAttribute('d',edgePath(p,q,(NR[e.post]||6)+7));
+    pa.setAttribute('stroke', e.ext?cv('--ext'):cv(CLSV[e.cls]||'--I2'));
+    pa.setAttribute('stroke-width', e.ext?1.1:edgeW(e.n));
+    pa.setAttribute('stroke-opacity', e.ext?0.5:0.55);
+    pa.setAttribute('marker-end','url(#ar-'+(e.ext?'ext':(e.cls||'I2'))+')');
+    if(e.ext) pa.setAttribute('stroke-dasharray','3 4');
+    pa._e=e; edgeEls.push(pa); gEdge.appendChild(pa);
+    pa.addEventListener('mousemove',ev=>showTip(ev,e));
+    pa.addEventListener('mouseleave',hideTip);
+  });
+  applyFilter();
+}
+
+function buildNodes(){
+  gNode.innerHTML='';
+  D.nodes.forEach(n=>{
+    const p=pos[n.id]; const col=n.id==='SC'?cv('--ext'):(n.ei==='E'?cv('--exc'):cv('--inh'));
+    const rr=n.id==='SC'?9:(6+2.6*Math.log10(n.n+1));
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('class','node-dot'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y);
+    c.setAttribute('r',rr); c.setAttribute('fill',col); c._n=n; gNode.appendChild(c);
+    // 라벨(원 바깥, 각도 정렬)
+    const la=p.a, lx=CX+(R+20)*Math.cos(la), ly=CY+(R+20)*Math.sin(la);
+    const right=Math.cos(la)>=-0.01;
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('class','node-lab'); t.setAttribute('x',lx); t.setAttribute('y',ly);
+    t.setAttribute('text-anchor',right?'start':'end');
+    t.setAttribute('transform',`rotate(${(la*180/Math.PI)+(right?0:180)} ${lx} ${ly})`);
+    t.setAttribute('dominant-baseline','middle');
+    t.textContent=n.id.replace('_','·');
+    const s=document.createElementNS(NS,'tspan'); s.setAttribute('class','node-sub');
+    s.textContent=n.id==='SC'?'  (외부)':`  ${n.n}`; t.appendChild(s);
+    gNode.appendChild(t);
+    [c,t].forEach(el=>{
+      el.style.cursor='pointer';
+      el.addEventListener('mouseenter',()=>{hoverNode=n.id;applyFilter();showNodeTip(n);});
+      el.addEventListener('mouseleave',()=>{hoverNode=null;applyFilter();hideTip();});
+    });
+  });
+}
+
+function applyFilter(){
+  edgeEls.forEach(pa=>{
+    const e=pa._e; let vis=true;
+    if(curCls!=='all' && !e.ext && e.cls!==curCls) vis=false;
+    if(curCls!=='all' && e.ext && curCls!=='E2') vis=false;
+    if(hoverNode && e.pre!==hoverNode && e.post!==hoverNode) vis=false;
+    pa.classList.toggle('dim',!vis);
+    pa.classList.toggle('hl', vis && !!hoverNode);
+  });
+}
+
+function setCls(c){
+  curCls=c;
+  document.getElementById('all').classList.toggle('on',c==='all');
+  document.querySelectorAll('button.cls').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+  applyFilter();
+}
+function toggleSC(){showSC=!showSC;document.getElementById('scb').classList.toggle('on',showSC);buildEdges();}
+
+function showTip(ev,e){
+  const g=e.g!=null?`<div><span class="k">gsyn</span> ${e.g} nS</div>`:'';
+  const stp=e.U!=null?`<div><span class="k">U/D/F</span> ${e.U} / ${e.D} / ${e.F}</div>`:'';
+  tip.innerHTML=`<b>${e.pre.replace('_','·')} → ${e.post.replace('_','·')}</b>`+
+    `<div><span class="k">클래스</span> ${e.ext?'SC(외부입력)':e.cls}</div>`+
+    `<div><span class="k">연결쌍</span> ${e.n.toLocaleString()}${e.nsyn?` · 시냅스 ${e.nsyn.toLocaleString()}`:''}</div>`+stp+g;
+  place(ev);
+}
+function showNodeTip(n){
+  const outE=D.edges.filter(e=>e.pre===n.id).length, inE=D.edges.filter(e=>e.post===n.id).length;
+  tip.innerHTML=`<b>${n.id.replace('_','·')}</b>`+
+    `<div><span class="k">유형</span> ${n.id==='SC'?'외부 SC 입력':(n.ei==='E'?'흥분(추체)':'억제 개재')} · ${n.layer}</div>`+
+    (n.n?`<div><span class="k">세포수</span> ${n.n.toLocaleString()}</div>`:'')+
+    `<div><span class="k">경로</span> 나감 ${outE} · 들어옴 ${inE}</div>`;
+  tip.style.opacity=1;
+  const p=pos[n.id], r=stage.getBoundingClientRect(), sc=r.width/900;
+  tip.style.left=Math.min(r.width-190,Math.max(6,p.x*sc+10))+'px';
+  tip.style.top=Math.max(6,p.y*(r.height/760)-10)+'px';
+}
+function place(ev){
+  const r=stage.getBoundingClientRect();
+  tip.style.opacity=1;
+  tip.style.left=Math.min(r.width-190,ev.clientX-r.left+12)+'px';
+  tip.style.top=Math.max(6,ev.clientY-r.top-8)+'px';
+}
+function hideTip(){tip.style.opacity=0;}
+
+// 요약 푸터
+(function(){
+  const byc={}; D.edges.forEach(e=>byc[e.cls]=(byc[e.cls]||0)+1);
+  const cE=D.nodes.filter(n=>n.ei==='E'&&n.id!=='SC').length, cI=D.nodes.filter(n=>n.ei==='I').length;
+  document.getElementById('foot').innerHTML=
+    `<b>${D.edges.length}개 내부 경로</b>가 <b>5개 시냅스 클래스</b>를 모두 덮습니다 — `+
+    Object.entries(byc).sort().map(([k,v])=>`${k}:${v}`).join(' · ')+
+    `. 세포형 흥분 ${cE}(PC) · 억제 ${cI}종. `+
+    `문헌 비교는 핵심 경로(예: SC→PC·PVBC→PC·PC→OLM) 위주지만, <b>시뮬은 132경로 전수를 2세포로 검증</b>할 수 있습니다.`;
+  document.getElementById('np').textContent=D.edges.length;
+})();
+
+buildEdges(); buildNodes();
+</script>

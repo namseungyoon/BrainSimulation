@@ -10,6 +10,7 @@
 | Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
 | Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
 | Ex2 | Schaffer collateral(CA3→CA1) 단발 uEPSP | `04_experiments/Ex2_schaffer` | 05페이지 | ✅ **uEPSP 0.43mV·PPR 2.11·τ9.95ms (Sayer1990 추세일치)** |
+| Ex2b | 연결 검증 매트릭스 (전 경로 2세포 uPSP/PPR) | `04_experiments/Ex2b_connection_matrix` | 커넥톰 UI(원형+매트릭스) 완성, 132경로·5클래스 | 🔄 UI ✅ · 2세포 벤치 대기 |
 | Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | 포화판 slope·tpeak·peak 표+3D UI, 창발반응 5/7 문헌일치 | 🔄 저세기 재실행중 |
 | Ex3b | SC 페어펄스/train — 억제 동역학 | `04_experiments/Ex3b_paired_train` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
@@ -38,6 +39,17 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **기록(신규)**: 대표 세포 **Vm** — 소마 + 시냅스가 놓인 수상돌기 세그먼트 → EPSP가 수상돌기→소마로 감쇠·전파되는 것 관찰. (지금까지 스파이크만 저장 → Ex2부터 Vm 기록 추가)
 - **프로토콜**: ① 단발(1 스파이크) → uEPSP. ② 페어펄스 ISI 50ms → PPR=EPSP2/EPSP1 (SC→PC 촉진성 → >1 기대). 확률시냅스(Nrrp>1)라 **다수 시행 평균**.
 - **검증지표**: 소마 uEPSP 진폭(mV)·지연(ms)·상승시간·감쇠τ · PPR. **대조**: 04 벤치(Sayer 1990) · gsyn 규칙(HippocampusHub).
+
+## Ex2b 상세 — 연결 검증 매트릭스 (전 경로 2세포 uPSP/PPR) (설계 2026-08-25)
+**목표**: Ex2(SC→PC 한 쌍)를 **커넥텀 전 경로로 일반화** — 각 (pre-mtype→post-mtype) 연결의 uPSP/uIPSP·PPR을 격리 측정해 **시냅스 파라미터(U/D/F/gsyn)가 클래스별로 올바른 거동**을 내는지 검증. 시뮬 장점: 문헌은 핵심 경로만이지만 우리는 **전수 검증** 가능.
+- **범위(실측 커넥텀)**: 내부 **132 경로**(pre-mtype→post-mtype, 실제 배선 598,204 연결) + SC 입력 11경로. **5 시냅스 클래스 전부**(E1·E2·I1·I2·I3) 덮음. 분포 E1:4·E2:7·I1:7·I2:110·I3:4.
+- **방법 = 진짜 2세포**: 내부 연결은 pre·post 둘 다 빌드 → **pre를 IClamp로 발화**(단발/페어펄스) → post Vm 기록. SC는 CA3=외부라 **VecStim**(=Ex2). 커넥텀의 실제 접촉 시냅스·수상돌기 위치 그대로 사용.
+  - *개념*: 시냅스는 스파이크 "이벤트"만 보므로 응답(uPSP/PPR)은 VecStim=실세포 동일. 진짜 2세포는 **전시냅스 발화(흥분성·AP)까지 통합 검증**하려는 선택.
+- **측정**: post uPSP/uIPSP 진폭·부호·지연·상승/감쇠τ·**PPR**·실패율 + pre AP. 확률방출(Nrrp)→다시행 평균.
+- **판정**: 규칙 U/D/F 예측(촉진/억압) vs 실측 거동 일치. 예: PC→OLM 강촉진(E1), PVBC→PC 억압(I2), SC→PC 촉진(=Ex2 PPR 2.11).
+- **UI(완성 2026-08-25)**: `04_experiments/Ex2b_connection_matrix/ui/` — **원형 커넥토그램**(`connectome_circular.html`; 방향 화살표·클래스 색·연결수 굵기·노드 호버) + **연결 매트릭스**(`connectome_matrix.html`; pre세로×post가로 히트맵). 빌더 `03_network/3_run/ex2b_connectome_tpl.html`·`ex2b_matrix_tpl.html`, 데이터 `scratch/connectome_graph.json`.
+- **mechanism 일관성**: 흥분 `GBPlasticityStpProbSyn`(Ex2·망 동일), 억제 `ProbGABAAB_EMS`, gsyn 내부=출처·SC=Ex2보정(0.8nS). 출처 HippocampusHub/Kohus 2016.
+- **의존/일정**: 전체망 조립 1회 재사용 가능(2세포 소형·빠름). **Ex3 저세기 완료 후 벤치 실행 예정**. 다음 시각화 계획: 2세포 격리 형태(ex2_morph식) + 시간축 전류/시냅스 반응.
 
 ## Ex3 상세 — SC I-O + 억제 차단 (설계 확정 2026-08-24)
 **목표**: basal 시냅스 전달의 **I-O 곡선**(실측 MEA 포맷)을 재현. **y=fEPSP slope, x=fiber volley(발화 섬유 진폭)**의 전달함수.

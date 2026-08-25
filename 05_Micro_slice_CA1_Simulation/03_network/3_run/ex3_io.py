@@ -30,6 +30,8 @@ CFG = os.path.join(ROOT, "config", "synapse_rules.json")
 FIBER_OFFSET = 10_000_000
 
 FRACS = [0.005, 0.01, 0.02, 0.04, 0.08]          # 모집 비율 (fiber volley) — 역치~상승부 (50~800섬유)
+if "--fracs" in sys.argv:                          # 진단/커스텀: 쉼표구분 (예: --fracs 0.02)
+    FRACS = [float(x) for x in sys.argv[sys.argv.index("--fracs") + 1].split(",")]
 CONDS = [("normal", False), ("block", True)]       # (이름, 억제차단?)
 SETTLE = float(sys.argv[sys.argv.index("--settle") + 1]) if "--settle" in sys.argv else 30.0  # 무음망→짧게
 STIM_T = SETTLE + 10.0
@@ -187,7 +189,14 @@ def main():
     tspk = h.Vector(); idspk = h.Vector(); pc.spike_record(-1, tspk, idspk)
     is_pc = np.array([mt[g] == "SP_PC" for g in range(N)])
     totE = int(np.sum(is_pc)); totI = int(N - totE)
-    results = []; fep_all = []; spk_all = []           # 집합통신은 NEURON pc 사용(mpi4py 불요)
+    try:                                               # 집합통신: 검증된 mpi4py 우선(ca1sim에 있음)
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+    except Exception:
+        comm = None                                    # 폴백: NEURON pc (mpi4py 없는 환경)
+    if rank == 0:
+        print(f"[집합통신] {'mpi4py' if comm is not None else 'NEURON pc(폴백)'}", flush=True)
+    results = []; fep_all = []; spk_all = []
 
     # ── fEPSP 기록기(조건 전체 재사용, 1회 설정) ──
     frec = None; elec = None; enames = None
@@ -217,11 +226,18 @@ def main():
             h.dt = 0.25; pc.psolve(SETTLE)          # 안정화(거친)
             h.dt = 0.025; pc.psolve(TSTOP)          # 자극+관측(고운)
             dt_run = time.time() - tr
-            at = pc.py_gather(list(tspk), 0); ai = pc.py_gather(list(idspk), 0)
+            if rank == 0: print(f"  [diag] psolve done {dt_run:.0f}s -> gather", flush=True)
+            if comm is not None:
+                at = comm.gather(list(tspk), root=0); ai = comm.gather(list(idspk), root=0)
+            else:
+                at = pc.py_gather(list(tspk), 0); ai = pc.py_gather(list(idspk), 0)
+            if rank == 0: print(f"  [diag] gather done {time.time()-tr:.0f}s -> fepsp reduce", flush=True)
             Vtot = None; tfe = None
-            if FEPSP:                                                # 전 랭크 집합통신(NEURON pc)
-                Vtot = frec.potential_allreduce_pc(pc)
+            if FEPSP:                                                # 전 랭크 집합통신
+                Vtot = (comm.allreduce(frec.potential_local(), op=MPI.SUM)
+                        if comm is not None else frec.potential_allreduce_pc(pc))
                 tfe = np.array(frec.times())
+                if rank == 0: print(f"  [diag] fepsp reduce done {time.time()-tr:.0f}s", flush=True)
             if rank == 0:
                 st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])
                 sid = np.concatenate([np.array(x) for x in ai]).astype(int) if any(len(x) for x in ai) else np.array([], int)
