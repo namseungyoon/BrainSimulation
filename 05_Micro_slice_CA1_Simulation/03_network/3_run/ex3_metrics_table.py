@@ -27,6 +27,8 @@ ELEC = arg("--elec", "E3")
 def metrics(f, i):
     t = np.asarray(f["t"], float) - STIM
     V = np.asarray(f["V"], float)[i]
+    base = V[t < 0].mean() if (t < 0).any() else 0.0          # 자극 전 baseline 차감(라이브 로그와 일치)
+    V = V - base
     m = (t >= 0) & (t <= 25); tw = t[m]; Vw = V[m]
     k = int(np.argmin(Vw)); Vpk = float(Vw[k]); tpk = float(tw[k])
     sel = (tw >= 0.2) & (tw <= tpk)
@@ -38,7 +40,8 @@ def main():
     global STIM
     tr = np.load(TR, allow_pickle=True)
     fep = tr["fep"]; spk = tr["spk"]; STIM = float(tr["stim_t"])
-    en = [str(x) for x in tr["enames"]]; ie = en.index(ELEC) if ELEC in en else 1
+    en = [str(x) for x in tr["enames"]]
+    ie = next((j for j, e in enumerate(en) if e.startswith(ELEC)), 1)   # "E3(SR)" 접두어 매칭
 
     byfrac = {}
     for i in range(len(fep)):

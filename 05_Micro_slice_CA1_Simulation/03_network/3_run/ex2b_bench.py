@@ -25,6 +25,16 @@ def arg(f, d):
 PRE = arg("--pre", "SP_PC"); POST = arg("--post", "SP_PC")
 ISIS = [float(x) for x in arg("--isis", "20,50,100,200").split(",")]
 NTRIAL = int(arg("--ntrial", 20)); AMP = arg("--amp", 1.2)
+HOLD_V = arg("--holdv", -50.0)                    # 억제(IPSC) 측정용 전압클램프 유지전위(mV)
+
+
+def post_record(P, post_soma):
+    """후세포 응답 기록 설정. 억제=전압클램프(-50mV) IPSC 전류, 흥분=전류클램프 Vm.
+    반환: (기록ref, SEClamp객체 or None, 단위). E_GABA≈rest라 IPSP는 rest에서 안 보여 VC 필요."""
+    if P["mech"] == "I":
+        se = h.SEClamp(post_soma(0.5)); se.rs = 0.001; se.dur1 = 1e9; se.amp1 = HOLD_V
+        return se._ref_i, se, "nA"                # IPSC (전류)
+    return post_soma(0.5)._ref_v, None, "mV"      # EPSP (전압)
 SAVE = "--save" in sys.argv
 MORPH3D = "--morph3d" in sys.argv                # 세그먼트별 Vm + 시냅스 전류 3D 기록(대표 경로)
 STIM = 100.0; TAIL = 80.0
@@ -68,6 +78,7 @@ def record_morph3d(P, XYZ, Q, isi=REP_ISI, rec_dt=0.25):
         spos.append(XYZ[P["qg"]] + rotq.apply(loc))
     ic1 = h.IClamp(pre_soma(0.5)); ic1.delay = STIM; ic1.dur = 3.0; ic1.amp = AMP
     ic2 = h.IClamp(pre_soma(0.5)); ic2.delay = STIM + isi; ic2.dur = 3.0; ic2.amp = AMP
+    _ih = hold_post(P, post_soma)                 # 억제면 후세포 탈분극 홀딩
     for (syn, nc, k) in P["syns"]:
         syn.setRNG(P["qg"] + 1, 900000 + k, 7 if P["mech"] == "E" else 4)
     h.dt = 0.025; h.finitialize(-70); h.continuerun(STIM + isi + TAIL)
@@ -123,8 +134,9 @@ def run_train(P, freq, npulse, ntrial):
     ics = []
     for t0 in ts:
         ic = h.IClamp(pre_soma(0.5)); ic.delay = t0; ic.dur = 3.0; ic.amp = AMP; ics.append(ic)
+    qrec, _se, _unit = post_record(P, post_soma)  # 억제=VC IPSC, 흥분=Vm
     tv = h.Vector(); tv.record(h._ref_t)
-    qv = h.Vector(); qv.record(post_soma(0.5)._ref_v)
+    qv = h.Vector(); qv.record(qrec)
     acc = None
     for tr in range(ntrial):
         for (syn, nc, k) in P["syns"]:
@@ -132,12 +144,17 @@ def run_train(P, freq, npulse, ntrial):
         h.dt = 0.025; h.finitialize(-70); h.continuerun(tstop)
         v = np.array(qv); acc = v if acc is None else acc + v
     v = acc / ntrial; t = np.array(tv); base = v[t < STIM].mean()
-    amps = []
+    amps = []; s = None
     for k, t0 in enumerate(ts):
         loc = v[(t >= t0 - 1.5) & (t < t0)].mean() if k else base
-        w = (t >= t0 + 1.0) & (t < t0 + min(isi, 40))
-        d = v - loc
-        amps.append(float(d[w][np.argmax(np.abs(d[w]))]) if w.any() else 0.0)
+        w = (t >= t0 + 1.0) & (t < t0 + 1.0 + min(WFIX, isi - 2))
+        if not w.any():
+            amps.append(0.0); continue
+        dw = v[w] - loc
+        if s is None:                                  # 1번째로 응답 방향 결정
+            a0 = float(dw[int(np.argmax(np.abs(dw)))]); s = 1.0 if a0 >= 0 else -1.0; amps.append(a0)
+        else:
+            amps.append(float(s * np.max(s * dw)))     # 같은 방향의 peak
     a1 = amps[0] if abs(amps[0]) > 1e-4 else 1.0
     return [round(a / a1, 3) for a in amps]
 
@@ -148,9 +165,10 @@ def run_isi(P, isi, ntrial):
     tstop = STIM + isi + TAIL
     ic1 = h.IClamp(pre_soma(0.5)); ic1.delay = STIM; ic1.dur = 3.0; ic1.amp = AMP
     ic2 = h.IClamp(pre_soma(0.5)); ic2.delay = STIM + isi; ic2.dur = 3.0; ic2.amp = AMP
+    qrec, _se, _unit = post_record(P, post_soma)  # 억제=VC IPSC, 흥분=Vm
     tv = h.Vector(); tv.record(h._ref_t)
     pv = h.Vector(); pv.record(pre_soma(0.5)._ref_v)
-    qv = h.Vector(); qv.record(post_soma(0.5)._ref_v)
+    qv = h.Vector(); qv.record(qrec)
     acc = None; nsp = 0; pre_last = None
     for tr in range(ntrial):
         for (syn, nc, k) in P["syns"]:
@@ -162,17 +180,21 @@ def run_isi(P, isi, ntrial):
     return np.array(tv), acc / ntrial, pre_last, nsp / ntrial
 
 
+WFIX = min(min(ISIS) - 2.0, 30.0)                 # 응답 측정창(모든 ISI 공통 → a1 ISI 독립·PPR 일관)
+
+
 def amp_pp(t, v, base, isi):
-    """페어펄스 두 응답 진폭. 1번째=전역 base 기준 peak. 2번째=국소 base 기준,
-    1번째와 '동일 상대 잠복시각'에서 측정(표준법) → 감쇠꼬리 오검출·음수 아티팩트 방지."""
-    w1 = (t >= STIM + 1.0) & (t < STIM + isi)
+    """페어펄스 두 응답 진폭. 두 응답 모두 '고정폭 창'에서 '1번째와 같은 방향'의 peak로 측정.
+    고정창 → a1이 ISI에 무관(일관 PPR). 방향인식 peak → 음수아티팩트 방지 + 느린 IPSC 포착.
+    (주의: 수상돌기 억제는 소마 VC 공간클램프로 과소·저속 측정될 수 있음 — 실제 실험과 동일 한계)"""
+    w1 = (t >= STIM + 1.0) & (t < STIM + 1.0 + WFIX)
     d1 = v - base
     if not w1.any():
         return 0.0, 0.0
-    tw1, dw1 = t[w1], d1[w1]
-    k1 = int(np.argmax(np.abs(dw1))); a1 = float(dw1[k1]); tpk_rel = float(tw1[k1] - STIM)
+    k1 = int(np.argmax(np.abs(d1[w1]))); a1 = float(d1[w1][k1]); s = 1.0 if a1 >= 0 else -1.0
     pre2 = v[(t >= STIM + isi - 1.5) & (t < STIM + isi)].mean() if isi > 4 else base
-    a2 = float(np.interp(STIM + isi + tpk_rel, t, v) - pre2)   # 1번째 peak와 같은 상대시각
+    w2 = (t >= STIM + isi + 1.0) & (t < STIM + isi + 1.0 + WFIX)
+    a2 = float(s * np.max(s * (v[w2] - pre2))) if w2.any() else 0.0
     return a1, a2
 
 
@@ -185,18 +207,17 @@ def kinetics(t, v, base):
     pk = int(np.argmax(np.abs(dw))); peak = dw[pk]
     if abs(peak) < 1e-3:
         return 0.0, 0.0, 0.0
-    s = np.sign(peak); sd = dw * s                      # 응답 방향 양수화
-    def cross(frac, lo, hi):
-        for i in range(lo, hi):
-            if sd[i] >= frac * abs(peak):
+    s = np.sign(peak); sd = dw * s; ap = abs(peak)      # 응답 방향 양수화
+    def back(frac):                                     # peak에서 역스캔 → 10%/90% 교차(온셋)
+        for i in range(pk, 0, -1):
+            if sd[i] < frac * ap:
                 return tw[i]
-        return tw[hi - 1]
-    t10 = cross(0.1, 0, pk + 1); t90 = cross(0.9, 0, pk + 1)
-    lat = t10 - STIM
-    rise = t90 - t10
+        return tw[0]
+    t10 = back(0.1); t90 = back(0.9)
+    lat = t10 - STIM; rise = t90 - t10
     tau = 0.0                                            # peak→37% 감쇠
     for i in range(pk, len(sd)):
-        if sd[i] <= 0.37 * abs(peak):
+        if sd[i] <= 0.37 * ap:
             tau = tw[i] - tw[pk]; break
     return float(lat), float(rise), float(tau)
 
