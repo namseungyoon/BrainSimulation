@@ -1,0 +1,173 @@
+<title>CA1 Pair 3D</title>
+<style>
+  :root{--bg:#f6f7fb;--panel:#fff;--ink:#1a2130;--mut:#5d6b82;--line:#e4e9f2;--grid:#eef2f8;
+    --pre:#0e9f6e;--post:#7c3aed;--syn:#f59e0b;--acc:#ef4444;}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1220;--panel:#141a28;--ink:#e7ecf5;--mut:#94a3b8;--line:#26304a;--grid:#1b2337;--pre:#34d399;--post:#a78bfa;--syn:#fbbf24;}}
+  :root[data-theme="dark"]{--bg:#0e1220;--panel:#141a28;--ink:#e7ecf5;--mut:#94a3b8;--line:#26304a;--grid:#1b2337;--pre:#34d399;--post:#a78bfa;--syn:#fbbf24;}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1140px;margin:0 auto;padding:16px 14px 36px}
+  h1{font-size:18px;margin:0 0 2px} header p{margin:0;color:var(--mut);font-size:12px}
+  .warn{color:var(--acc);font-size:11.5px;margin-top:3px}
+  .grid2{display:grid;grid-template-columns:1fr 340px;gap:14px;margin-top:12px}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
+  canvas{display:block;width:100%;border-radius:10px;background:radial-gradient(120% 120% at 50% 35%,var(--panel),var(--bg))}
+  .ctrl{display:flex;align-items:center;gap:10px;margin-top:8px}
+  button{font:inherit;font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+  button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  input[type=range]{flex:1} .t{font-variant-numeric:tabular-nums;font-size:12px;color:var(--mut);min-width:70px}
+  .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:8px}
+  .leg .d{width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:4px}
+  .cbar{height:9px;border-radius:5px;background:linear-gradient(90deg,#2563eb,#93c5fd,#e5e7eb,#fca5a5,#dc2626);margin-top:4px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;margin:8px 0}
+  .kv .k{color:var(--mut)} .kv b{font-variant-numeric:tabular-nums}
+  .big{font-size:20px;font-weight:700}
+  svg{display:block;width:100%}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>CA1 2세포 쌍 — 3D 전압전파 + 시냅스 전류 (시간동기화)</h1>
+    <p id="sub"></p>
+    <div class="warn" id="warn"></div>
+  </header>
+  <div class="grid2">
+    <div class="card">
+      <canvas id="cv"></canvas>
+      <div class="ctrl">
+        <button id="play" onclick="toggle()">▶ 재생</button>
+        <input type="range" id="sld" min="0" value="0" step="1" oninput="seek(+this.value)">
+        <span class="t" id="tlab">0.0 ms</span>
+        <button id="rot" class="on" onclick="autorot=!autorot;this.classList.toggle('on',autorot)">자동회전</button>
+      </div>
+      <div class="ctrl" style="margin-top:2px">
+        <span style="font-size:11px;color:var(--mut)">속도</span>
+        <button data-ms="800" onclick="setSpeed(800,this)">0.1×</button>
+        <button data-ms="400" onclick="setSpeed(400,this)">0.25×</button>
+        <button class="on" data-ms="200" onclick="setSpeed(200,this)">0.5×</button>
+        <button data-ms="100" onclick="setSpeed(100,this)">1×</button>
+        <button data-ms="50" onclick="setSpeed(50,this)">2×</button>
+        <span style="flex:1"></span>
+        <button onclick="seek(0)">⏮ 처음</button>
+      </div>
+      <div class="leg">
+        <span><span class="d" style="background:var(--pre)"></span>pre(개재뉴런)</span>
+        <span><span class="d" style="background:var(--post)"></span>post(추체)</span>
+        <span><span class="d" style="background:var(--syn)"></span>시냅스(전류)</span>
+        <span style="flex:1;min-width:120px">Vm: <span class="cbar" style="width:120px;display:inline-block;height:9px"></span> −70→+30mV</span>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--mut)">시간동기 지표 (재생 커서와 함께)</div>
+      <div style="display:flex;gap:12px;margin:6px 0">
+        <div><div class="big" id="mPre" style="color:var(--pre)">-</div><div style="font-size:10px;color:var(--mut)">pre 소마 Vm</div></div>
+        <div><div class="big" id="mSyn" style="color:var(--syn)">-</div><div style="font-size:10px;color:var(--mut)">시냅스 전류</div></div>
+        <div><div class="big" id="mPost" style="color:var(--post)">-</div><div style="font-size:10px;color:var(--mut)">post 소마 Vm</div></div>
+      </div>
+      <svg id="tr" viewBox="0 0 320 210"></svg>
+      <div class="kv" id="kv"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const D=__DATA__;
+const cv=document.getElementById('cv'), gx=cv.getContext('2d');
+const NF=D.t.length; let frame=0, playing=false, autorot=true, yaw=0.5, pitch=0.2, drag=false, lx=0,ly=0, DPR=Math.min(2,devicePixelRatio||1);
+function cvv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+// 좌표 중심/스케일
+const allP=D.post.pos.concat(D.pre.pos);
+const ctr=[0,1,2].map(k=>allP.reduce((s,p)=>s+p[k],0)/allP.length);
+let span=0; allP.forEach(p=>{const d=Math.hypot(p[0]-ctr[0],p[1]-ctr[1],p[2]-ctr[2]); if(d>span)span=d;}); span*=1.15;
+
+function resize(){DPR=Math.min(2,devicePixelRatio||1);const w=cv.clientWidth||760;cv.width=w*DPR;cv.height=520*DPR;}
+window.addEventListener('resize',()=>{resize();draw();});
+
+function proj(p,W,H,sc){const cY=Math.cos(yaw),sY=Math.sin(yaw),cP=Math.cos(pitch),sP=Math.sin(pitch);
+  let x=p[0]-ctr[0],y=p[1]-ctr[1],z=p[2]-ctr[2];
+  let x1=x*cY - z*sY, z1=x*sY + z*cY, y1=y*cP - z1*sP;
+  return [W/2 + x1*sc, H/2 - y1*sc];}
+
+function vmColor(v){ // -70→파랑, -55중립, +30빨강
+  const t=Math.max(0,Math.min(1,(v+70)/100));
+  const stops=[[37,99,235],[147,197,253],[229,231,235],[252,165,165],[220,38,38]];
+  const x=t*4, i=Math.min(3,Math.floor(x)), f=x-i;
+  const a=stops[i],b=stops[i+1];
+  return `rgb(${(a[0]+(b[0]-a[0])*f)|0},${(a[1]+(b[1]-a[1])*f)|0},${(a[2]+(b[2]-a[2])*f)|0})`;
+}
+
+function draw(){
+  const W=cv.width,H=cv.height,sc=Math.min(W,H)/(span*2.2);
+  gx.clearRect(0,0,W,H);
+  if(autorot&&!drag&&playing) yaw+=0.004;
+  // 세그먼트(작은 점) — post, pre
+  function drawCell(cell,rBase){
+    for(let i=0;i<cell.pos.length;i++){
+      const q=proj(cell.pos[i],W,H,sc); const v=cell.v[i][frame];
+      const isSoma=cell.typ[i]==='soma';
+      gx.fillStyle=vmColor(v); gx.beginPath();
+      gx.arc(q[0],q[1],(isSoma?4.2:1.7)*DPR,0,6.28); gx.fill();
+    }
+  }
+  drawCell(D.post); drawCell(D.pre);
+  // 시냅스 전류 glow
+  for(let s=0;s<D.syn.pos.length;s++){
+    const q=proj(D.syn.pos[s],W,H,sc); const cur=Math.abs(D.syn.i[s][frame]);
+    const gl=Math.min(18,2+cur*20)*DPR;
+    const g=gx.createRadialGradient(q[0],q[1],0,q[0],q[1],gl);
+    g.addColorStop(0,cvv('--syn')); g.addColorStop(1,'rgba(245,158,11,0)');
+    gx.fillStyle=g; gx.globalAlpha=.85; gx.beginPath(); gx.arc(q[0],q[1],gl,0,6.28); gx.fill(); gx.globalAlpha=1;
+    gx.fillStyle=cvv('--syn'); gx.beginPath(); gx.arc(q[0],q[1],2.6*DPR,0,6.28); gx.fill();
+  }
+  // 라벨
+  gx.fillStyle=cvv('--mut'); gx.font=(12*DPR)+'px sans-serif';
+  const pp=proj(D.pre.pos[0],W,H,sc), qq=proj(D.post.pos[0],W,H,sc);
+  gx.fillText('pre',pp[0]+8*DPR,pp[1]); gx.fillText('post',qq[0]+8*DPR,qq[1]);
+}
+
+// 동기 지표 + 트레이스
+const tr=document.getElementById('tr');
+const preSoma=D.pre.v[D.soma_post_idx!=null?0:0], postSoma=D.post.v[D.soma_post_idx||0];
+const synCur=D.syn.i[0];
+function buildTrace(){
+  const W=320,H=210,pad=30;
+  const t=D.t, t0=t[0],t1=t[t.length-1];
+  const sx=x=>pad+(x-t0)/(t1-t0)*(W-pad-6);
+  function ln(arr,vmin,vmax,col,h0,hh){let d='';for(let i=0;i<arr.length;i++){const x=sx(t[i]),y=h0+hh-(arr[i]-vmin)/(vmax-vmin||1)*hh;d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}return `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.5"/>`;}
+  const pv=preSoma, qv=postSoma, si=synCur;
+  const g1=`<text x="2" y="12" font-size="9.5" fill="${cvv('--pre')}">pre 소마 Vm</text>`+ln(pv,Math.min(...pv),Math.max(...pv),cvv('--pre'),16,48);
+  const g2=`<text x="2" y="86" font-size="9.5" fill="${cvv('--post')}">post 소마 Vm</text>`+`<g transform="translate(0,74)">`+ln(qv,Math.min(...qv),Math.max(...qv),cvv('--post'),16,48)+`</g>`;
+  const g3=`<text x="2" y="160" font-size="9.5" fill="${cvv('--syn')}">시냅스 전류</text>`+`<g transform="translate(0,148)">`+ln(si,Math.min(...si),Math.max(...si),cvv('--syn'),16,48)+`</g>`;
+  tr.innerHTML=g1+g2+g3+`<line id="cur" x1="0" y1="0" x2="0" y2="${H}" stroke="${cvv('--ink')}" stroke-width="1"/>`;
+}
+function updCursor(){
+  const W=320,pad=30,t=D.t,t0=t[0],t1=t[t.length-1];
+  const x=pad+(t[frame]-t0)/(t1-t0)*(W-pad-6);
+  const c=document.getElementById('cur'); if(c){c.setAttribute('x1',x);c.setAttribute('x2',x);}
+  document.getElementById('mPre').textContent=preSoma[frame].toFixed(0)+' mV';
+  document.getElementById('mPost').textContent=postSoma[frame].toFixed(1)+' mV';
+  document.getElementById('mSyn').textContent=synCur[frame].toFixed(2);
+  document.getElementById('tlab').textContent=(D.t[frame]-D.stim).toFixed(1)+' ms';
+}
+
+function render(){draw();updCursor();document.getElementById('sld').value=frame;}
+function seek(f){frame=Math.max(0,Math.min(NF-1,f));render();}
+let timer=null, frameMs=200;                    // 기본 0.5× (느리게)
+function startTimer(){clearInterval(timer);timer=setInterval(()=>{frame=(frame+1)%NF;render();},frameMs);}
+function toggle(){playing=!playing;document.getElementById('play').textContent=playing?'⏸ 일시정지':'▶ 재생';
+  document.getElementById('play').classList.toggle('on',playing);
+  if(playing)startTimer();else clearInterval(timer);}
+function setSpeed(ms,btn){frameMs=ms;document.querySelectorAll('[data-ms]').forEach(b=>b.classList.toggle('on',b===btn));if(playing)startTimer();}
+
+cv.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{if(!drag)return;yaw+=(e.clientX-lx)*0.008;pitch=Math.max(-1.4,Math.min(1.4,pitch+(e.clientY-ly)*0.006));lx=e.clientX;ly=e.clientY;draw();});
+
+document.getElementById('sub').textContent=`${D.pre_label} → ${D.post_label} · 클래스 ${D.cls} · 시냅스 ${D.syn.pos.length}개 · 자극 2펄스(ISI ${D.isi}ms)`;
+document.getElementById('warn').textContent=D.example?'⚠ 예시(합성 형태 + 도식 전파) — 실측 morph3d(실제 형태·전류)로 교체 예정':'';
+document.getElementById('sld').max=NF-1;
+document.getElementById('kv').innerHTML=`<span class="k">프레임</span><b>${NF} · dt ${(D.t[1]-D.t[0]).toFixed(1)}ms</b>`+
+  `<span class="k">동기화</span><b>3D 색 ↔ 트레이스 커서 ↔ 지표</b>`+`<span class="k">PPR(예시)</span><b>${D.ppr}</b>`;
+resize(); buildTrace(); render();
+</script>
