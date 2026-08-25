@@ -50,7 +50,7 @@
 | **3-8** | `03_synapse/8_distance` | `3-8_attenuation.py` | `3-8_attenuation.png` · `3-8_attenuation.json` | ✅ |
 | **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` · `3-9_bap.json` | ✅ |
 | **4-1** | `04_drive/1_modes` | `4-1_drive_modes.py` | `4-1_drive_modes.png` · `4-1_drive.json` | ✅ |
-| **4-2** | `04_drive/2_natural_theta` | `4-2_natural_theta.py` | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` | ⬜ |
+| **4-2** | `04_drive/2_natural_theta` | `4-2_natural_theta.py` | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` · `4-2_natural_theta.json` | ✅ |
 | **4-3** | `04_drive/3_imposed_theta` | `4-3_imposed_theta.py` | `4-3_imposed_theta.png` | ⬜ |
 | **4-4** | `04_drive/4_gamma` | `4-4_gamma.py` | `4-4_theta_gamma.png` | ⬜ |
 | **4-5** | `04_drive/5_phase_align` | `4-5_phase_align.py` | `4-5_phase_align.png` | ⬜ |
@@ -61,7 +61,7 @@
 | **5-4** | `05_engines/4_gb_b` | `5-4_engine_b.py` | `5-4_engine_b.png` · `5-4_gb_b.json` | ✅ |
 | **5-5** | `05_engines/5_gb_c` | `5-5_engine_c.py` | `5-5_engine_c.png` · `5-5_gb_c.json` | ✅ |
 | **5-6** | `05_engines/6_stdp` | `5-6_stdp.py` | `5-6_stdp_window.png` | ⬜ |
-| **5-7** | `05_engines/7_glusyn` | `5-7_glusyn.py` | `5-7_spine_calcium.png` | ⬜ |
+| **5-7** | `05_engines/7_glusyn` | `5-7_spine_calcium.py` | `5-7_spine_calcium.png` · `5-7_glusyn.json` | ✅ |
 | **5-8** | `05_engines/8_registry` | `5-8_registry.py` | `5-8_engine_matrix.png` | ⬜ |
 | **5-9** | `05_engines/9_stp_verify` | `5-9_stp_verify.py` | `5-9_ppr.png` · `5-9_train.png` · `5-9_recovery.png` · `5-9_stp.json` | ✅ |
 | **5-10** | `05_engines/10_calibrate` | `5-10_calibrate.py` | `5-10_first_pulse_match.png` · `5-10_calib.json` · `config/engines_calib.yaml` | ✅ |

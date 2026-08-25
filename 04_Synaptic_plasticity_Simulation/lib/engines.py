@@ -90,12 +90,25 @@ ENGINES = {
         conventions={"all_to_all": 1},
         note="칼슘 상태가 없다 — 스파이크 짝만 본다. GB 계열의 대조군(5-6).",
     ),
-    # 5-7 GluSynapseCa 는 미결#4(외부 소스 라이선스) 결정 후 등록한다.
-    #   등록 시 post_nc=False (국소 전압에서 칼슘을 만들므로 sentinel 을 붙이면 이중계산),
-    #   ref="glusyn" 이 될 예정이다. 여기 주석으로 남겨 계약을 미리 못박는다.
+    # 5-7 (2026-08-25 등록). 미결#4 는 "우리가 직접 작성" 으로 해소 — 외부 소스를 쓰지 않으므로
+    # 라이선스 문제가 없다. ★Chindemi 2022 재현이 아니라 **개념의 우리 구현**이다.
+    "glu": dict(
+        mech="GluSynapseCa", label="GluSynapse (국소전압 칼슘)", own=True,
+        stp=False, ltp=True, prob=False,
+        post_nc=False,          # ★국소 전압에서 칼슘을 만든다 — sentinel 은 이중계산
+        gmax_via="param",
+        states=("g", "i", "c", "rho", "w", "ca_nmda", "ca_vdcc", "m_vdcc", "n_pre"),
+        stp_keys=(),
+        freeze={"gamma_p": 0.0, "gamma_d": 0.0},
+        freeze_rho0=(0.0, 0.5, 1.0), freeze_rho0_robust=(0.0, 1.0),
+        ref="glusyn",
+        note=("칼슘이 국소 전압 + 실제 방출에서 나온다. GAPS G3(위치 의존)·G5(방출 실패)를 "
+              "반증할 수 있는 유일한 엔진. 전압 클램프 프로브로는 검증 불가 — "
+              "synprobe.play_voltage() 로 bAP 파형을 재생해 잰다."),
+    ),
 }
 
-ORDER = ["det", "A", "B", "C", "stdp"]          # 그림·표의 고정 순서
+ORDER = ["det", "A", "B", "C", "stdp", "glu"]   # 그림·표의 고정 순서
 
 # lib/synprobe.py 가 쓰는 형태(mech 이름 -> 능력)로 투영한다. 단일 출처 유지.
 CAPS = {e["mech"]: dict(stp=e["stp"], ltp=e["ltp"], prob=e["prob"],

@@ -62,6 +62,7 @@ class SynProbe:
         self.v_hold = v_hold
 
         self._g_nS = 1.0                  # set_gmax() 로 정한다 (단위는 항상 nS)
+        self._played = None               # play_voltage() 기록
         self.pre_vs = self.post_vs = None
         self.pre_nc = self.post_nc = None
         self.rec = {}
@@ -139,6 +140,29 @@ class SynProbe:
         nc.delay = delay
         self.post_vs, self.post_nc = vs, nc
         self.keep += [v, vs, nc]
+        return self
+
+
+    # ---- 전압 파형 재생 (국소 전압 의존 엔진용) ----
+    def play_voltage(self, t_ms, v_mV):
+        """SEClamp 지령 전압에 파형을 흘려넣어 **국소 막전위를 정확히 제어**한다.
+
+        ★ 왜 필요한가. GluSynapseCa 처럼 칼슘을 국소 전압에서 만드는 엔진은 클램프 고정
+          전압에서는 검증할 수 없다 — bAP 가 없으니 VDCC 가 절대 열리지 않는다.
+          여기에 3-9 가 실측한 위치별 bAP 파형을 그대로 넣으면 **위치 의존성(G3)을 직접**
+          시험할 수 있다.
+
+        t_ms 는 등간격이어야 하고 그 간격으로 play 한다. clamp=True 로 만든 프로브에만 쓴다.
+        """
+        import numpy as _np
+        if self.clamp is None:
+            raise RuntimeError("play_voltage 는 clamp=True 프로브에만 쓴다")
+        t = _np.asarray(t_ms, dtype=float)
+        dtp = float(t[1] - t[0])
+        vec = h.Vector(_np.asarray(v_mV, dtype=float))
+        vec.play(self.clamp._ref_amp1, dtp)
+        self.keep.append(vec)
+        self._played = (t, _np.asarray(v_mV, dtype=float))
         return self
 
     # ---- 실행 ----

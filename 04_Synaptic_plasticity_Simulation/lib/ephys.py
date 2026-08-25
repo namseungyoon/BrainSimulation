@@ -207,3 +207,79 @@ def adaptation_index(cell, amp_nA):
         return None
     isi = np.diff(during)
     return float(isi[-1] / isi[0] - 1.0)
+
+def ou_response(cell, mean_nA, sigma_nA, tau_ms=3.0, dur_ms=5000.0, seed=1,
+                block_ih=False, v_init=-70.0, rec_dt=0.1, seg=None, dt=CELL_DT):
+    """Ornstein-Uhlenbeck 잡음 전류 주입 — '자연스러운' 배경 구동의 표준 대용물.
+
+    실제 뉴런은 수천 개의 시냅스가 만드는 요동 속에서 발화한다. 계단전류로는 그 통계를
+    재현할 수 없다. OU 는 평균·분산·상관시간을 따로 정할 수 있어 배경 구동의 표준 모형이다.
+
+        dx = (mean - x)/tau * dt + sigma * sqrt(2*dt/tau) * N(0,1)
+
+    sigma 는 **정상상태 표준편차**다(위 형태에서 그렇게 된다).
+    block_ih=True 면 모든 구획의 Ih(ghdbar_hd)를 0 으로 — 기전 귀속 대조군.
+    반환 (t, v, i_inj). 파형은 시뮬 dt 격자로 만들고 play 간격도 같은 dt 다.
+    """
+    import numpy as _np
+    site = seg if seg is not None else cell.soma[0](0.5)
+    if block_ih:
+        for s in cell.all:
+            if h.ismembrane("hd", sec=s):
+                for sg in s:
+                    sg.hd.ghdbar = 0.0
+
+    rng = _np.random.default_rng(seed)
+    n = int(dur_ms / dt) + 1
+    t = _np.arange(n) * dt
+    x = _np.empty(n)
+    x[0] = mean_nA
+    a = dt / tau_ms
+    b = sigma_nA * _np.sqrt(2.0 * dt / tau_ms)
+    noise = rng.standard_normal(n)
+    for i in range(1, n):
+        x[i] = x[i - 1] + (mean_nA - x[i - 1]) * a + b * noise[i]
+
+    ic = h.IClamp(site)
+    ic.delay = 0.0
+    ic.dur = dur_ms
+    vec = h.Vector(x)
+    vec.play(ic._ref_amp, dt)
+
+    vv = h.Vector().record(site._ref_v, rec_dt)
+    tv = h.Vector().record(h._ref_t, rec_dt)
+    nrnenv.finit(v_init=v_init, dt=dt)
+    h.continuerun(dur_ms)
+    keep = (ic, vec)                      # GC 방지
+    return _np.array(tv), _np.array(vv), x, keep
+
+
+def spike_train_psd(sp_times, dur_ms, bin_ms=2.0, nperseg_s=2.0):
+    """스파이크 시각열 -> 이진 열 -> Welch PSD. (f_hz, P) 반환.
+
+    발화가 특정 주파수에 몰리는지 보는 표준 방법. 평균 발화율을 빼서(DC 제거)
+    '리듬성' 만 남긴다. 스파이크가 너무 적으면(< 20) 의미가 없으므로 호출부가 확인한다.
+    """
+    import numpy as _np
+    from scipy import signal as _sig
+    nb = int(dur_ms / bin_ms)
+    x = _np.zeros(nb)
+    for ts in sp_times:
+        k = int(ts / bin_ms)
+        if 0 <= k < nb:
+            x[k] += 1.0
+    fs = 1000.0 / bin_ms                      # Hz
+    x = x - x.mean()
+    nps = min(int(nperseg_s * fs), nb)
+    f, P = _sig.welch(x, fs=fs, nperseg=nps, noverlap=nps // 2)
+    return f, P
+
+
+def band_ratio(f, P, lo, hi, ref=(1.0, 30.0)):
+    """[lo,hi] 대역 파워가 기준 대역 대비 차지하는 비. 0~1."""
+    import numpy as _np
+    m = (f >= lo) & (f <= hi)
+    r = (f >= ref[0]) & (f <= ref[1])
+    if not r.any() or P[r].sum() <= 0:
+        return float("nan")
+    return float(P[m].sum() / P[r].sum())
