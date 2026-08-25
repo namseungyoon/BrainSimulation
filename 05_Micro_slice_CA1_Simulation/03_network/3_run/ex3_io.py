@@ -29,7 +29,7 @@ DERIVED = os.path.join(ROOT, "data", "derived")
 CFG = os.path.join(ROOT, "config", "synapse_rules.json")
 FIBER_OFFSET = 10_000_000
 
-FRACS = [0.10, 0.25, 0.50, 0.75, 1.00]           # 모집 비율 (fiber volley 축)
+FRACS = [0.005, 0.01, 0.02, 0.04, 0.08]          # 모집 비율 (fiber volley) — 역치~상승부 (50~800섬유)
 CONDS = [("normal", False), ("block", True)]       # (이름, 억제차단?)
 SETTLE = float(sys.argv[sys.argv.index("--settle") + 1]) if "--settle" in sys.argv else 30.0  # 무음망→짧게
 STIM_T = SETTLE + 10.0
