@@ -10,7 +10,8 @@
 | Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
 | Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
 | Ex2 | Schaffer collateral(CA3→CA1) 단발 uEPSP | `04_experiments/Ex2_schaffer` | 05페이지 | ✅ **uEPSP 0.43mV·PPR 2.11·τ9.95ms (Sayer1990 추세일치)** |
-| Ex3 | SC I-O + 억제 차단 | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
+| Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | TBD | ⬜ |
+| Ex3b | SC 페어펄스/train — 억제 동역학 | `04_experiments/Ex3b_paired_train` | TBD | ⬜ |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | TBD | ⬜ |
 | Ex4c | CSD/kCSD 분석 + 정답 검증 | `04_experiments/Ex4c_csd` | TBD | ⬜ |
@@ -49,6 +50,15 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **측정**: 전극 E1·E2·E3 **fEPSP slope**(LSA/MoI) · 발화 세포% · **반응 구름 반경**(세기↑ 시 발화 뉴런이 locus에서 퍼지는 범위 = 출력).
 - **예상**(문헌): 정상 = 포화형 상승, 억제차단 = 더 가파르고 높음(탈억제). r=100%에서 발화 39%(Ex1 volley 앵커).
 - **예보 UI**: `03_network/3_run/ex_forecast.html`(Ex3 카드 I-O) · `ex3_recruit3d.html`(실제 커넥텀 3D 모집 구름, `build_ex3_recruit3d.py`). 실행 후 실측으로 대체.
+
+## Ex3b 상세 — SC 페어펄스/train, 억제 동역학 (설계 2026-08-25)
+**목표**: 단발 I-O(Ex3)에서 억제가 안 보인 이유(흥분 단일시냅스 ~3ms > 억제 이중시냅스 ~5–8ms, 강자극 포화)를 넘어, **연속 자극으로 억제의 시간 동역학**을 측정 = **E-I 회로 기능 검증**.
+- **근거**: 억제 회로는 존재(GABA 4.79M·억제뉴런 발화 확인). 단발은 억제가 첫 스파이크에 늦어 무효 → **연속이면 앞 자극의 GABA(~10–40ms 지속)가 다음을 억제** → 억제 드러남.
+- **① 페어펄스**: 2 볼리, ISI [20, 50, 100, 200]ms → **PPR = fEPSP2/fEPSP1** (또는 발화2/발화1). 단ISI에서 억제 우세(감소) vs 촉진. GABA off → 억제성 감소분 사라짐.
+- **② train**: theta(8Hz)·gamma(40Hz)·HFS(100Hz) 열 → **억제 누적·주파수의존 gating**. GABA off → **탈억제 epileptiform 다중 population spike**(Schwartzkroin & Prince 1980).
+- **측정**: PPR(ISI별) · train 응답 감쇠/증강 · 탈억제 bursting · fEPSP + 발화. 정상 vs GABA off.
+- **검증 기준**: **여기선 억제 차단 효과가 뚜렷해야 정상** (단발과 달리 시간중첩으로 억제가 작동). 안 나오면 억제 배선/강도 점검.
+- **의존/연결**: Ex3(단발) 후. Ex5/Ex6(theta)·Ex2(페어펄스 인프라)와 공유. 세기는 Ex3 역치값 사용.
 
 ## Ex4·Ex4b·Ex4c 상세 — fEPSP forward → CSD → 검증 (설계 2026-08-24)
 **사슬:** 세그먼트 막전류 → [forward] → 전극 fEPSP → [inverse=CSD] → sink/source 밴드.
