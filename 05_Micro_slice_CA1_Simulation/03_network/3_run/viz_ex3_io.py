@@ -34,8 +34,8 @@ def main():
     ax1.set_title("Firing I-O"); ax1.set_ylim(0, 105); ax1.legend(fontsize=9); ax1.grid(alpha=.2)
     ax2.set_xlabel("fiber volley (recruited %)"); ax2.set_ylabel("fEPSP E3(SR) |peak| [mV]")
     ax2.set_title("fEPSP I-O"); ax2.legend(fontsize=9); ax2.grid(alpha=.2)
-    fig.suptitle("Ex3 SC I-O (w=0, R-fraction) — normal vs inhibition block\n"
-                 "note: strong stim → firing saturates by 50% (limited dynamic range)", fontsize=11)
+    fig.suptitle("Ex3 SC I-O (w=0, low-intensity 0.5-8%) — normal vs inhibition block\n"
+                 "gradual rising phase; single-pulse block ~ no effect (feedforward inhibition too late)", fontsize=11)
     fig.tight_layout()
     outd = os.path.join(ROOT, "04_experiments", "Ex3_io_inhibition", "figures"); os.makedirs(outd, exist_ok=True)
     p = os.path.join(outd, "ex3_io_curve.png"); fig.savefig(p, dpi=140, bbox_inches="tight")

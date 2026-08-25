@@ -94,7 +94,7 @@
 | Ex1 | baseline 발화율·구동 검증 | `04_experiments/Ex1_baseline` | ✅ volley 39%·자발 0Hz |
 | Ex2 | Schaffer collateral(CA3→CA1) uEPSP | `04_experiments/Ex2_schaffer` | ✅ uEPSP 0.43mV·PPR 2.11 |
 | Ex2b | 연결 검증 매트릭스 (전 경로 2세포 uPSP/PPR/STP) | `04_experiments/Ex2b_connection_matrix` | 🔄 벤치(다중ISI+train+morph3d)·시각화 3종(A매트릭스·B3D쌍·C6패널) 예시 완성(TM예측) · 실측 132쌍 Ex3 메모리 풀리면 교체 |
-| Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | 🔄 포화판 완료(slope·tpeak·peak 표·3D UI, 창발 5/7 문헌일치) · 저세기 재실행중(WSL ca1sim, mpi4py→pc) |
+| Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | ✅ 완료 — gradual I-O(발화 1.2→34.6%·fEPSP 10배 단조), 단발 억제차단 무효=피드포워드 타이밍(정답) · 저세기/포화 표·곡선·3D UI |
 | Ex3b | SC 페어펄스/train — 억제 동역학 | `04_experiments/Ex3b_paired_train` | ⬜ 신설 — E-I 회로 기능검증 |
 | Ex4 | fEPSP 계산기(LSA/PSA) | `04_experiments/Ex4_fepsp` | 🔄 인프라 구축·검증완료(mea_forward+fepsp_record) |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | ⬜ |
