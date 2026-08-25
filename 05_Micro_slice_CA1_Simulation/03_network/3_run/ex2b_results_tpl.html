@@ -78,30 +78,31 @@ const D=__DATA__;
 const CCOL={E1:'--fac',E2:'--fac',I1:'--dep',I2:'--dep',I3:'--dep'};
 let curCls='all', sel=null;
 function cv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
-// 다중 ISI 배열 → 스칼라 정규화 (ISI 50 기준)
+// 다중 ISI 배열 → 스칼라 정규화 (실측=pprs_meas 우선, ISI 50 기준)
 D.pairs.forEach(p=>{ if(p.pprs){ const j=p.isis.indexOf(50)>=0?p.isis.indexOf(50):1;
-  p.ppr=p.pprs[j]; p.a1=p.a1s[0]; p.a2=p.a2s[j]; p.isi=p.isis[j]; } });
+  const meas=p.pprs_meas||p.pprs; p.ppr=meas[j]; p.a1=p.a1s[0]; p.a2=p.a2s[j]; p.isi=p.isis[j]; } });
 const bykey={}; D.pairs.forEach(p=>bykey[p.pre+'|'+p.post]=p);
-function stpSVG(p){
-  if(!p.pprs) return '';
-  const W=376,H=96,pl=34,pb=20;
-  const xs=p.isis, ys=p.pprs;
-  const ymax=Math.max(1.2,...ys)*1.1, ymin=Math.min(0.8,...ys)*0.9;
+function plot(W,H,pl,pb,xs,series,y1line,labels){
+  const allY=[].concat(...series.map(s=>s.y)).concat(y1line?[1]:[]);
+  let ymax=Math.max(...allY)*1.08, ymin=Math.min(...allY)*0.94; if(ymax-ymin<0.2){ymax+=0.1;ymin-=0.1;}
   const xmin=Math.min(...xs),xmax=Math.max(...xs);
-  const sx=x=>pl+(x-xmin)/(xmax-xmin||1)*(W-pl-8);
-  const sy=y=>H-pb-(y-ymin)/(ymax-ymin||1)*(H-pb-8);
-  const y1=sy(1);
-  let path='',dots='';
-  ys.forEach((y,i)=>{const X=sx(xs[i]),Y=sy(y);path+=(i?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);
-    dots+=`<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="3" fill="${y<1?cv('--dep'):cv('--fac')}"/>`;});
-  const xt=xs.map(x=>`<text x="${sx(x).toFixed(1)}" y="${H-6}" font-size="8.5" fill="${cv('--mut')}" text-anchor="middle">${x}</text>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}">`+
-    `<line x1="${pl}" y1="${y1.toFixed(1)}" x2="${W-8}" y2="${y1.toFixed(1)}" stroke="${cv('--mut')}" stroke-width="0.7" stroke-dasharray="3 3" opacity=".6"/>`+
-    `<text x="2" y="${(y1+3).toFixed(1)}" font-size="8" fill="${cv('--mut')}">1</text>`+
-    `<text x="2" y="10" font-size="9" fill="${cv('--ink')}">PPR</text>`+
-    `<path d="${path}" fill="none" stroke="${cv('--ink')}" stroke-width="1.4"/>`+dots+xt+
-    `<text x="${(W/2).toFixed(0)}" y="${H-6}" font-size="8.5" fill="${cv('--mut')}" text-anchor="end" dx="-30"></text></svg>`;
+  const sx=x=>pl+(x-xmin)/(xmax-xmin||1)*(W-pl-8), sy=y=>H-pb-(y-ymin)/(ymax-ymin||1)*(H-pb-10);
+  let out='';
+  if(y1line){const Y=sy(1);out+=`<line x1="${pl}" y1="${Y.toFixed(1)}" x2="${W-8}" y2="${Y.toFixed(1)}" stroke="${cv('--mut')}" stroke-width=".7" stroke-dasharray="3 3" opacity=".6"/><text x="2" y="${(Y+3).toFixed(1)}" font-size="8" fill="${cv('--mut')}">1</text>`;}
+  series.forEach(s=>{let d='';s.y.forEach((y,i)=>{const X=sx(xs[i]),Y=sy(y);d+=(i?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1);});
+    out+=`<path d="${d}" fill="none" stroke="${s.col}" stroke-width="${s.w||1.5}"${s.dash?' stroke-dasharray="4 3"':''}/>`;
+    if(s.dot) s.y.forEach((y,i)=>out+=`<circle cx="${sx(xs[i]).toFixed(1)}" cy="${sy(y).toFixed(1)}" r="2.6" fill="${s.col}"/>`);});
+  out+=xs.map(x=>`<text x="${sx(x).toFixed(1)}" y="${H-5}" font-size="8.5" fill="${cv('--mut')}" text-anchor="middle">${x}</text>`).join('');
+  (labels||[]).forEach((L,i)=>out+=`<text x="${W-8}" y="${12+i*12}" font-size="9" fill="${L.col}" text-anchor="end">${L.t}</text>`);
+  return `<svg viewBox="0 0 ${W} ${H}">`+out+`</svg>`;
 }
+function stpSVG(p){ if(!p.pprs) return '';
+  const s=[]; if(p.pprs_tm) s.push({y:p.pprs_tm,col:cv('--mut'),w:1.3,dash:true});
+  s.push({y:p.pprs_meas||p.pprs,col:cv('--ink'),w:1.6,dot:true});
+  return plot(376,104,34,20,p.isis,s,true,[{t:'실측',col:cv('--ink')},{t:'TM예측',col:cv('--mut')}]); }
+function trainSVG(p){ if(!p.train20) return '';
+  const xs=p.train20.map((_,i)=>i+1);
+  return plot(376,104,28,20,xs,[{y:p.train20,col:p.train20[p.train20.length-1]<1?cv('--dep'):cv('--fac'),w:1.6,dot:true}],true,[{t:'20Hz train',col:cv('--ink')}]); }
 
 // 축: pre(세로)=SC 제외, post(가로)
 const lorder=['SP','SO','SR','SLM'];
@@ -137,6 +138,7 @@ function build(){
         td.style.background=hexA(pprCol(p.ppr),alpha(p.a1));
         td.textContent=isNaN(p.ppr)?'-':p.ppr.toFixed(1);
         td._p=p; td.onclick=()=>select(p,td);
+        if(p.rep){td.style.boxShadow='inset 0 0 0 2.5px '+cv('--syn');td.title='⭐ 대표: '+(p.ref||'');}
         if(sel&&sel.pre===rm&&sel.post===cm)td.classList.add('sel');
       }
       tr.appendChild(td);
@@ -180,8 +182,10 @@ function select(p,td){
       `<div><div class="big">${Math.abs(p.a1).toFixed(2)}</div><div style="font-size:11px;color:var(--mut)">u${sign}1 (mV)</div></div>`+
       `<div><div class="big">${Math.abs(p.a2).toFixed(2)}</div><div style="font-size:11px;color:var(--mut)">u${sign}2 (mV)</div></div>`+
     `</div>`+
-    `<div style="font-size:11px;color:var(--mut);margin:8px 0 -2px">STP 곡선 (PPR vs ISI)</div>`+
+    (p.rep?`<div style="margin:6px 0 2px;font-size:11px;color:var(--syn);font-weight:600">⭐ 대표 연결 — ${p.ref||''}</div>`:'')+
+    `<div style="font-size:11px;color:var(--mut);margin:8px 0 -2px">STP 곡선 (PPR vs ISI) — 실측 vs TM예측</div>`+
     stpSVG(p)+
+    (p.train20?`<div style="font-size:11px;color:var(--mut);margin:6px 0 -2px">Train 응답 (20Hz, 진폭 vs 펄스#) — ${p.train20[p.train20.length-1]<1?'저역통과(억압)':'대역통과(촉진)'}</div>`+trainSVG(p):'')+
     `<div style="font-size:11px;color:var(--mut);margin:6px 0 -2px">대표 파형 (ISI ${p.rep_isi||50}ms)</div>`+
     traceSVG(p)+
     `<div class="kv"><span class="k">pre 발화</span><b>${p.presp.toFixed(1)} 회/자극</b>`+

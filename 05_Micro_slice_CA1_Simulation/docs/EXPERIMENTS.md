@@ -49,7 +49,19 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 - **판정**: 규칙 U/D/F 예측(촉진/억압) vs 실측 거동 일치. 예: PC→OLM 강촉진(E1), PVBC→PC 억압(I2), SC→PC 촉진(=Ex2 PPR 2.11).
 - **UI(완성 2026-08-25)**: `04_experiments/Ex2b_connection_matrix/ui/` — **원형 커넥토그램**(`connectome_circular.html`; 방향 화살표·클래스 색·연결수 굵기·노드 호버) + **연결 매트릭스**(`connectome_matrix.html`; pre세로×post가로 히트맵). 빌더 `03_network/3_run/ex2b_connectome_tpl.html`·`ex2b_matrix_tpl.html`, 데이터 `scratch/connectome_graph.json`.
 - **mechanism 일관성**: 흥분 `GBPlasticityStpProbSyn`(Ex2·망 동일), 억제 `ProbGABAAB_EMS`, gsyn 내부=출처·SC=Ex2보정(0.8nS). 출처 HippocampusHub/Kohus 2016.
-- **의존/일정**: 전체망 조립 1회 재사용 가능(2세포 소형·빠름). **Ex3 저세기 완료 후 벤치 실행 예정**. 다음 시각화 계획: 2세포 격리 형태(ex2_morph식) + 시간축 전류/시냅스 반응.
+
+### Ex2b 확장 — 벤치 프로토콜 + 시각화 3종 (2026-08-25)
+**벤치 프로토콜**(`ex2b_bench.py`, 2세포 격리, ex3_io 배치로직 재사용):
+- **다중 ISI STP**: 페어펄스 ISI [20/50/100/200]ms → PPR(ISI) 곡선. 2번째는 1번째와 동일 상대잠복시각에서 측정(음수 아티팩트 방지).
+- **⭐ Train/주파수 필터링**(신규): 20Hz 8펄스 train + 주파수별(5/10/20/40Hz) 정상상태 → 억압=저역통과·촉진=대역통과. TM의 상징 실험(Markram/Tsodyks).
+- **kinetics**: 잠복·상승(10-90%)·감쇠τ. **morph3d 모드**(`--morph3d`): 세그먼트 Vm(t)+시냅스 전류 3D 기록(대표경로).
+**시각화 3종**(예시=Tsodyks-Markram 이론 예측, 실측 교체):
+- **A 매트릭스** `ex2b_matrix[_예시].html`: pre×post PPR 히트맵, **대표조합 6개 강조**(SC→PC·PC→PC·PVBC→PC·PC→OLM·CCKBC→PC·Ivy→PC, 문헌참조). 클릭→**STP곡선(실측 vs TM점선)·Train응답·대표파형·kinetics·지표표**.
+- **B 3D 쌍** `ex2b_pair3d_예시.html`: pre+post 형태 **전압전파 시간재생 + 시냅스 전류 glow**, 재생커서와 **동기화 지표**(pre소마·전류·post소마), 속도조절(0.1~2×).
+- **C 분석 6패널** `figures/ex2b_analysis_예시.png`: PPR-vs-U·클래스별·표적특이STP·STP곡선·**TM-vs-실측 산점도**·**Train 주파수필터링**.
+- 빌더: `build_ex2b_results_ui.py`(실측 A) · `gen_ex2b_{example,analysis,morph3d_example}.py`(예시). 템플릿 `ex2b_{results,pair3d}_tpl.html`.
+- **누락 조사 결과**: TM 표준실험 중 **train/주파수필터링이 빠져 추가**. 남은 것: CV·실패율(시행별), 장ISI 회복(500/1000ms).
+- **의존/일정**: 전체망 조립 불요(2세포 소형). **Ex3 메모리 풀리면 132쌍 순차 실행**(한 쌍씩, OOM 방지) → 예시 자리에 교체. morph3d는 대표경로만.
 
 ## Ex3 상세 — SC I-O + 억제 차단 (설계 확정 2026-08-24)
 **목표**: basal 시냅스 전달의 **I-O 곡선**(실측 MEA 포맷)을 재현. **y=fEPSP slope, x=fiber volley(발화 섬유 진폭)**의 전달함수.

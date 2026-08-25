@@ -114,6 +114,34 @@ def build_pair(B, XYZ, Q, seed, radial, rules, ipre, ipost, insyn, irule, igsyn,
                 pg=pg, qg=qg, ns=ns, rl=rl, gs=gs, mech=mech)
 
 
+def run_train(P, freq, npulse, ntrial):
+    """freq(Hz)에서 npulse 트레인 N시행 평균 → 펄스별 상대진폭(1번째=1)."""
+    pre_soma, post_soma = P["pre_soma"], P["post_soma"]
+    isi = 1000.0 / freq
+    ts = [STIM + k * isi for k in range(npulse)]
+    tstop = ts[-1] + TAIL
+    ics = []
+    for t0 in ts:
+        ic = h.IClamp(pre_soma(0.5)); ic.delay = t0; ic.dur = 3.0; ic.amp = AMP; ics.append(ic)
+    tv = h.Vector(); tv.record(h._ref_t)
+    qv = h.Vector(); qv.record(post_soma(0.5)._ref_v)
+    acc = None
+    for tr in range(ntrial):
+        for (syn, nc, k) in P["syns"]:
+            syn.setRNG(P["qg"] + 1 + tr * 7919, 900000 + k + tr * 131, 7 if P["mech"] == "E" else 4)
+        h.dt = 0.025; h.finitialize(-70); h.continuerun(tstop)
+        v = np.array(qv); acc = v if acc is None else acc + v
+    v = acc / ntrial; t = np.array(tv); base = v[t < STIM].mean()
+    amps = []
+    for k, t0 in enumerate(ts):
+        loc = v[(t >= t0 - 1.5) & (t < t0)].mean() if k else base
+        w = (t >= t0 + 1.0) & (t < t0 + min(isi, 40))
+        d = v - loc
+        amps.append(float(d[w][np.argmax(np.abs(d[w]))]) if w.any() else 0.0)
+    a1 = amps[0] if abs(amps[0]) > 1e-4 else 1.0
+    return [round(a / a1, 3) for a in amps]
+
+
 def run_isi(P, isi, ntrial):
     """ISI 페어펄스 N시행 평균 post Vm + 대표 pre Vm 반환."""
     pre_soma, post_soma = P["pre_soma"], P["post_soma"]
@@ -211,8 +239,12 @@ def main():
             rep_t, rep_v, rep_pre = t, v, preV
         print(f"  ISI {isi:5.0f}ms: u{'EPSP' if P['mech']=='E' else 'IPSP'}1 {a1:.3f} · 2 {a2:.3f} · PPR {ppr:.2f}", flush=True)
     a1m = float(np.nanmean([abs(x) for x in a1s]))
+    ntr_tr = max(8, NTRIAL // 2)
+    train20 = run_train(P, 20.0, 8, ntr_tr)                # 20Hz 8펄스 트레인
+    freqs = [5.0, 10.0, 20.0, 40.0]
+    freqR = [round(run_train(P, f, 10, ntr_tr)[-1], 3) for f in freqs]   # 주파수별 정상상태
     print(f"[결과] pre 발화 {presp:.1f}회 · u1 {a1m:.3f}mV · PPR@50 {pprs[isis.index(50.0)] if 50.0 in isis else float('nan'):.2f} · "
-          f"잠복 {lat:.2f}ms · 상승 {rise:.2f}ms · τ {tau:.1f}ms", flush=True)
+          f"잠복 {lat:.2f}ms · τ {tau:.1f}ms · train20 정상상태 {train20[-1]:.2f} · freqR {freqR}", flush=True)
     if SAVE:
         outd = os.path.join(ROOT, "04_experiments", "Ex2b_connection_matrix", "traces"); os.makedirs(outd, exist_ok=True)
         lo = STIM - 8; hi = STIM + REP_ISI + TAIL
@@ -222,6 +254,7 @@ def main():
                  ns=P["ns"], gsyn=P["gs"], base=base0, presp=presp,
                  U=(P["rl"]["U"] if P["rl"] else 0), D=(P["rl"]["D"] if P["rl"] else 0), F=(P["rl"]["F"] if P["rl"] else 0),
                  isis=np.array(isis), a1s=np.array(a1s), a2s=np.array(a2s), pprs=np.array(pprs),
+                 train20=np.array(train20), freqs=np.array(freqs), freqR=np.array(freqR),
                  lat=lat, rise=rise, tau=tau, stim=STIM, rep_isi=REP_ISI,
                  t=rep_t[m].astype(np.float32), v=rep_v[m].astype(np.float32), preV=rep_pre[m].astype(np.float32))
         print(f"[저장] traces/pair_{PRE}__{POST}.npz", flush=True)

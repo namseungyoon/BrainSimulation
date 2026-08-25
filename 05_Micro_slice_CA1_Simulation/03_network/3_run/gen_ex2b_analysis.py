@@ -30,7 +30,7 @@ def main():
     isis = d.get("isis", [20, 50, 100, 200])
     j50 = isis.index(50) if 50 in isis else 1
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    fig, ax = plt.subplots(2, 2, figsize=(12, 9)); ax = ax.ravel()
+    fig, ax = plt.subplots(2, 3, figsize=(17, 9)); ax = ax.ravel()
     ttl = "Ex2b connection bench" + (" — EXAMPLE (Tsodyks-Markram prediction)" if example else " — measured")
     fig.suptitle(ttl, fontsize=13, weight="bold")
 
@@ -71,6 +71,26 @@ def main():
         if p: ax[3].plot(isis, p["pprs"], "o-", color=CCOL[p["cls"]], label=f"{k} ({p['cls']})", lw=1.6, ms=5)
     ax[3].axhline(1, color="#888", ls="--", lw=.8); ax[3].set_xlabel("ISI (ms)"); ax[3].set_ylabel("PPR")
     ax[3].set_title("(4) STP curves (PPR vs ISI) — key pathways", fontsize=11); ax[3].legend(fontsize=7.5)
+
+    # ⑤ TM 예측 vs 실측 (PPR@50)
+    have_meas = any("pprs_meas" in p for p in P)
+    if have_meas:
+        for c in CCOL:
+            xs = [p["pprs_tm"][j50] for p in P if p["cls"] == c and "pprs_meas" in p]
+            ys = [p["pprs_meas"][j50] for p in P if p["cls"] == c and "pprs_meas" in p]
+            if xs: ax[4].scatter(xs, ys, s=26, c=CCOL[c], label=c, alpha=.8, edgecolor="white", linewidth=.5)
+        lim = [min(0.2, *[p["pprs_tm"][j50] for p in P]) * .9, max(1.2, *[p["pprs_tm"][j50] for p in P]) * 1.05]
+        ax[4].plot(lim, lim, "k--", lw=.8, label="y=x (agree)"); ax[4].set_xlim(lim); ax[4].set_ylim(lim)
+    ax[4].set_xlabel("TM prediction (PPR@50)"); ax[4].set_ylabel("measured (PPR@50)")
+    ax[4].set_title("(5) TM theory vs measured", fontsize=11); ax[4].legend(fontsize=7.5, ncol=2)
+
+    # ⑥ Train 주파수 필터링 (대표 경로, 20Hz)
+    for k in key:
+        p = bk.get(k)
+        if p and "train20" in p:
+            ax[5].plot(range(1, len(p["train20"]) + 1), p["train20"], "o-", color=CCOL[p["cls"]], label=f"{k.split('->')[0]}→{k.split('->')[1].replace('SP_','').replace('SO_','')} ({p['cls']})", lw=1.6, ms=4)
+    ax[5].axhline(1, color="#888", ls="--", lw=.8); ax[5].set_xlabel("pulse # (20Hz train)"); ax[5].set_ylabel("rel. amplitude")
+    ax[5].set_title("(6) Train / freq filtering: LP(depress) vs BP(facil)", fontsize=11); ax[5].legend(fontsize=7)
 
     plt.tight_layout(rect=[0, 0, 1, 0.97])
     plt.savefig(OUT, dpi=130); print(f"[analysis] -> {OUT}")

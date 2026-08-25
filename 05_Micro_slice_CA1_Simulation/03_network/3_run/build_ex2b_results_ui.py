@@ -1,50 +1,46 @@
 # -*- coding: utf-8 -*-
-"""Ex2b 결과 UI 빌더 — traces/pair_*.npz(2세포 벤치 측정) → 하나의 인터랙티브 UI.
-매트릭스(색=PPR 억압/촉진, 진하기=|uPSP|) + 셀 클릭 시 파형·지표. 미측정 쌍은 빈칸.
-실행: python build_ex2b_results_ui.py   (배치 도는 중에 반복 실행하면 누적 갱신)
+"""Ex2b 결과 UI 빌더 (실측) — traces/pair_*.npz(다중ISI STP+train 벤치) → 하나의 UI.
+예시와 동일 포맷: STP곡선(실측 vs TM점선)·Train응답·kinetics·대표조합 강조. 미측정=빈칸.
+실행: python build_ex2b_results_ui.py   (배치 도는 중 반복 실행 → 누적 갱신)
 """
 import os, io, json, glob
 import numpy as np
+import gen_ex2b_example as EX          # tm_ppr, REP 재사용
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 TRD = os.path.join(ROOT, "04_experiments", "Ex2b_connection_matrix", "traces")
-NPTS = 360
-
-
-def ds(t, *arrs, lo, hi):
-    m = (t >= lo) & (t <= hi)
-    tt = t[m]
-    if len(tt) <= NPTS:
-        idx = np.arange(len(tt))
-    else:
-        idx = np.linspace(0, len(tt) - 1, NPTS).astype(int)
-    return [np.round(tt[idx], 2).tolist()] + [np.round(a[m][idx], 3).tolist() for a in arrs]
 
 
 def main():
-    nodes = json.load(io.open(os.path.join(ROOT, "scratch", "connectome_graph.json"), encoding="utf-8"))["nodes"]
-    nodes = [n for n in nodes if n["id"] != "SC"]
+    nodes = [n for n in json.load(io.open(os.path.join(ROOT, "scratch", "connectome_graph.json"), encoding="utf-8"))["nodes"] if n["id"] != "SC"]
     pairs = []
     for f in sorted(glob.glob(os.path.join(TRD, "pair_*.npz"))):
         d = np.load(f, allow_pickle=True)
-        stim = float(d["stim"]); isi = float(d["isi"])
-        t, v, pv = ds(np.asarray(d["t"], float), np.asarray(d["v"], float), np.asarray(d["preV"], float),
-                      lo=stim - 8, hi=stim + isi + 70)
+        isis = [float(x) for x in d["isis"]]
+        U, D, F = float(d["U"]), float(d["D"]), float(d["F"])
+        pprs = [round(float(x), 3) for x in d["pprs"]]
+        pprs_tm = [round(EX.tm_ppr(U, D, F, dt), 3) for dt in isis]     # 이론 오버레이
+        key = str(d["pre"]) + "->" + str(d["post"])
         pairs.append({
             "pre": str(d["pre"]), "post": str(d["post"]), "cls": str(d["cls"]), "mech": str(d["mech"]),
-            "ns": int(d["ns"]), "gsyn": round(float(d["gsyn"]), 3), "base": float(d["base"]),
-            "a1": float(d["a1"]), "a2": float(d["a2"]), "ppr": float(d["ppr"]), "presp": float(d["presp"]),
-            "stim": stim, "isi": isi, "U": float(d["U"]), "D": float(d["D"]), "F": float(d["F"]),
-            "t": t, "v": v, "preV": pv,
+            "ns": int(d["ns"]), "gsyn": round(float(d["gsyn"]), 3), "base": round(float(d["base"]), 2), "presp": round(float(d["presp"]), 1),
+            "U": U, "D": D, "F": F, "lat": round(float(d["lat"]), 2), "rise": round(float(d["rise"]), 2), "tau": round(float(d["tau"]), 1),
+            "stim": float(d["stim"]), "rep_isi": float(d["rep_isi"]), "isis": isis,
+            "a1s": [round(float(x), 3) for x in d["a1s"]], "a2s": [round(float(x), 3) for x in d["a2s"]],
+            "pprs": pprs, "pprs_meas": pprs, "pprs_tm": pprs_tm,
+            "train20": [round(float(x), 3) for x in d["train20"]] if "train20" in d.files else None,
+            "freqs": [float(x) for x in d["freqs"]] if "freqs" in d.files else None,
+            "freqR": [round(float(x), 3) for x in d["freqR"]] if "freqR" in d.files else None,
+            "rep": key in EX.REP, "ref": EX.REP.get(key, ""),
+            "t": [round(float(x), 2) for x in d["t"]], "v": [round(float(x), 3) for x in d["v"]], "preV": [round(float(x), 2) for x in d["preV"]],
         })
-    out = {"nodes": nodes, "pairs": pairs}
+    out = {"nodes": nodes, "pairs": pairs, "example": False}
     data = json.dumps(out, separators=(",", ":"))
     tpl = io.open(os.path.join(HERE, "ex2b_results_tpl.html"), encoding="utf-8").read()
     outd = os.path.join(ROOT, "04_experiments", "Ex2b_connection_matrix", "ui"); os.makedirs(outd, exist_ok=True)
-    outp = os.path.join(outd, "ex2b_results.html")
-    io.open(outp, "w", encoding="utf-8").write(tpl.replace("__DATA__", data))
-    print(f"[ex2b-results] {outp} ({len(data)//1024}KB · {len(pairs)}/132 측정 완료)", flush=True)
+    io.open(os.path.join(outd, "ex2b_matrix.html"), "w", encoding="utf-8").write(tpl.replace("__DATA__", data))
+    print(f"[ex2b-results] ex2b_matrix.html · {len(pairs)}/132 측정 완료", flush=True)
 
 
 if __name__ == "__main__":
