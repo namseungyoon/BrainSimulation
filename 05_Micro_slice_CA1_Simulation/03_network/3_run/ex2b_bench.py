@@ -23,7 +23,9 @@ def arg(f, d):
 
 
 PRE = arg("--pre", "SP_PC"); POST = arg("--post", "SP_PC")
-ISIS = [float(x) for x in arg("--isis", "20,50,100,200").split(",")]
+ISIS = [float(x) for x in arg("--isis", "20,50,100,200").split(",")]   # A: 페어펄스 4 ISI (=50/20/10/5Hz)
+TRAIN_FREQS = [float(x) for x in arg("--tfreqs", "5,10,20,40").split(",")]  # B: train 주파수스윕 4개
+TRAIN_NP = int(arg("--tnp", 8))                                        # train 펄스 수
 NTRIAL = int(arg("--ntrial", 20)); AMP = arg("--amp", 1.2)
 HOLD_V = arg("--holdv", -50.0)                    # 억제(IPSC) 측정용 전압클램프 유지전위(mV)
 
@@ -33,7 +35,7 @@ def post_record(P, post_soma):
     반환: (기록ref, SEClamp객체 or None, 단위). E_GABA≈rest라 IPSP는 rest에서 안 보여 VC 필요."""
     if P["mech"] == "I":
         se = h.SEClamp(post_soma(0.5)); se.rs = 0.001; se.dur1 = 1e9; se.amp1 = HOLD_V
-        return se._ref_i, se, "nA"                # IPSC (전류)
+        return se._ref_i, se, "nA"                # IPSC (전류) · rs 낮게(clean clamp)
     return post_soma(0.5)._ref_v, None, "mV"      # EPSP (전압)
 SAVE = "--save" in sys.argv
 MORPH3D = "--morph3d" in sys.argv                # 세그먼트별 Vm + 시냅스 전류 3D 기록(대표 경로)
@@ -261,11 +263,12 @@ def main():
         print(f"  ISI {isi:5.0f}ms: u{'EPSP' if P['mech']=='E' else 'IPSP'}1 {a1:.3f} · 2 {a2:.3f} · PPR {ppr:.2f}", flush=True)
     a1m = float(np.nanmean([abs(x) for x in a1s]))
     ntr_tr = max(8, NTRIAL // 2)
-    train20 = run_train(P, 20.0, 8, ntr_tr)                # 20Hz 8펄스 트레인
-    freqs = [5.0, 10.0, 20.0, 40.0]
-    freqR = [round(run_train(P, f, 10, ntr_tr)[-1], 3) for f in freqs]   # 주파수별 정상상태
-    print(f"[결과] pre 발화 {presp:.1f}회 · u1 {a1m:.3f}mV · PPR@50 {pprs[isis.index(50.0)] if 50.0 in isis else float('nan'):.2f} · "
-          f"잠복 {lat:.2f}ms · τ {tau:.1f}ms · train20 정상상태 {train20[-1]:.2f} · freqR {freqR}", flush=True)
+    trains = {f: run_train(P, f, TRAIN_NP, ntr_tr) for f in TRAIN_FREQS}    # B: 4-freq train 스윕(각 8펄스)
+    freqs = list(TRAIN_FREQS); freqR = [round(trains[f][-1], 3) for f in TRAIN_FREQS]   # 주파수별 정상상태
+    train20 = trains.get(20.0, trains[TRAIN_FREQS[0]])                      # UI 대표 train
+    trains_mat = [trains[f] for f in TRAIN_FREQS]
+    print(f"[결과] pre 발화 {presp:.1f}회 · u1 {a1m:.3f} · PPR@50 {pprs[isis.index(50.0)] if 50.0 in isis else float('nan'):.2f} · "
+          f"잠복 {lat:.2f}ms · τ {tau:.1f}ms · freqR(5/10/20/40Hz) {freqR}", flush=True)
     if SAVE:
         outd = os.path.join(ROOT, "04_experiments", "Ex2b_connection_matrix", "traces"); os.makedirs(outd, exist_ok=True)
         lo = STIM - 8; hi = STIM + REP_ISI + TAIL
@@ -275,7 +278,7 @@ def main():
                  ns=P["ns"], gsyn=P["gs"], base=base0, presp=presp,
                  U=(P["rl"]["U"] if P["rl"] else 0), D=(P["rl"]["D"] if P["rl"] else 0), F=(P["rl"]["F"] if P["rl"] else 0),
                  isis=np.array(isis), a1s=np.array(a1s), a2s=np.array(a2s), pprs=np.array(pprs),
-                 train20=np.array(train20), freqs=np.array(freqs), freqR=np.array(freqR),
+                 train20=np.array(train20), freqs=np.array(freqs), freqR=np.array(freqR), trains=np.array(trains_mat),
                  lat=lat, rise=rise, tau=tau, stim=STIM, rep_isi=REP_ISI,
                  t=rep_t[m].astype(np.float32), v=rep_v[m].astype(np.float32), preV=rep_pre[m].astype(np.float32))
         print(f"[저장] traces/pair_{PRE}__{POST}.npz", flush=True)
