@@ -30,13 +30,16 @@ NTRIAL = int(arg("--ntrial", 20)); AMP = arg("--amp", 1.2)
 HOLD_V = arg("--holdv", -50.0)                    # 억제(IPSC) 측정용 전압클램프 유지전위(mV)
 
 
-def post_record(P, post_soma):
-    """후세포 응답 기록 설정. 억제=전압클램프(-50mV) IPSC 전류, 흥분=전류클램프 Vm.
-    반환: (기록ref, SEClamp객체 or None, 단위). E_GABA≈rest라 IPSP는 rest에서 안 보여 VC 필요."""
-    if P["mech"] == "I":
-        se = h.SEClamp(post_soma(0.5)); se.rs = 0.001; se.dur1 = 1e9; se.amp1 = HOLD_V
-        return se._ref_i, se, "nA"                # IPSC (전류) · rs 낮게(clean clamp)
-    return post_soma(0.5)._ref_v, None, "mV"      # EPSP (전압)
+def g_recorders(P):
+    """각 시냅스 컨덕턴스 g(t) 기록 벡터 (E: AMPA+NMDA, I: GABA_A). 후세포 전압/전류 무관 → 공간클램프·구동력·클램프 artifact 우회. 시냅스 모델(U/D/F/gsyn)의 직접 출력."""
+    gv = []
+    for (syn, nc, k) in P["syns"]:
+        v = h.Vector(); v.record(syn._ref_g); gv.append(v)
+    return gv
+
+
+def g_sum(gv, nt):
+    return np.sum([np.array(v)[:nt] for v in gv], axis=0) * 1000.0 if gv else np.zeros(nt)  # µS→nS
 SAVE = "--save" in sys.argv
 MORPH3D = "--morph3d" in sys.argv                # 세그먼트별 Vm + 시냅스 전류 3D 기록(대표 경로)
 STIM = 100.0; TAIL = 80.0
@@ -136,15 +139,14 @@ def run_train(P, freq, npulse, ntrial):
     ics = []
     for t0 in ts:
         ic = h.IClamp(pre_soma(0.5)); ic.delay = t0; ic.dur = 3.0; ic.amp = AMP; ics.append(ic)
-    qrec, _se, _unit = post_record(P, post_soma)  # 억제=VC IPSC, 흥분=Vm
     tv = h.Vector(); tv.record(h._ref_t)
-    qv = h.Vector(); qv.record(qrec)
+    gv = g_recorders(P)                            # 시냅스 컨덕턴스 g(t)
     acc = None
     for tr in range(ntrial):
         for (syn, nc, k) in P["syns"]:
             syn.setRNG(P["qg"] + 1 + tr * 7919, 900000 + k + tr * 131, 7 if P["mech"] == "E" else 4)
         h.dt = 0.025; h.finitialize(-70); h.continuerun(tstop)
-        v = np.array(qv); acc = v if acc is None else acc + v
+        g = g_sum(gv, int(tv.size())); acc = g if acc is None else acc + g
     v = acc / ntrial; t = np.array(tv); base = v[t < STIM].mean()
     amps = []; s = None
     for k, t0 in enumerate(ts):
@@ -167,18 +169,17 @@ def run_isi(P, isi, ntrial):
     tstop = STIM + isi + TAIL
     ic1 = h.IClamp(pre_soma(0.5)); ic1.delay = STIM; ic1.dur = 3.0; ic1.amp = AMP
     ic2 = h.IClamp(pre_soma(0.5)); ic2.delay = STIM + isi; ic2.dur = 3.0; ic2.amp = AMP
-    qrec, _se, _unit = post_record(P, post_soma)  # 억제=VC IPSC, 흥분=Vm
     tv = h.Vector(); tv.record(h._ref_t)
     pv = h.Vector(); pv.record(pre_soma(0.5)._ref_v)
-    qv = h.Vector(); qv.record(qrec)
+    gv = g_recorders(P)                            # 시냅스 컨덕턴스 g(t) 기록
     acc = None; nsp = 0; pre_last = None
     for tr in range(ntrial):
         for (syn, nc, k) in P["syns"]:
             syn.setRNG(P["qg"] + 1 + tr * 7919, 900000 + k + tr * 131, 7 if P["mech"] == "E" else 4)
         tsp = h.Vector(); ncsp = h.NetCon(pre_soma(0.5)._ref_v, None, sec=pre_soma); ncsp.threshold = -10; ncsp.record(tsp)
         h.dt = 0.025; h.finitialize(-70); h.continuerun(tstop)
-        nsp += int(tsp.size()); v = np.array(qv)
-        acc = v if acc is None else acc + v; pre_last = np.array(pv)
+        nsp += int(tsp.size()); g = g_sum(gv, int(tv.size()))
+        acc = g if acc is None else acc + g; pre_last = np.array(pv)
     return np.array(tv), acc / ntrial, pre_last, nsp / ntrial
 
 
