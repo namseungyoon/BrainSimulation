@@ -12,6 +12,13 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 TRD = os.path.join(ROOT, "04_experiments", "Ex2b_connection_matrix", "traces")
 
 
+def ds(a, n=400):                                  # 트레이스 다운샘플(HTML 경량화)
+    a = np.asarray(a, float)
+    if len(a) <= n:
+        return a
+    return a[np.linspace(0, len(a) - 1, n).astype(int)]
+
+
 def main():
     nodes = [n for n in json.load(io.open(os.path.join(ROOT, "scratch", "connectome_graph.json"), encoding="utf-8"))["nodes"] if n["id"] != "SC"]
     pairs = []
@@ -33,7 +40,10 @@ def main():
             "freqs": [float(x) for x in d["freqs"]] if "freqs" in d.files else None,
             "freqR": [round(float(x), 3) for x in d["freqR"]] if "freqR" in d.files else None,
             "rep": key in EX.REP, "ref": EX.REP.get(key, ""),
-            "t": [round(float(x), 2) for x in d["t"]], "v": [round(float(x), 3) for x in d["v"]], "preV": [round(float(x), 2) for x in d["preV"]],
+            "stim_amp": float(d["stim_amp"]) if "stim_amp" in d.files else 1.2, "stim_dur": float(d["stim_dur"]) if "stim_dur" in d.files else 3.0,
+            "t": [round(float(x), 2) for x in ds(d["t"])], "v": [round(float(x), 4) for x in ds(d["v"])],
+            "postV": [round(float(x), 3) for x in ds(d["postV"])] if "postV" in d.files else None,
+            "preV": [round(float(x), 2) for x in ds(d["preV"])],
         })
     out = {"nodes": nodes, "pairs": pairs, "example": False}
     data = json.dumps(out, separators=(",", ":"))

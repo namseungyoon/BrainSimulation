@@ -171,16 +171,17 @@ def run_isi(P, isi, ntrial):
     ic2 = h.IClamp(pre_soma(0.5)); ic2.delay = STIM + isi; ic2.dur = 3.0; ic2.amp = AMP
     tv = h.Vector(); tv.record(h._ref_t)
     pv = h.Vector(); pv.record(pre_soma(0.5)._ref_v)
+    qv = h.Vector(); qv.record(post_soma(0.5)._ref_v)   # post Vm 병행 기록(매끈 PSP)
     gv = g_recorders(P)                            # 시냅스 컨덕턴스 g(t) 기록
-    acc = None; nsp = 0; pre_last = None
+    acc = None; accq = None; nsp = 0; pre_last = None
     for tr in range(ntrial):
         for (syn, nc, k) in P["syns"]:
             syn.setRNG(P["qg"] + 1 + tr * 7919, 900000 + k + tr * 131, 7 if P["mech"] == "E" else 4)
         tsp = h.Vector(); ncsp = h.NetCon(pre_soma(0.5)._ref_v, None, sec=pre_soma); ncsp.threshold = -10; ncsp.record(tsp)
         h.dt = 0.025; h.finitialize(-70); h.continuerun(tstop)
-        nsp += int(tsp.size()); g = g_sum(gv, int(tv.size()))
-        acc = g if acc is None else acc + g; pre_last = np.array(pv)
-    return np.array(tv), acc / ntrial, pre_last, nsp / ntrial
+        nt = int(tv.size()); nsp += int(tsp.size()); g = g_sum(gv, nt); q = np.array(qv)[:nt]
+        acc = g if acc is None else acc + g; accq = q if accq is None else accq + q; pre_last = np.array(pv)
+    return np.array(tv), acc / ntrial, accq / ntrial, pre_last, nsp / ntrial
 
 
 WFIX = min(min(ISIS) - 2.0, 30.0)                 # 응답 측정창(모든 ISI 공통 → a1 ISI 독립·PPR 일관)
@@ -250,17 +251,17 @@ def main():
         print(f"[morph3d] {M['vq'].shape[0]}+{M['vp'].shape[0]}세그 · {M['t'].size}프레임 · 시냅스 {M['si'].shape[0]} -> traces/morph3d_{PRE}__{POST}.npz", flush=True)
         return
     isis, a1s, a2s, pprs = [], [], [], []
-    rep_t = rep_v = rep_pre = None; lat = rise = tau = 0.0; presp = 0.0; base0 = -70.0
+    rep_t = rep_v = rep_pre = rep_post = None; lat = rise = tau = 0.0; presp = 0.0; base0 = -70.0
     for isi in ISIS:
-        t, v, preV, sp = run_isi(P, isi, NTRIAL)
+        t, v, postV, preV, sp = run_isi(P, isi, NTRIAL)   # v=g(컨덕턴스, 지표용), postV=post Vm(매끈 PSP)
         base = v[t < STIM].mean()
         a1, a2 = amp_pp(t, v, base, isi)
         ppr = (a2 / a1) if abs(a1) > 1e-4 else float("nan")
         isis.append(isi); a1s.append(a1); a2s.append(a2); pprs.append(ppr)
-        if isi == max(ISIS):                            # kinetics = 가장 잘 분리된 1번째 응답
+        if isi == max(ISIS):                            # kinetics = 가장 잘 분리된 1번째 응답(g 기준)
             lat, rise, tau = kinetics(t, v, base); presp = sp; base0 = base
         if abs(isi - REP_ISI) < 1e-6 or (rep_t is None and isi == ISIS[0]):
-            rep_t, rep_v, rep_pre = t, v, preV
+            rep_t, rep_v, rep_pre, rep_post = t, v, preV, postV
         print(f"  ISI {isi:5.0f}ms: u{'EPSP' if P['mech']=='E' else 'IPSP'}1 {a1:.3f} · 2 {a2:.3f} · PPR {ppr:.2f}", flush=True)
     a1m = float(np.nanmean([abs(x) for x in a1s]))
     ntr_tr = max(8, NTRIAL // 2)
@@ -281,7 +282,9 @@ def main():
                  isis=np.array(isis), a1s=np.array(a1s), a2s=np.array(a2s), pprs=np.array(pprs),
                  train20=np.array(train20), freqs=np.array(freqs), freqR=np.array(freqR), trains=np.array(trains_mat),
                  lat=lat, rise=rise, tau=tau, stim=STIM, rep_isi=REP_ISI,
-                 t=rep_t[m].astype(np.float32), v=rep_v[m].astype(np.float32), preV=rep_pre[m].astype(np.float32))
+                 stim_amp=AMP, stim_dur=3.0,               # 자극파형(IClamp 사각펄스): STIM·STIM+isi에 dur동안 amp
+                 t=rep_t[m].astype(np.float32), v=rep_v[m].astype(np.float32),
+                 postV=rep_post[m].astype(np.float32), preV=rep_pre[m].astype(np.float32))
         print(f"[저장] traces/pair_{PRE}__{POST}.npz", flush=True)
 
 
