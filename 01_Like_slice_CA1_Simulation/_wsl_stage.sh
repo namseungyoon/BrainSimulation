@@ -16,7 +16,7 @@
 # 실패 감지: _wsl_net_fepsp.sh 가 남기는 사이드카 figures/.last_rc 를 읽는다.
 #   (로그의 EXIT= 줄은 NUL 바이트가 섞이면 grep이 흔들려 2순위)
 set -u
-LS=/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/like_slice_CA1
+LS=/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/01_Like_slice_CA1_Simulation
 FIGS=$LS/13_net_fepsp/figures
 LOG=$FIGS/stage.log
 RCF=$FIGS/.last_rc
@@ -35,29 +35,30 @@ NRANK="${NRANK:-16}"
 
 # ── 확정 프로토콜 (13_net_fepsp/README.md §1) ────────────────────────────────
 NBASE=5; TBS=15; NPOST=10                  # 6,260 ms = 200*(5+15+10+1)+60
-IOTEST="${IO_TEST:-0.4}"                   # ★1단계에서 확정한 값으로 바꿔서 2·3단계를 돌릴 것
+IOTEST="${IO_TEST:-0.02}"                  # ★1단계 확정값 2.0%(=섬유 4/200). 침습률 0 최대 세기. IO_TEST=로 덮어쓰기 가능
 IOLEVELS="${IO_LEVELS:-0.05,0.15,0.30,0.50,0.80}"
 STIMT=100                                  # finitialize 과도응답이 가라앉을 시간을 준다
 CA_STP="${CA_STP:-1}"                      # 모델 B·C만 사용. 0 = 칼슘을 Graupner 원본으로 고정
-COMMON="--counts full --sc_g_pc 1.5 --rec_dt 0.4 --chunk 25 --ckpt_every 4 --ca_stp $CA_STP"
+COMMON="--counts ${COUNTS:-full} --sc_g_pc 1.5 --rec_dt 0.4 --chunk 25 --ckpt_every 4 --ca_stp $CA_STP"
+CELLCUR="${SAVE_CELLCUR:+--save_cellcur}"   # SAVE_CELLCUR=1 → 세포별 막전류 축약 저장(3D 시각화용, io 전용)
 
 # ★TAG 덮어쓰기 방지 — 같은 단계를 다른 세기 목록으로 다시 돌릴 때 반드시 지정할 것.
 #   지정하지 않으면 기본 태그(S1_io_gb 등)가 재사용되어 **기존 결과 npz를 덮어쓴다.**
 #   예: IO_LEVELS=0.01,0.02,0.035 TAG=S1w_io_gb bash _wsl_stage.sh 1 gb
 case "$STAGE" in
   1) NAME="${TAG:-S1_io_${MODEL}}"
-     ARGS="$COMMON --protocol io --syn_model $MODEL --io_levels $IOLEVELS --stim_t $STIMT --tstop 140 --tag $NAME" ;;
+     ARGS="$COMMON --protocol io --syn_model $MODEL --io_levels $IOLEVELS --stim_t $STIMT --tstop 140 $CELLCUR --tag $NAME" ;;
   2) NAME="S2_exp_${MODEL}"
-     ARGS="$COMMON --protocol ltp --syn_model $MODEL --n_base $NBASE --tbs_bursts $TBS --n_post $NPOST --io_test $IOTEST --tag S2_exp_${MODEL}" ;;
+     ARGS="$COMMON --protocol ltp --syn_model $MODEL --rec_elec 18 --n_base $NBASE --tbs_bursts $TBS --n_post $NPOST --io_test $IOTEST --tag S2_exp_${MODEL}" ;;
   3) NAME="S3_ctrl_${MODEL}"
-     ARGS="$COMMON --protocol ltp --syn_model $MODEL --freeze_rho --n_base $NBASE --tbs_bursts $TBS --n_post $NPOST --io_test $IOTEST --tag S3_ctrl_${MODEL}" ;;
+     ARGS="$COMMON --protocol ltp --syn_model $MODEL --freeze_rho --rec_elec 18 --n_base $NBASE --tbs_bursts $TBS --n_post $NPOST --io_test $IOTEST --tag S3_ctrl_${MODEL}" ;;
   4) RHO="${RHO_INIT:-$FIGS/_mea_S2_exp_${MODEL}_rho60min.npz}"
      if [ ! -f "$RHO" ]; then echo "★없음: $RHO — mea_postproc.py 로 60분 ρ를 먼저 만드세요"; exit 2; fi
      NAME="S4_recheck60_${MODEL}"
      # 테스트 펄스만(TBS 없음). 펄스 K회 → t_end = 100 + 200*(K-1) + 60 ms
      #   K=1 → 160ms = 3.7h (계획 예산)   K=3 → 560ms = 9.9h (흔들림까지 보고 싶을 때)
      K="${N_RECHECK:-1}"
-     ARGS="$COMMON --protocol ltp --syn_model $MODEL --freeze_rho --rho_init $RHO --n_base $K --tbs_bursts 0 --n_post 0 --t_settle $STIMT --io_test $IOTEST --tag S4_recheck60_${MODEL}" ;;
+     ARGS="$COMMON --protocol ltp --syn_model $MODEL --freeze_rho --rec_elec 18 --rho_init $RHO --n_base $K --tbs_bursts 0 --n_post 0 --t_settle $STIMT --io_test $IOTEST --tag S4_recheck60_${MODEL}" ;;
   *) echo "단계는 1~4"; exit 2 ;;
 esac
 

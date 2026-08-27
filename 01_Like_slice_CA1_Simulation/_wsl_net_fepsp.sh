@@ -13,7 +13,7 @@ export NMODLHOME=$HOME/nrn-gpu-mpi
 export NMODL_PYLIB=$HOME/miniconda3/envs/nrngpu/lib/libpython3.11.so
 export MODELS_DIR=$HOME/models_native
 SP=${SPECIAL:-$HOME/mods_full_gpu_mpi/x86_64/special}   # SPECIAL 로 override(예: 가소성 포함 mods_ltp)
-LS=/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/like_slice_CA1
+LS=/mnt/d/Project_2025_2026_HIPPO/Workspace/03_BrainSimulator/01_Like_slice_CA1_Simulation
 cd "$LS"
 echo "===== WSL MPI -n $NR $SCRIPT $(date +%F_%T) ====="
 "$MPIBIN/mpiexec" --oversubscribe -n "$NR" "$SP" -mpi -python "$SCRIPT" "$@"

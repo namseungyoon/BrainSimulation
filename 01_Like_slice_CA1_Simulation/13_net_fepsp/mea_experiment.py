@@ -182,6 +182,7 @@ def main():
     t_sched_end = _t_last + 60.0
     no_inh = "--no_inh" in sys.argv
     no_conn = "--no_conn" in sys.argv          # 내부 커넥톰 전체 배선 생략(회로 개입 OFF 조건)
+    save_cellcur = "--save_cellcur" in sys.argv  # 세포별 소마/수상돌기 막전류 축약 저장(3D 시각화용, io 전용)
     chunk_ms = float(argval("--chunk", "0"))   # >0이면 시간 청크 누적(막전류 전 시점 저장 회피)
     ckpt_every = int(argval("--ckpt_every", "4"))   # 토막 N개마다 중간 저장(0=끔). 청크 모드에서만 동작
 
@@ -276,6 +277,13 @@ def main():
         if m.any():
             lay_cen[Ln] = ((xyz[m] - c0) @ face_ax.T).mean(0)
     u_layer = lay_cen["SLM"] - lay_cen["SP"]; u_layer = u_layer / (np.linalg.norm(u_layer) + 1e-12)
+    u_long = np.array([-u_layer[1], u_layer[0]])       # 층축에 수직인 장축(면 내)
+    def _frame(uv2, thk1):                              # 면 2D+두께 → (장축 u · 층관통 r · 두께 w)
+        d2 = uv2 - lay_cen["SP"]
+        return np.array([float(d2 @ u_long), float(d2 @ u_layer), float(thk1)])
+    def _soma_frame(g):                                # ★검증된 소마 배치 좌표(xyz 노드) 기준
+        soxyz = xyz[keep[g]]
+        return _frame((soxyz - c0) @ face_ax.T, float((soxyz - c0) @ thick_ax))
     s_lay = {Ln: float((lay_cen[Ln] - lay_cen["SP"]) @ u_layer) for Ln in lay_cen}
     s_el = (E2d - lay_cen["SP"]) @ u_layer                  # 전극의 층 좌표(SP=0, SR·SLM=+)
     el_layer = np.array([min(s_lay, key=lambda k: abs(s_lay[k] - s)) for s in s_el])
@@ -360,6 +368,7 @@ def main():
             fibers.append(ns); keeph.append(ns)
     prm = SC_PRM; scrng = np.random.RandomState(7000 + RANK + seed * 131); n_sc = 0
     sc_cells = []                                      # SC를 받은 세포(진단용)
+    syn_xyz = []                                       # 활성(테스트)섬유가 구동하는 SC 시냅스 (uv, thk) — 시각화용
     rho_syns = []                                      # 가소성 시냅스(효능 ρ 추적용)
     rho_gid = []; rho_k = []                           # ★시냅스 신원 (세포 gid, 그 세포 안 몇 번째)
 
@@ -390,8 +399,13 @@ def main():
         k_syn = min(sc_pc if is_pc else sc_int, len(cand) * 3)   # 후보 세그당 최대 3접촉
         gnS = sc_g_pc if is_pc else sc_g_int
         sc_cells.append(g)
+        if save_cellcur:                               # 세포별 소마 보정(cellgeom→xyz참좌표) 한 번만
+            _ism = np.array([".soma" in x for x in cg["names"]])
+            _somf = _soma_frame(g)
+            _cgsf = _frame(cg["uv"][_ism].mean(0), cg["thk"][_ism].mean()) if _ism.any() else _somf
         for kk in range(k_syn):
-            seg = cg["geom"]["segs"][cand[scrng.randint(len(cand))]]
+            si = cand[scrng.randint(len(cand))]
+            seg = cg["geom"]["segs"][si]
             if SM["cls"] is not None:
                 # 칼슘 기반 장기가소성 시냅스(Graupner-Brunel, Wittenberg2006 파라미터=mod 기본값).
                 # 'gb'는 단기가소성이 없다 → PPF가 안 나옴(모델 한계). 'gbstp'가 그것을 메운다.
@@ -418,8 +432,11 @@ def main():
                 keeph.append(ncp); rho_syns.append(syn); rho_gid.append(g); rho_k.append(kk)
             else:
                 syn = build_synapse(seg, prm, seeds=(90000 + n_sc + RANK * 100000 + seed * 7, 1, 1), deterministic=det)
-            nc = h.NetCon(fibers[scrng.randint(n_fiber)], syn); nc.weight[0] = gnS; nc.delay = SYN_DELAY
+            fi = scrng.randint(n_fiber)
+            nc = h.NetCon(fibers[fi], syn); nc.weight[0] = gnS; nc.delay = SYN_DELAY
             keeph += [syn, nc]; n_sc += 1
+            if save_cellcur and fi < n_test:          # 테스트에서 켜지는 시냅스만 · 소마 보정으로 참좌표
+                syn_xyz.append(_somf + (_frame(cg["uv"][si], cg["thk"][si]) - _cgsf))
     n_sc_all = int(pc.allreduce(n_sc, 1)); n_sccell_all = int(pc.allreduce(len(sc_cells), 1)); pc.barrier()
     log(f"[3/4 국소SC] {n_sc_all:,} SC시냅스 · SC받은세포 {n_sccell_all}개 (자극전극#{stim_elec} 수상돌기 {r_stim}µm 내)")
     # 진단: SC를 받은 PC 소마 Vm 기록(자극이 실제로 세포를 탈분극시키는가)
@@ -453,6 +470,29 @@ def main():
     M_rank = L.moi_point_matrix(geom_r, E3, SIG_T, SIG_S, SIG_G, Hh, N_IMG) if len(rads) else np.zeros((NELEC, 0))
     nt = int(round(tstop / rec_dt)) + 1
     log(f"[4/4 전달행렬] rank세그 {len(rads)} · Hh={Hh:.0f}µm · {time.time()-t0:.0f}s")
+
+    # ── 세포별 막전류 축약(3D 시각화용): 세그먼트 → 세포당 (소마행, 수상돌기행) 2줄 ──
+    #   ★소마점은 검증된 배치 좌표(xyz 노드) 기준 _soma_frame(g).
+    #     수상돌기점 = 소마점 + (수상돌기−소마) 상대벡터 → cellgeom의 형태 원점 offset이 상쇄된다.
+    cell_grp = None; cell_pos_rank = None; cell_parts = []
+    if save_cellcur and protocol != "io":
+        raise SystemExit("--save_cellcur 는 io 프로토콜 전용입니다 (ltp는 6,260ms라 데이터가 폭발)")
+    if save_cellcur:
+        cell_grp = np.empty(len(vecs), np.int32)
+        cell_pos_rank = np.zeros((2 * len(cseg), 3))
+        for c, (g, a, b) in enumerate(cseg):
+            cg = cellgeom[g]; nm = cg["names"]
+            is_soma = np.array([".soma" in nm[i] for i in range(len(nm))])
+            cell_grp[a:b] = np.where(is_soma, 2 * c, 2 * c + 1)
+            somf = _soma_frame(g)
+            cell_pos_rank[2 * c] = somf
+            if (~is_soma).any() and is_soma.any():
+                rel = (_frame(cg["uv"][~is_soma].mean(0), cg["thk"][~is_soma].mean())
+                       - _frame(cg["uv"][is_soma].mean(0), cg["thk"][is_soma].mean()))
+            else:
+                rel = np.zeros(3)
+            cell_pos_rank[2 * c + 1] = somf + rel
+        log(f"[시각화] --save_cellcur 켜짐 · rank 세포 {len(cseg)} → 점 {2*len(cseg)}개 · SC시냅스 {len(syn_xyz)}개")
 
     # ══ 0-2 원자료 저장 ══════════════════════════════════════════════════════
     # 98시간짜리 런을 돌리고 요약 숫자 몇 개만 남기면 다시 돌릴 수밖에 없다.
@@ -578,6 +618,20 @@ def main():
                 out += M_rank[:, i:i + blk.shape[0]] @ blk
             return out * 1e3
 
+        def accum_cellcur():
+            """현재 청크의 세그먼트 막전류를 세포당 (소마, 수상돌기) 2행으로 합산해 누적.
+            grab()와 같은 블록 패턴이라 복사본이 블록 크기로 억제된다(버퍼 비우기 전에 호출)."""
+            if not save_cellcur or not vecs:
+                return
+            n = int(vecs[0].size())
+            if n == 0:
+                return
+            cc = np.zeros((2 * len(cseg), n))
+            for i in range(0, len(vecs), SEG_BLK):
+                blk = np.array([np.asarray(v) for v in vecs[i:i + SEG_BLK]])
+                np.add.at(cc, cell_grp[i:i + blk.shape[0]], blk)
+            cell_parts.append(cc)
+
         def try_contrib(V, n_prev, t_start, t_stop):
             """전극당 기여를 **이 버퍼가 살아 있는 지금** 계산한다.
 
@@ -614,6 +668,7 @@ def main():
             pc.psolve(t_end)
             V = grab()
             try_contrib(V, 0, 0.0, t_end)
+            accum_cellcur()
             return V if V is not None else np.zeros((NELEC, nt_fb))
         parts = []; t_next = 0.0; k = 0
         nchunk = int(np.ceil((t_end - 1e-9) / chunk_ms))
@@ -625,6 +680,7 @@ def main():
             V = grab()
             # ★버퍼를 비우기 **전에** 기여를 계산해야 한다(청크 모드에서는 여기가 유일한 기회).
             try_contrib(V, sum(p.shape[1] for p in parts), t_start, t_next)
+            accum_cellcur()                           # ★버퍼 비우기 전에 세포별 전류 축약 누적
             if V is not None:
                 parts.append(V)
             for v in vecs:                            # ★버퍼 비우고 재사용 = 메모리 상수화
@@ -648,6 +704,8 @@ def main():
         (Neff·기여세포수·90% 반경)를 재서 `contrib_res`에 남긴다. 청크 모드에서도 동작한다.
         """
         contrib_req.clear(); contrib_res.clear()
+        if save_cellcur:
+            cell_parts.clear()            # 세기마다 새로 누적(저장은 마지막 세기 기준)
         if contrib is not None:
             contrib_req.update(j=int(contrib[0]), t_lo=float(contrib[1]), t_hi=float(contrib[2]))
         for k, ns in enumerate(fibers):
@@ -757,6 +815,46 @@ def main():
                              fe["n_band"], fe["t20"], fe["t80"]))
                 waves.append(Ve[:, w])                     # 진단: 전극별 창내 파형
                 log(f"{na:>10} {fe['slope']:>13.4f} {fe['amp']:>9.4f} {pk_abs:>12.4f} {nspk:>7} {dep:>12.2f}")
+        # ── 3D 시각화 데이터 취합(집합통신, 전 rank 참여) ──
+        viz = {}
+        if save_cellcur:
+            cc = np.concatenate(cell_parts, axis=1) if cell_parts else np.zeros((2 * len(cseg), 0))
+            pos = cell_pos_rank if cell_pos_rank is not None else np.zeros((0, 3))
+            somaf = (np.arange(2 * len(cseg)) % 2 == 0).astype(np.int8)
+            synp = np.array(syn_xyz, float) if syn_xyz else np.zeros((0, 3))   # 이미 참좌표(u,r,w)
+            if NHOST > 1:
+                pcc = [np.array(p) for p in pc.py_allgather(cc.tolist())]
+                L0 = min(p.shape[1] for p in pcc)
+                cc = np.vstack([p[:, :L0] for p in pcc])
+                pos = np.vstack([np.array(p) for p in pc.py_allgather(pos.tolist())])
+                somaf = np.concatenate([np.array(p) for p in pc.py_allgather(somaf.tolist())])
+                sp = [np.array(p) for p in pc.py_allgather(synp.tolist())]
+                sp = [q if q.ndim == 2 else q.reshape(0, 3) for q in sp]
+                synp = np.vstack(sp) if sp else np.zeros((0, 3))
+            if RANK == 0:
+                somam = somaf == 1
+                Isoma = cc[somam].sum(0) if cc.size else np.zeros(cc.shape[1])
+                Idend = cc[~somam].sum(0) if cc.size else np.zeros(cc.shape[1])
+                el_u = (E2d - lay_cen["SP"]) @ u_long
+                wglass = float(np.percentile(pos[:, 2], 1)) if pos.size else 0.0
+                viz_elec = np.column_stack([el_u, s_el, np.full(len(E2d), wglass)])
+                cen = np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")])
+                ed = np.array([cen[0] - (cen[1] - cen[0]) / 2, (cen[0] + cen[1]) / 2,
+                               (cen[1] + cen[2]) / 2, (cen[2] + cen[3]) / 2,
+                               cen[3] + (cen[3] - cen[2]) / 2])
+                bu = float(np.percentile(np.abs(pos[:, 0]), 99)) * 2 if pos.size else 1.0
+                br = float(np.percentile(np.abs(pos[:, 1]), 99)) * 2 if pos.size else 1.0
+                bw = float(np.percentile(np.abs(pos[:, 2]), 99)) * 2 if pos.size else 1.0
+                u_stim = float((E2d[stim_elec] - lay_cen["SP"]) @ u_long)
+                viz = dict(cell_pos=pos.astype(np.float32), cell_soma=somaf,
+                           cell_cur=cc.astype(np.float32), Isoma=Isoma, Idend=Idend,
+                           syn_xyz=synp.astype(np.float32), viz_V=Ve.astype(np.float32),
+                           viz_elec=viz_elec, viz_lay_name=np.array(["SO", "SP", "SR", "SLM"]),
+                           viz_lay_r0=ed[:-1], viz_lay_r1=ed[1:],
+                           viz_box=np.array([bu, br, bw]),
+                           viz_stim_locus=np.array([u_stim, s_el[stim_elec], wglass]),
+                           viz_t=np.arange(cc.shape[1]) * rec_dt)
+                log(f"[시각화 저장] 점 {cc.shape[0]}개 · 프레임 {cc.shape[1]} · SC시냅스 {len(synp)}개")
         if RANK == 0:
             R = np.array(rows, float)
             np.savez(out, kind="io", levels=R[:, 0], nact=R[:, 1], slope=R[:, 2], amp=R[:, 3],
@@ -772,7 +870,7 @@ def main():
                      rec_j=rec_j, E=E2d, over=over, el_layer=el_layer, s_el=s_el,
                      rec_idx=np.array(rec_idx), neff=neff, r90=r90, n_contrib=nz,
                      s_lay=np.array([s_lay.get(k, np.nan) for k in ("SO", "SP", "SR", "SLM")]),
-                     **cfg)
+                     **viz, **cfg)
             print("saved:", out, f"· 총 {time.time()-t_all:.0f}s", flush=True)
 
     elif protocol == "ppf":
