@@ -53,8 +53,8 @@
 | **4-2** | `04_drive/2_natural_theta` | `4-2_natural_theta.py` | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` · `4-2_natural_theta.json` | ✅ |
 | **4-3** | `04_drive/3_imposed_theta` | `4-3_imposed_theta.py` | `4-3_imposed_theta.png` · `4-3_theta.json` | ✅ |
 | **4-4** | `04_drive/4_gamma` | `4-4_gamma.py` | `4-4_theta_gamma.png` | ⬜ |
-| **4-5** | `04_drive/5_phase_align` | `4-5_phase_align.py` | `4-5_phase_align.png` | ⬜ |
-| **4-6** | `04_drive/6_budget` | `4-6_runtime_budget.py` | `4-6_runtime_budget.png` | ⬜ |
+| **4-5** | `04_drive/5_phase_align` | `4-5_phase_align.py` | `4-5_phase_align.png` · `4-5_align.json` | ✅ |
+| **4-6** | `04_drive/6_budget` | `4-6_runtime_budget.py` | `4-6_runtime_budget.png` · `4-6_budget.json` | ✅ |
 | **5-1** | `05_engines/1_ref` | `5-1_refs.py` | `5-1_refs.png` · `5-1_refs.json` | ✅ |
 | **5-2** | `05_engines/2_det` | `5-2_engine_det.py` | `5-2_engine_det.png` · `5-2_det.json` | ✅ |
 | **5-3** | `05_engines/3_gb_a` | `5-3_engine_a.py` | `5-3_engine_a.png` · `5-3_gb_a.json` | ✅ |

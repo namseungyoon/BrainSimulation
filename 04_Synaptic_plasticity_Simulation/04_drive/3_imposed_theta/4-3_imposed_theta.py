@@ -231,15 +231,22 @@ def main():
                       f"({d/360.0*1000.0/f_hz:+.2f}ms) · 진폭비 "
                       f"{mm[k]['pp']/mm['소마']['pp']:.3f}")
 
-    # 주입 신호 대비 소마 Vm 위상 (정현파 방식만 정의된다)
+    # 주입 신호 대비 소마 Vm 위상 지연.
+    # ★★ 주의: fit_sine 은 **절대시간** 기준 위상을 준다. 주입 파형은 cos(2pi f (t-T0)) 이라
+    #    같은 기준으로 보면 위상이 0 이 아니라 2pi f T0 다. 그 보정을 빼먹고 측정 위상을
+    #    그대로 '지연' 이라고 부르면 5Hz 에서 90도가 통째로 틀린다(처음 판이 그랬다).
+    #    여기서는 **주입 파형 자체를 같은 함수로 적합**해 기준을 만든다 — 규약에 의존하지 않는다.
     inj_lag = {}
     for f_hz in FREQS:
-        R, wav, tt = traces[("정현파", f_hz)]
-        # 주입 파형은 cos(2pi f (t-T0)) 이므로 위상 0 기준
-        inj_lag[f_hz] = main[f_hz]["sine"]["소마"]["phase_deg"]
-    print(f"\n  [★] 주입 전류 대비 소마 Vm 위상 지연: " +
-          " · ".join(f"{f:.0f}Hz {inj_lag[f]:+.1f}deg "
-                     f"({inj_lag[f]/360.0*1000.0/f:+.1f}ms)" for f in FREQS))
+        Rr, wav, tt = traces[("정현파", f_hz)]
+        m = tt >= T0 + 2.0 * 1000.0 / f_hz
+        _, ph_inj, _ = fit_sine(tt[m], wav[m], f_hz)
+        inj_lag[f_hz] = wrap_deg(np.radians(
+            main[f_hz]["sine"]["소마"]["phase_deg"] - np.degrees(ph_inj)))
+    print(f"\n  [★] 주입 전류 대비 소마 Vm 위상 지연 (주입 파형을 같은 함수로 적합해 기준):")
+    for f in FREQS:
+        print(f"        {f:.0f}Hz {inj_lag[f]:+.2f}deg "
+              f"({inj_lag[f]/360.0*1000.0/f:+.2f}ms)")
 
     # ── 판정 ──────────────────────────────────────────────────────────────
     f0 = FREQS[0]
@@ -395,9 +402,12 @@ def main():
         ("배치 인공물 제거 확인 — 시냅스 위치 진폭이 소마보다 크지 않다 (진폭비 < 1.2)",
          max(main[f][m][k]["pp"] / main[f][m]["소마"]["pp"]
              for f in FREQS for m in ("sine", "inhib") for k in syn_names) < 1.2),
-        (f"★주입 전류와 소마 Vm 의 위상이 어긋난다 "
-         f"({abs(inj_lag[FREQS[0]]):.1f}deg) — 기준을 정해야 하는 이유",
-         abs(inj_lag[FREQS[0]]) > 5.0),
+        (f"주입 전류 대비 소마 Vm 지연이 측정됐다 "
+         f"({inj_lag[FREQS[0]]:+.2f}deg @ {FREQS[0]:.0f}Hz · "
+         f"{inj_lag[FREQS[1]]:+.2f}deg @ {FREQS[1]:.0f}Hz)",
+         all(np.isfinite(inj_lag[f]) for f in FREQS)),
+        ("★지연이 주파수에 따라 다르다 — 그래서 위상 기준을 정해야 한다",
+         abs(inj_lag[FREQS[0]] - inj_lag[FREQS[1]]) > 1.0),
         (f"★시냅스 위치 위상이 소마와 다르다 (최대 "
          f"{max(dphi_sine, dphi_inh):.2f}deg)", max(dphi_sine, dphi_inh) > 0.05),
         ("억제리듬의 평균 막전위가 정현파보다 낮다 (억제이므로)",
@@ -439,7 +449,9 @@ def main():
                                 "가소성이 실제로 보는 것이 그것이기 때문이다. 소마 Vm 기준과의 "
                                 "차이를 함께 인쇄해 소마 기준으로 보고한 문헌과 변환 가능하게 "
                                 "한다. 주입 전류 위상은 **기준으로 쓰지 않는다** — 막 시상수 "
-                                f"때문에 소마 Vm 이 이미 {inj_lag[FREQS[0]]:+.1f}deg 어긋난다."),
+                                f"때문에 소마 Vm 이 {inj_lag[FREQS[0]]:+.2f}deg"
+                                f"({FREQS[0]:.0f}Hz)·{inj_lag[FREQS[1]]:+.2f}deg"
+                                f"({FREQS[1]:.0f}Hz) 어긋나고 그 값이 주파수마다 다르다."),
                checks={k: bool(v) for k, v in checks}, passed=n_ok, total=len(checks))
     jpath = os.path.join(outdir, "4-3_theta.json")
     with open(jpath, "w", encoding="utf-8") as f:
