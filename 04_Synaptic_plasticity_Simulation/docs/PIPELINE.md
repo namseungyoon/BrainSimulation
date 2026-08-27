@@ -51,7 +51,7 @@
 | **3-9** | `03_synapse/9_bap` | `3-9_bap_profile.py` | `3-9_bap_profile.png` · `3-9_bap.json` | ✅ |
 | **4-1** | `04_drive/1_modes` | `4-1_drive_modes.py` | `4-1_drive_modes.png` · `4-1_drive.json` | ✅ |
 | **4-2** | `04_drive/2_natural_theta` | `4-2_natural_theta.py` | `4-2_zap_summary.png` · `4-2_spike_spectrum.png` · `4-2_natural_theta.json` | ✅ |
-| **4-3** | `04_drive/3_imposed_theta` | `4-3_imposed_theta.py` | `4-3_imposed_theta.png` | ⬜ |
+| **4-3** | `04_drive/3_imposed_theta` | `4-3_imposed_theta.py` | `4-3_imposed_theta.png` · `4-3_theta.json` | ✅ |
 | **4-4** | `04_drive/4_gamma` | `4-4_gamma.py` | `4-4_theta_gamma.png` | ⬜ |
 | **4-5** | `04_drive/5_phase_align` | `4-5_phase_align.py` | `4-5_phase_align.png` | ⬜ |
 | **4-6** | `04_drive/6_budget` | `4-6_runtime_budget.py` | `4-6_runtime_budget.png` | ⬜ |

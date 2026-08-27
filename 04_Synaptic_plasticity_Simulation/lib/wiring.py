@@ -158,6 +158,15 @@ class Wiring:
     def restore(self):
         """settle() 로 저장한 정착 상태로 복원(t 포함) + 기록 벡터 초기화.
 
+        ⚠️⚠️ **Vector.play 와 VecStim 은 restore() 와 양립하지 않는다.**
+        둘 다 `finitialize()` 때 등록된다 — play 는 PlayRecord 를, VecStim 은 INITIAL 에서
+        첫 net_send 를 건다. restore() 는 finitialize 를 부르지 않으므로 **둘 다 조용히
+        아무 일도 하지 않는다.** 실측 2026-08-28 (4-3): 정현파 전류와 억제 시냅스 리듬이
+        **둘 다 진폭 0.000 mV** 로 나왔고 두 방식이 완전히 같은 값을 냈다.
+        IClamp 는 t 에서 전류를 직접 계산하므로 restore 와 무관하다(3-7·3-8 이 그래서 정상).
+        => 연속 파형 구동이나 VecStim 을 쓰는 단계는 **조건마다 run()(=finit)** 을 쓴다.
+           정착이 필요하면 자극 시각을 SETTLE_MS 뒤로 두면 된다(그게 T0 의 역할이다).
+
         ⚠️ SaveState 는 **상태변수뿐 아니라 파라미터도 정착 시점 값으로 되돌린다.**
         조건마다 gmax 등을 바꾸려면 반드시 restore() **뒤에** 설정해야 한다.
         앞에 두면 조용히 지워진다(오류 없음). 실측 2026-08-24: 4-1 (D) 가 이 순서
