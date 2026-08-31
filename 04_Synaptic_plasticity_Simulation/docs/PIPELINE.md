@@ -66,7 +66,7 @@
 | **5-9** | `05_engines/9_stp_verify` | `5-9_stp_verify.py` | `5-9_ppr.png` · `5-9_train.png` · `5-9_recovery.png` · `5-9_stp.json` | ✅ |
 | **5-10** | `05_engines/10_calibrate` | `5-10_calibrate.py` | `5-10_first_pulse_match.png` · `5-10_calib.json` · `config/engines_calib.yaml` | ✅ |
 | **5-11** | `05_engines/11_freeze` | `5-11_freeze_contract.py` | `5-11_freeze_identity.png` · `5-11_freeze.json` | ✅ |
-| **6-1** | `06_experiments/1_theta_phase` | `6-1_theta_phase.py` | `6-1_theta_phase.png` | ⬜ |
+| **6-1** | `06_experiments/1_theta_phase` | `6-1_theta_phase.py` | `6-1_theta_phase.png` · `6-1_phase.json` | ✅ |
 | **6-2** | `06_experiments/2_theta_gamma` | `6-2_theta_gamma.py` | `6-2_theta_gamma.png` | ⬜ |
 | **6-3** | `06_experiments/3_stdp_single` | `6-3_stdp_single.py` | `6-3_stdp_single.png` | ⬜ |
 | **6-4** | `06_experiments/4_stdp_burst` | `6-4_stdp_burst.py` | `6-4_stdp_burst.png` | ⬜ |

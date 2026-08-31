@@ -35,14 +35,22 @@ def load_synapse_cfg(class_name=None):
 class Wiring:
     """고정 벤치 위의 전달 배선 + 기록. NEURON 객체를 keep 리스트로 GC 방지."""
 
-    def __init__(self, bench, class_name=None, frozen=True, prob=False, segs=None):
+    def __init__(self, bench, class_name=None, frozen=True, prob=False, segs=None,
+                 mech=None, pre_weight=1.0):
         """segs: [(seg, spec), ...] 를 주면 고정 기하 대신 그 위치에 시냅스를 만든다.
         spec 은 최소한 delay_ms 를 가져야 한다. 3-8(거리 스윕)·3-9 처럼 임의 위치가
-        필요한 단계용이고, 시냅스 파라미터는 여전히 config 단일 출처를 쓴다."""
+        필요한 단계용이고, 시냅스 파라미터는 여전히 config 단일 출처를 쓴다.
+
+        mech: POINT_PROCESS 이름을 직접 준다(6단계가 엔진 6종을 갈아끼울 때). 주지 않으면
+              prob 플래그에 따라 GB 계열을 고른다(3단계 관례).
+        pre_weight: pre NetCon 의 weight. GB 계열은 전달 플래그 1.0 이지만 BBP 계열
+              (Det*/Prob*)은 **여기에 nS 를 넣어야** 한다(D22 (1) 단위 규약)."""
         self.b = bench
         self.class_name, self.p = load_synapse_cfg(class_name)
         self.segs_override = segs
         self.prob = prob        # True 면 확률 방출(GBPlasticityStpProbSyn, 모델 C)
+        self.mech_name = mech
+        self.pre_weight = float(pre_weight)
         self.keep = []
         self.syns = []          # [(syn, spec)]
         self.pre_ncs = []
@@ -55,10 +63,18 @@ class Wiring:
 
     def _build(self, frozen):
         p = self.p
-        mech = h.GBPlasticityStpProbSyn if self.prob else h.GBPlasticitySyn
+        if self.mech_name:
+            mech = getattr(h, self.mech_name)
+        else:
+            mech = h.GBPlasticityStpProbSyn if self.prob else h.GBPlasticitySyn
         targets = self.segs_override if self.segs_override is not None else self.b.post_syn_segs()
         for seg, spec in targets:
             syn = mech(seg)
+            if self.mech_name:
+                # 엔진을 직접 지정한 경우 파라미터는 호출부(lib.engines.apply_params)가 맡는다.
+                # 여기서 GB 전용 필드를 건드리면 다른 엔진에서 AttributeError 가 난다.
+                self.syns.append((syn, spec)); self.keep.append(syn)
+                continue
             syn.gmax = p["g_nS"] / 1000.0            # nS -> uS
             syn.e = p["e_rev_mV"]                      # ★ mod 기본 0 을 덮어씀
             syn.tau_r_AMPA = p["tau_r_AMPA"]; syn.tau_d_AMPA = p["tau_d_AMPA"]
@@ -114,7 +130,8 @@ class Wiring:
         """pre 소마 전압 문턱 검출 -> 각 시냅스로 거리기반 지연 전달."""
         for syn, spec in self.syns:
             nc = h.NetCon(self.b.pre_soma_seg()._ref_v, syn, sec=self.b.pre.soma[0])
-            nc.threshold = -10.0; nc.weight[0] = 1.0; nc.delay = spec["delay_ms"]
+            nc.threshold = -10.0; nc.weight[0] = self.pre_weight
+            nc.delay = spec["delay_ms"]
             self.pre_ncs.append(nc); self.keep.append(nc)
 
     def wire_post_sentinel(self):

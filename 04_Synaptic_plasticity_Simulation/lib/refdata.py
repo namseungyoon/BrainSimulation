@@ -82,3 +82,34 @@ CACPYR = {
     "rheobase_nA":      (0.05, 0.35),  # 발화 시작 최소전류
     "adaptation_index": (0.0, 0.60),   # 발화 적응(양수)
 }
+
+# ── 6-1 의 직접 근거 (2026-08-31 PubMed 초록으로 확보. 전문은 여전히 미확보) ──
+HUERTA_LISMAN_1995 = {
+    "cite": "Huerta PT, Lisman JE (1995) Neuron 15(5):1053-63",
+    "pmid": "7576649",
+    "doi": "10.1016/0896-6273(95)90094-2",
+    "title": ("Bidirectional synaptic plasticity induced by a single burst during "
+              "cholinergic theta oscillation in CA1 in vitro"),
+    # ★초록에서 직접 읽은 것 (수치 대조가 가능한 것은 프로토콜뿐이다)
+    "burst": {"n_pulse": 4, "hz": 100.0},        # 우리 D17 표준 burst 와 동일
+    "peak": "동시냅스 LTP",
+    "trough": "**이미 강화된** 시냅스의 동시냅스 LTD",
+    "hetero": "다른 시냅스가 LTP 될 때 비활성 시냅스에 이시냅스 LTD",
+    "requires": ["NMDA 수용체", "무스카린 수용체"],
+    "sensitization": "theta 중에는 가소성이 크게 민감해져 **단일 burst** 로 유도된다",
+    "theta_source": "카바콜로 유도한 theta (약물)",
+    # ★우리 구성과의 차이 — 결과 해석에 반드시 함께 적는다
+    "deviations": [
+        "우리 theta 는 **정현파 전류로 부과**한다(4-2: 자연 theta 불가 · 4-3). "
+        "논문은 카바콜로 유도했다.",
+        "**무스카린 수용체 조절이 우리 모델에 없다.** 논문은 그것이 필요하다고 보고한다 — "
+        "따라서 '민감화(단일 burst 로 충분)' 를 우리가 재현하지 못해도 그것이 결핍인지 "
+        "구성의 차이인지 단정할 수 없다.",
+        "논문은 전시냅스 burst 만 준다. 우리 벤치는 시냅스 2개라 post 를 발화시킬 수 없으므로"
+        "(D17 (D)) **post 스파이크를 소마 전류로 부과**한다.",
+        "정량 수치(LTP/LTD 크기·카바콜 농도·위상 검출법)는 **전문 미확보**라 대조 불가. "
+        "**부호(방향)만** 검증 대상으로 삼는다.",
+    ],
+    "note": "★trough LTD 가 '이미 강화된' 시냅스에서만 관측된다는 것은 D33(rho0 가 부호를 "
+            "좌우한다)과 정확히 일치한다. 6-1 은 peak 를 rho0=0, trough 를 rho0=1 에서 본다.",
+}
