@@ -136,7 +136,7 @@ function drawScene(W,H,sc){
     gx.fillStyle=LAYFILL[L.name]||'rgba(120,130,150,.05)'; gx.beginPath();
     c.forEach((q,i)=>i?gx.lineTo(q[0],q[1]):gx.moveTo(q[0],q[1])); gx.closePath(); gx.fill();
     const lb=proj([-bu,(L.r0+L.r1)/2,bw],W,H,sc);
-    gx.fillStyle=LAYINK[L.name]||'#888'; gx.font='bold 12px IBM Plex Mono'; gx.textAlign='right';
+    gx.fillStyle=LAYINK[L.name]||'#888'; gx.font='bold 14px IBM Plex Mono'; gx.textAlign='right';
     gx.fillText(L.name, lb[0]-5, lb[1]+4); gx.textAlign='left';
   }
   // 박스 와이어프레임
@@ -144,18 +144,23 @@ function drawScene(W,H,sc){
   const ed=[[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
   gx.strokeStyle='rgba(150,175,210,.3)'; gx.lineWidth=1;
   for(const [a,b] of ed){const pa=proj(cor[a],W,H,sc),pb=proj(cor[b],W,H,sc); gx.beginPath();gx.moveTo(pa[0],pa[1]);gx.lineTo(pb[0],pb[1]);gx.stroke();}
-  // 치수 라벨
-  gx.fillStyle='#556579'; gx.font='10px IBM Plex Mono';
+}
+// 치수 라벨·자극 locus — 뉴런보다 나중에 그려 앞으로(가시성). 앞면 +bw 배치.
+function drawLabels(W,H,sc){
+  if(!D.box) return;
+  const bu=D.box.u/2, br=D.box.r/2, bw=D.box.w/2;
+  gx.fillStyle='#556579'; gx.font='bold 13px IBM Plex Mono'; gx.textAlign='left';
   const ml=(p,tx)=>{const q=proj(p,W,H,sc); gx.fillText(tx,q[0],q[1]);};
-  ml([0,br+30,-bw], D.box.u+'µm (장축)'); ml([bu+15,0,-bw], D.box.r+'µm (층관통)'); ml([-bu,-br-15,0], D.box.w+'µm (두께)');
-  // 자극 locus (반대 두께면)
+  ml([0,br+30,bw], D.box.u+'µm (장축)'); ml([bu+15,0,bw], D.box.r+'µm (측관통)'); ml([-bu,-br-15,bw], D.box.w+'µm (두께)');
   if(D.stim_locus){const q=proj(D.stim_locus,W,H,sc);
-    gx.strokeStyle='#c98a00';gx.lineWidth=2;gx.beginPath();gx.arc(q[0],q[1],7,0,6.28);gx.stroke();
-    gx.fillStyle='#c98a00';gx.font='bold 11px IBM Plex Mono';gx.fillText('⚡SC 자극',q[0]+10,q[1]+4);}
+    gx.strokeStyle='#c98a00';gx.lineWidth=2.5;gx.beginPath();gx.arc(q[0],q[1],8,0,6.28);gx.stroke();
+    gx.font='bold 15px IBM Plex Mono'; const _t='⚡SC 자극', _w=gx.measureText(_t).width;
+    gx.fillStyle='#ffffff'; gx.globalAlpha=.82; gx.fillRect(q[0]+10,q[1]-11,_w+10,22); gx.globalAlpha=1;
+    gx.fillStyle='#c98a00'; gx.fillText(_t,q[0]+15,q[1]+5);}
 }
 function draw3d(){
   const W=gl.width/DPR,H=gl.height/DPR; gx.setTransform(DPR,0,0,DPR,0,0); gx.clearRect(0,0,W,H);
-  const sc=Math.min(W,H)/(span*1.15); const cf=CUR[frame];
+  const sc=Math.min(W,H)/(span*1.15)*zoom; const cf=CUR[frame];
   drawScene(W,H,sc);
   const ord=[];
   for(let i=0;i<N;i++){const q=proj(POS[i],W,H,sc); ord.push([q[2],i,q]);}
@@ -181,9 +186,10 @@ function draw3d(){
     gx.beginPath(); gx.arc(q[0],q[1],rr+glow,0,6.28); gx.fill();
     gx.fillStyle=ECOL[j]; gx.beginPath(); gx.arc(q[0],q[1],rr,0,6.28); gx.fill();
     gx.strokeStyle='#fff'; gx.lineWidth=1; gx.stroke();
-    gx.fillStyle=ECOL[j]; gx.font='bold 10px IBM Plex Mono'; gx.textAlign='center';
+    gx.fillStyle=ECOL[j]; gx.font='bold 13px IBM Plex Mono'; gx.textAlign='center';
     gx.fillText(D.enames[j].split('(')[0], q[0], q[1]-rr-glow-4);
   }
+  drawLabels(W,H,sc);
   gx.textAlign='left';
 }
 function lineChart(ctx,cv,series,cursorFrame){
@@ -225,6 +231,8 @@ document.getElementById('etog').addEventListener('click',e=>{const b=e.target.cl
 document.getElementById('syntog').onclick=function(){synOn=!synOn; this.classList.toggle('on',synOn);};
 document.getElementById('rot').onclick=function(){autorot=!autorot; this.classList.toggle('on',autorot);};
 document.getElementById('catch').onclick=function(){catchment=!catchment; this.classList.toggle('on',catchment); this.style.opacity=catchment?1:.45;};
+let zoom=1;
+gl.addEventListener('wheel',e=>{e.preventDefault(); zoom*=Math.exp(-e.deltaY*0.0015); zoom=Math.max(0.3,Math.min(6,zoom));},{passive:false});
 gl.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
 window.addEventListener('mouseup',()=>drag=false);
 window.addEventListener('mousemove',e=>{if(!drag)return; yaw+=(e.clientX-lx)*0.008; pitch=Math.max(-0.5,Math.min(1.0,pitch+(e.clientY-ly)*0.006)); lx=e.clientX; ly=e.clientY;});
