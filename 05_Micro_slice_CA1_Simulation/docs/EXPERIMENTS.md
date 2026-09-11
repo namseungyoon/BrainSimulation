@@ -10,9 +10,12 @@
 | Ex1-A | 무자극 자발 발화율 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **0 Hz (완전 무음)** |
 | Ex1-B | 단일 volley 구동 검증 | `04_experiments/Ex1_baseline` | 05페이지 | ✅ **39% (2,182/5,610)** |
 | Ex2 | Schaffer collateral(CA3→CA1) 단발 uEPSP | `04_experiments/Ex2_schaffer` | 05페이지 | ✅ **uEPSP 0.43mV·PPR 2.11·τ9.95ms (Sayer1990 추세일치)** |
-| Ex2b | 연결 검증 매트릭스 (전 경로 2세포 uPSP/PPR) | `04_experiments/Ex2b_connection_matrix` | 커넥톰 UI(원형+매트릭스) 완성, 132경로·5클래스 | 🔄 UI ✅ · 2세포 벤치 대기 |
+| Ex2b | 연결 매트릭스 (전 경로 2세포 uPSP 진폭·kinetics) | `04_experiments/Ex2b_connection_matrix` | 132경로 격리쌍 · 통합 3D UI | ✅ **132/132 완료** |
+| Ex2c | 연결 STP (PPR 페어펄스 + 8펄스 train 주파수필터링) | `04_experiments/Ex2c_stp_dynamics_pair` | 132경로 STP·15그룹·문헌비교 | ✅ **132/132 완료** (amp_pp 저U촉진쌍 분산 유의) |
+| Ex2d | 버스트+회복 (Ecker Fig5: 8발@20Hz + 500ms 회복) | `04_experiments/Ex2d_stp_dynamics_burst` | 16대표쌍 · Ecker 9클래스 STP 직접대조 | ⬜ (ex2b_bench --burst 준비완료) |
+| (분석) | 통계 (부트스트랩 CI·PPR≠1·CV·Kruskal-Wallis) | `04_experiments/Ex2b_connection_matrix/statistical_test` | Ex2b/c/d 공통 분석(실험 아님) | ✅ forest plot |
 | Ex3 | SC I-O + 억제 차단 (단발) | `04_experiments/Ex3_io_inhibition` | ✅ **gradual I-O(발화 1.2→34.6%·fEPSP 10배)** · 단발 억제차단 무효=피드포워드 타이밍(정답) · 표+I-O곡선+3D UI(저세기/포화) | ✅ 완료 |
-| Ex3b | SC 페어펄스/train — 억제 동역학 | `04_experiments/Ex3b_paired_train` | TBD | ⬜ |
+| Ex3b | SC 페어펄스/train — 억제 동역학 (전체망) | `04_experiments/Ex3b_paired_train` | **14조건**: 페어펄스 ISI[20/50/100/200]×{정상,GABAoff} + train[θ8/γ40/HFS100]×{정상,GABAoff} · 8% · ~25hr | ⬜ (mpi_baseline --train/--gabaoff 준비완료) |
 | Ex4 | fEPSP 계산기(LSA) | `04_experiments/Ex4_fepsp` | TBD | ⬜ |
 | Ex4b | MEA 3층 영상법(MoI) 밴드 | `04_experiments/Ex4b_mea_band` | TBD | ⬜ |
 | Ex4c | CSD/kCSD 분석 + 정답 검증 | `04_experiments/Ex4c_csd` | TBD | ⬜ |
@@ -21,7 +24,8 @@
 | Ex7 | ACh 신경조절 | `04_experiments/Ex7_ach` | TBD | ⬜ |
 | Ex8 | LTP/LTD(칼슘 가소성) | `04_experiments/Ex8_ltp` | TBD | ⬜ |
 | Ex9 | 실측 MEA 대조(최종) | `04_experiments/Ex9_realdata_mea` | TBD | ⬜ |
-| Ex10 | STDP 곡선(Wittenberg 2006) | `04_experiments/Ex10_stdp` | TBD | ⬜ |
+| Ex3c | 네트워크 burst fEPSP 주파수의존(8·40·100Hz) | `04_experiments/Ex3c_microSlice_burst` | 05페이지 가-13 | ✅ **3주파수 완료** (E3 P8/P1 slope 8Hz 1.00·40Hz 0.82·100Hz 0.24 = 저역통과 필터링) |
+| Ex10 | STDP 곡선(장기가소성, Graupner-Brunel) | `04_experiments/Ex10_STDP_pair` | 05페이지 가-14~17 | 🔄 **진행 중** (3실험 타이밍·burst수·주파수 × ca_stp{0,1}, 스크립트·프로토콜그림 완료, tr8 완주 후 실행) |
 | Ex11 | cholinergic theta 위상의존 양방향 가소성(Huerta & Lisman 1995) | `04_experiments/Ex11_chol_theta_plasticity` | TBD | ⬜ |
 | Ex12 | **인터랙티브 SC 자극 워크벤치 (UI)** — 자극 설계 → 스파이크·fEPSP 리플레이 | `04_experiments/Ex12_ui_workbench` | TBD | ⬜ |
 
@@ -61,10 +65,22 @@ Ex4·Ex4b(fEPSP) → Ex8·Ex10(가소성) → **Ex9(실측 대조)**.
 **시각화 3종**(예시=Tsodyks-Markram 이론 예측, 실측 교체):
 - **A 매트릭스** `ex2b_matrix[_예시].html`: pre×post PPR 히트맵, **대표조합 6개 강조**(SC→PC·PC→PC·PVBC→PC·PC→OLM·CCKBC→PC·Ivy→PC, 문헌참조). 클릭→**STP곡선(실측 vs TM점선)·Train응답·대표파형·kinetics·지표표**.
 - **B 3D 쌍** `ex2b_pair3d_예시.html`: pre+post 형태 **전압전파 시간재생 + 시냅스 전류 glow**, 재생커서와 **동기화 지표**(pre소마·전류·post소마), 속도조절(0.1~2×).
-- **C 분석 6패널** `figures/ex2b_analysis_예시.png`: PPR-vs-U·클래스별·표적특이STP·STP곡선·**TM-vs-실측 산점도**·**Train 주파수필터링**.
+- **C 분석 6패널** `Ex2c_stp_dynamics_pair/figures/ex2c_analysis_예시.png` (STP=Ex2c): PPR-vs-U·클래스별·표적특이STP·STP곡선·**TM-vs-실측 산점도**·**Train 주파수필터링**.
 - 빌더: `build_ex2b_results_ui.py`(실측 A) · `gen_ex2b_{example,analysis,morph3d_example}.py`(예시). 템플릿 `ex2b_{results,pair3d}_tpl.html`.
 - **누락 조사 결과**: TM 표준실험 중 **train/주파수필터링이 빠져 추가**. 남은 것: CV·실패율(시행별), 장ISI 회복(500/1000ms).
 - **의존/일정**: 전체망 조립 불요(2세포 소형). **Ex3 메모리 풀리면 132쌍 순차 실행**(한 쌍씩, OOM 방지) → 예시 자리에 교체. morph3d는 대표경로만.
+
+## 🧪 Ex2c — 연결 STP (PPR 페어펄스 + 8펄스 train) · 결과·문헌비교·결론 (2026-08-27)
+**과학적 질문**: 각 연결의 **단기가소성(STP)** — 페어펄스 PPR(ISI 20/50/100/200)과 8펄스 train 주파수필터링(5/10/20/40Hz)이 시냅스 클래스별로 문헌과 맞나. (Ex2b가 "연결·진폭"이면 Ex2c는 "그 연결의 동역학". 같은 `ex2b_bench.py` 격리쌍 런에서 함께 측정.) 그림 `04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_protocol.png`(프로토콜)·`ex2c_analysis_예시.png`(STP 분석).
+**실행**: 132쌍 전체 프로토콜(4 ISI + 4 train + morph) 5워커 라운드로빈 배치(`run_ex2b_batch.sh`), 쌍당 ~50분(train 병목, 시냅스수 무관), ~18hr 완주. 통합 3D UI(`ex2b_matrix.html`): 3열(매트릭스·3D morph 세로·파형), pre초록/post보라 세포별 색스케일+이중컬러바, 자극지점⚡, 실시간값, ◆STP그룹 대표(15)·⭐문헌 페어(7) 마킹, 클릭 시 결과표(STP그룹/문헌비교).
+**핵심 결과**:
+- **STP 15종 수렴**: 132경로 U/D/F가 15그룹뿐(그룹10 I2 혼자 102경로). `compute_stp_groups.py`→`scratch/stp_groups.json`. 억제 대부분 억압, **촉진은 2그룹만**: E1(PC→SO_OLM/BS/Tri/BP, PPR@20 1.74)·I1(CCK/SCA/PPA 인터뉴런간, 1.70).
+- **문헌 대조**(리서치 조사 `scratch/lit_refs.json`): ✅ **PC→PC 억압 0.19**(Deuchars&Thomson 1996 일치), **PVBC→PC 억압 0.64·τ8.2ms**(Kraushaar&Jonas 일치, 단 DG문헌). ❌ **OLM→PC**: 시뮬 억압0.55 vs 문헌 무변조~1.0(Maccaferri et al.2000) — 파라미터 불일치. ⚠️ **Ivy→PC** 시뮬 약촉진1.23 vs 문헌 저속억압 — 방향 상충.
+**한계·주의**:
+- **발화실패 6쌍**(PC→OLM·PC→SO_BS·PC→SP_PVBC·PC→SR_SCA·BS→SP_AA·BS→SP_CCKBC): 고정자극 1.2nA가 rheobase 미달→presp=0→NaN. **강한자극(--amp 2.0) 재측정**(`ex2b_refire.sh`, 2026-08-27). ※ presp=2.0=1AP/펄스가 정상(119/125쌍 정상).
+- **단일쌍 Nrrp 확률성**: 개별 PPR이 TM에서 튐(BS→PC 실측1.36 vs TM0.88, train은 억압) → 아티팩트 스캐너 `ex2b_artifacts.py`로 방향뒤집힘·PP-train모순 플래그. 촉진쌍 반복 증가 권장.
+- **문헌 지역 불일치**: PVBC(Kraushaar)·CCKBC(Hefft)=DG, SC(Sayer)=기니피그. **인용 정정**: OLM→PC은 Maccaferri&McBain 1996 아님 → **Maccaferri et al. 2000**(J Physiol 524:91).
+**종합 결론**: 모델은 CA1 미세회로 STP의 **큰 구조**(세포체주변·전방향 억제=억압, 되먹임 흥분=촉진)를 **정성적으로 재현**. 개별 경로 정량 PPR은 문헌과 편차 있음 — (a)단일쌍 확률성 (b)Ecker 파라미터가 특정 CA1 단위연구에 미튜닝 (c)발화실패·촉진쌍 측정 불안정 기인. **후속**: 발화실패 재측정 → 촉진쌍 반복↑ → OLM/Ivy 파라미터를 CA1 문헌(Maccaferri/Fuentealba)에 재조정.
 
 ## Ex3 상세 — SC I-O + 억제 차단 (설계 확정 2026-08-24)
 **목표**: basal 시냅스 전달의 **I-O 곡선**(실측 MEA 포맷)을 재현. **y=fEPSP slope, x=fiber volley(발화 섬유 진폭)**의 전달함수.

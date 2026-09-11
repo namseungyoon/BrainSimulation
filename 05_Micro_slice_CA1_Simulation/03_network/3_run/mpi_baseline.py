@@ -25,10 +25,15 @@ DERIVED = os.path.join(ROOT, "data", "derived")
 CFG = os.path.join(ROOT, "config", "synapse_rules.json")
 FIBER_OFFSET = 10_000_000
 RADIUS = float(sys.argv[sys.argv.index("--r") + 1]) if "--r" in sys.argv else 150.0
+FRAC = float(sys.argv[sys.argv.index("--frac") + 1]) if "--frac" in sys.argv else 0.0  # >0이면 가까운 순 N% 섬유 모집(Ex3와 동일 volley 정의). 0이면 --r 반경.
 USE_GPU = "--gpu" in sys.argv   # CoreNEURON GPU 실행(단일 psolve, 균일 dt)
 NOSTIM = "--nostim" in sys.argv  # 자극 없음(자발 발화율 baseline)
 FEPSP = "--fepsp" in sys.argv    # 막전류→전극 fEPSP 기록(fast_imem + mea_forward)
 SETTLE = float(sys.argv[sys.argv.index("--settle") + 1]) if "--settle" in sys.argv else 300.0
+ISI = float(sys.argv[sys.argv.index("--isi") + 1]) if "--isi" in sys.argv else 0.0  # >0이면 페어펄스 2번째 자극(Ex3b: fEPSP PPR). 0=단발
+TRAIN_FREQ = float(sys.argv[sys.argv.index("--train") + 1]) if "--train" in sys.argv else 0.0  # >0이면 train(Hz). 다음 인자=펄스 수
+TRAIN_NP = int(sys.argv[sys.argv.index("--train") + 2]) if "--train" in sys.argv else 8
+GABAOFF = "--gabaoff" in sys.argv                # GABA_A off(bicuculline 대응, 탈억제 조건)
 if NOSTIM:
     # 무자극 자발 baseline: settle 후 OBS(기본 1000ms) 관측, 자극 없음
     OBS = float(sys.argv[sys.argv.index("--obs") + 1]) if "--obs" in sys.argv else 1000.0
@@ -36,9 +41,12 @@ if NOSTIM:
     TSTOP = SETTLE + OBS
     TAG = "_nostim"
 else:
-    STIM_T = SETTLE + 10.0
-    TSTOP = SETTLE + 40.0
-    TAG = ""
+    OBS = float(sys.argv[sys.argv.index("--obs") + 1]) if "--obs" in sys.argv else 30.0  # 마지막 자극 후 관측창(ms)
+    STIM_T = SETTLE + 10.0                          # 1번째 자극(자극 전 10ms baseline)
+    STIMDUR = ((TRAIN_NP - 1) * 1000.0 / TRAIN_FREQ) if TRAIN_FREQ > 0 else ISI  # 1번째→마지막 자극 시간
+    TSTOP = SETTLE + 10.0 + STIMDUR + OBS
+    _cond = ("tr%d" % int(TRAIN_FREQ)) if TRAIN_FREQ > 0 else ("isi%d" % int(ISI) if ISI > 0 else "single")
+    TAG = "_%s_%s" % (_cond, "block" if GABAOFF else "norm")   # 조건별 출력 구분
 WRITE_DIR = sys.argv[sys.argv.index("--write") + 1] if "--write" in sys.argv else None  # 파일모드: 모델을 여기 덤프 후 종료
 
 SC2 = {"SP_CCKBC", "SR_SCA", "SLM_PPA", "SP_Ivy"}
@@ -91,6 +99,7 @@ def compartments(cell, XYZg, rot, seed, radial):
 
 def main():
     h.nrnmpi_init(); pc = h.ParallelContext(); rank, nhost = int(pc.id()), int(pc.nhost())
+    pc.timeout(3600)  # 무거운 스텝(고빈도 burst 후반 스파이크 급증)에서 nrn_timeout 오탐 abort 방지; 실제 데드락은 1h 후 감지
     import net_build as nb
     B = nb.NetBuilder(); t0 = time.time()
     wc = np.load(os.path.join(DERIVED, "window_cells.npz"), allow_pickle=True)
@@ -118,12 +127,30 @@ def main():
     if rank == 0:
         print(f"[조립] {N}세포 · {time.time()-t0:.0f}s", flush=True)
 
-    # 자극 대상 = E3 반경 섬유 (국소 SC point 자극). 무자극(nostim)이면 아무도 안 켬.
-    driven = set() if NOSTIM else set(np.unique(fiber_id[dist_e3 < RADIUS]).tolist())
+    # 자극 대상: 무자극=없음. --frac>0이면 가까운 순 N% 섬유(Ex3와 동일 volley). 아니면 --r 반경.
+    if NOSTIM:
+        driven = set()
+    elif FRAC > 0:
+        nfib = int(fiber_id.max()) + 1
+        fmin = np.full(nfib, np.inf); np.minimum.at(fmin, fiber_id, dist_e3)
+        frank = np.argsort(fmin); k = int(round(FRAC * nfib))
+        driven = set(int(f) for f in frank[:k])
+        if rank == 0:
+            print(f"[자극] frac {FRAC:.2f} = 가까운 {k}/{nfib} 섬유 (locus=윈도우중심)", flush=True)
+    else:
+        driven = set(np.unique(fiber_id[dist_e3 < RADIUS]).tolist())
     vstim = {}
     for fidv in set(int(f) for f in np.unique(fiber_id) if int(f) % nhost == rank):
         pc.set_gid2node(FIBER_OFFSET + fidv, rank)
-        vs = h.VecStim(); tv = h.Vector([STIM_T] if fidv in driven else [])
+        if fidv not in driven:
+            spk = []
+        elif TRAIN_FREQ > 0:
+            spk = [STIM_T + kk * 1000.0 / TRAIN_FREQ for kk in range(TRAIN_NP)]   # train N펄스
+        elif ISI > 0:
+            spk = [STIM_T, STIM_T + ISI]                                          # 페어펄스
+        else:
+            spk = [STIM_T]                                                        # 단발
+        vs = h.VecStim(); tv = h.Vector(spk)
         vs.play(tv); nc = h.NetCon(vs, None); pc.cell(FIBER_OFFSET + fidv, nc)
         vstim[fidv] = (vs, tv, nc); keep.append((vs, tv, nc))
 
@@ -170,7 +197,7 @@ def main():
                 if rl:
                     syn.Use = rl["U"]; syn.Dep = rl["D"]; syn.Fac = rl["F"]; syn.Nrrp = rl["NRRP"]
                 syn.setRNG(qg + 1, 800000 + ci, 4)   # 확률 시냅스 RNG 필수(GPU 직렬화 위해서도) — stream 4
-                ncp = pc.gid_connect(pg, syn); ncp.weight[0] = gs / 1000.0; ncp.delay = 1.0
+                ncp = pc.gid_connect(pg, syn); ncp.weight[0] = 0.0 if GABAOFF else gs / 1000.0; ncp.delay = 1.0  # --gabaoff=탈억제
                 keep.append((syn, ncp))
             n_int += 1
     pc.barrier(); tot_int = int(pc.allreduce(n_int, 1))
@@ -195,16 +222,27 @@ def main():
     frec = None; elec = None; enames = None
     if FEPSP:
         import fepsp_record as fr
-        elec = np.array([e["xyz_um"] for e in cfg["electrodes"]["list"]], float)
-        enames = [e["id"] + "(" + e["layer"] + ")" for e in cfg["electrodes"]["list"]]
+        elec_mea = np.array([e["xyz_um"] for e in cfg["electrodes"]["list"]], float)
+        enames_mea = [e["id"] + "(" + e["layer"] + ")" for e in cfg["electrodes"]["list"]]
+        # 라미나 프로브(Ex4c CSD용): 기록기둥 u 아래 SO→SLM r축 32전극, 두께 중앙 w=0
+        NLAM = 32; u_col = cfg["electrodes"]["center_local"]["u"]
+        r_lam = np.linspace(-150.0, 500.0, NLAM)
+        elec_lam = np.array([seed + Mrows @ np.array([u_col, float(r), 0.0]) for r in r_lam])
+        enames_lam = ["L%02d_r%d" % (i, int(r_lam[i])) for i in range(NLAM)]
+        n_mea = len(elec_mea)
+        elec = np.vstack([elec_mea, elec_lam])
+        enames = enames_mea + enames_lam
         FSTRIDE = int(sys.argv[sys.argv.index("--fstride") + 1]) if "--fstride" in sys.argv else 4
         frec = fr.FEPSPRecorder(elec, stride=FSTRIDE)            # 세그먼트 1/stride 기록(대규모 setup 회피)
         for g in mine:
             frec.add_cell(B.cells[g], XYZ[g], Rot.from_quat(Q[g][[1, 2, 3, 0]]))
-        frec.finalize(rec_dt=0.1)                                    # scalar 간격(설정 빠름). 전 시뮬 0.1ms 기록 → settle 짧게
+        FRECDT = float(sys.argv[sys.argv.index("--frecdt") + 1]) if "--frecdt" in sys.argv else 0.25
+        n_rt = int(round((TSTOP - (STIM_T - 10.0)) / FRECDT)) + 1
+        rt = h.Vector(np.linspace(STIM_T - 10.0, TSTOP, n_rt))  # ★관측창만 기록(settle 제외)·TSTOP 안 넘겨 tvec>기록 불일치 방지
+        frec.finalize(rec_tvec=rt)
         nseg_tot = int(pc.allreduce(frec.n_seg(), 1))
         if rank == 0:
-            print(f"[fEPSP] 기록 세그먼트 {nseg_tot:,} · 전극 {len(elec)} · rec_dt 0.1ms · 전구간(settle {SETTLE:.0f}+관측)", flush=True)
+            print(f"[fEPSP] 기록 세그먼트 {nseg_tot:,} · 전극 {len(elec)} · rec_dt {FRECDT}ms · 관측창만({STIM_T-10:.0f}~{TSTOP:.0f}ms, {int(rt.size())}점)", flush=True)
 
     if rank == 0:
         print(f"      구동 시작", flush=True)
@@ -241,15 +279,20 @@ def main():
     at = comm.gather(list(tspk), root=0); ai = comm.gather(list(idspk), root=0)
     fep = None
     if FEPSP:
-        Vloc = frec.potential_local(); Vtot = comm.allreduce(Vloc, op=MPI.SUM)
-        tfe = np.array(frec.times()); nt = len(tfe)
+        Vlsa = comm.allreduce(frec.potential_local("lsa"), op=MPI.SUM)   # 선원(근거리 정확)
+        Vpsa = comm.allreduce(frec.potential_local("psa"), op=MPI.SUM)   # 점원(비교용)
+        tfe = np.array(frec.times()); nt = min(len(tfe), Vlsa.shape[1])  # tvec가 TSTOP 넘겨 실제 기록보다 길 수 있음 → 실제 기록 길이로 클램프
+        tfe = tfe[:nt]; Vlsa = Vlsa[:, :nt]; Vpsa = Vpsa[:, :nt]         # tfe·V·Im 시간축 길이 통일(불일치 IndexError 방지)
+        keep = np.where(tfe >= (STIM_T - 10.0))[0]                       # settle 잘라냄(자극 10ms전부터)
         pos = np.array(frec._pos); soma = np.array(frec._soma, dtype=int)
         Im = np.array([np.array(v)[:nt] for v in frec.vecs]) if frec.n_seg() else np.zeros((0, nt))
-        stride = max(1, frec.n_seg() // 2500)
-        gp = comm.gather(pos[::stride], root=0); gs = comm.gather(soma[::stride], root=0); gI = comm.gather(Im[::stride], root=0)
+        sstride = max(1, frec.n_seg() // 2500)                           # segI 공간 서브샘플(뷰 2500세그)
+        didx = keep[np.linspace(0, len(keep) - 1, min(150, len(keep))).astype(int)]  # segI 시간 다운샘플(뷰 150)
+        gp = comm.gather(pos[::sstride], root=0); gs = comm.gather(soma[::sstride], root=0)
+        gI = comm.gather(Im[::sstride][:, didx] if Im.size else Im, root=0)
         if rank == 0:
             SP = np.vstack([a for a in gp if len(a)]); SS = np.concatenate([a for a in gs if len(a)]); SI = np.vstack([a for a in gI if len(a)])
-            fep = dict(V=Vtot, t=tfe, SP=SP, SS=SS, SI=SI)
+            fep = dict(Vlsa=Vlsa[:, keep], Vpsa=Vpsa[:, keep], t=tfe[keep], t_seg=tfe[didx], SP=SP, SS=SS, SI=SI)
     if rank == 0:
         st = np.concatenate([np.array(x) for x in at]) if any(len(x) for x in at) else np.array([])
         sid = np.concatenate([np.array(x) for x in ai]).astype(int) if any(len(x) for x in ai) else np.array([], int)
@@ -279,17 +322,18 @@ def main():
                   open(os.path.join(ROOT, "scratch", f"mpi_baseline{TAG}.json"), "w"))
         print(f"[저장] scratch/mpi_baseline{TAG}.npz · 총 {time.time()-t0:.0f}s", flush=True)
         if fep is not None:
-            base = fep["V"][:, fep["t"] < STIM_T].mean(axis=1)
+            base = fep["Vlsa"][:, fep["t"] < STIM_T].mean(axis=1)
             m = fep["t"] >= STIM_T
-            print("[fEPSP] 전극별 자극후 피크:", flush=True)
-            for i, nm in enumerate(enames):
-                seg = fep["V"][i] - base[i]; k = int(np.argmax(np.abs(seg[m])))
-                print(f"   {nm}: {seg[m][k]:+.4f} mV @ {fep['t'][m][k]-STIM_T:.1f}ms", flush=True)
+            print("[fEPSP] MEA 전극별 자극후 피크(LSA):", flush=True)
+            for i in range(n_mea):
+                seg = fep["Vlsa"][i] - base[i]; k = int(np.argmax(np.abs(seg[m])))
+                print(f"   {enames[i]}: {seg[m][k]:+.4f} mV @ {fep['t'][m][k]-STIM_T:.1f}ms", flush=True)
             np.savez_compressed(os.path.join(ROOT, "scratch", f"mpi_fepsp{TAG}.npz"),
-                                V=fep["V"], t=fep["t"], elec=elec, enames=np.array(enames),
+                                V_lsa=fep["Vlsa"], V_psa=fep["Vpsa"], t=fep["t"], t_seg=fep["t_seg"],
+                                elec=elec, enames=np.array(enames), n_mea=n_mea,
                                 segpos=fep["SP"], segsoma=fep["SS"], segI=fep["SI"],
-                                stim_t=STIM_T, settle=SETTLE)
-            print(f"[fEPSP] 저장 scratch/mpi_fepsp{TAG}.npz · 세그먼트 {len(fep['SP']):,}", flush=True)
+                                stim_t=STIM_T, settle=SETTLE, tag=TAG)
+            print(f"[fEPSP] 저장 scratch/mpi_fepsp{TAG}.npz · MEA {n_mea}+라미나 {len(enames)-n_mea} · segI {fep['SI'].shape}", flush=True)
     pc.barrier(); pc.done(); h.quit()
 
 
