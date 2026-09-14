@@ -25,7 +25,7 @@
 | Ex8 | LTP/LTD(칼슘 가소성) | `04_experiments/Ex8_ltp` | TBD | ⬜ |
 | Ex9 | 실측 MEA 대조(최종) | `04_experiments/Ex9_realdata_mea` | TBD | ⬜ |
 | Ex3c | 네트워크 burst fEPSP 주파수의존(8·40·100Hz) | `04_experiments/Ex3c_microSlice_burst` | 05페이지 가-13 | ✅ **3주파수 완료** (E3 P8/P1 slope 8Hz 1.00·40Hz 0.82·100Hz 0.24 = 저역통과 필터링) |
-| Ex10 | STDP 곡선(장기가소성, Graupner-Brunel) | `04_experiments/Ex10_STDP_pair` | 05페이지 가-14~18 | ✅ **완료** (3실험×ca_stp{0,1}: burst수 ca0 1발0→4발0.61=Wittenberg재현·주파수 ca0 저빈도0→고빈도0.69=Sjöström·타이밍 정점형. **ca_stp0=생리적/ca_stp1=단일방출 아티팩트** 대조. +전파 3D 30짝평균) |
+| Ex10 | STDP 곡선(장기가소성, Graupner-Brunel) | `04_experiments/Ex10_STDP_pair` | 05페이지 가-14~18 | ✅ **완료** (3실험×ca_stp{0,1}: burst수 ca0 1발0→4발0.61=Wittenberg재현·주파수 ca0 저빈도0→고빈도0.69=Sjöström·타이밍 정점형. **ca_stp0=생리적/ca_stp1=단일방출 아티팩트** 대조. +전파 3D 30짝평균) + **6유형 재현(가-14B)**: 칼슘 분해 방식(원논문 Fig.1D→Fig.2, `stdp_calcium_decomp.py`) — DP 고전 헤비안 비대칭 창 재현(억압−0.072@−25ms·강화+0.059@+5ms)·D/P/위상도. DP만 원논문 검증 파라미터(Brian2 대조), 노이즈 제외 결정론 한계 명시 |
 | Ex11 | cholinergic theta 위상의존 양방향 가소성(Huerta & Lisman 1995) | `04_experiments/Ex11_chol_theta_plasticity` | TBD | ⬜ |
 | Ex12 | **인터랙티브 SC 자극 워크벤치 (UI)** — 자극 설계 → 스파이크·fEPSP 리플레이 | `04_experiments/Ex12_ui_workbench` | TBD | ⬜ |
 

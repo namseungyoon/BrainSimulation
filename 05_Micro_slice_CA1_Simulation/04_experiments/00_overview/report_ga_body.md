@@ -204,10 +204,36 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 - 목적은 Graupner-Brunel 칼슘 모델이 교체 가능한 표준 슬롯으로서 문헌 STDP(Spike-Timing-Dependent Plasticity)를 **부호와 창모양** 수준에서 재현하는지 보는 것임(정량 완전일치가 아니라 방향·형태 재현이 1차 목표). 신규 가소성 모델도 같은 프로토콜로 이 자리에서 재검증됨
 - STDP는 전·후 스파이크 시간차 Δt가 입력인 **쌍 수준 현상**이라 타이밍을 통제할 수 있는 쌍에서만 검증 가능함(문헌도 모두 쌍·단일 시냅스). 셋업은 E3(SR 층) 근처 추체세포 한 개에 SC(Schaffer Collateral) 시냅스 한 개를 커넥텀 그대로 두고, 단기 검증에서 0으로 얼렸던 gamma_p·gamma_d를 되살려 효능 변수 rho를 활성화한 뒤, 전시냅스(VecStim)와 후시냅스(소마 전류주입)로 Δt를 부여해 유도 후 rho를 판독함
 - 유도에는 후시냅스 버스트가 필요함 — 단일 스파이크쌍은 시냅스후 칼슘이 강화문턱 theta_p에 못 미쳐 변화가 없고(Inglebert et al. 2020), 버스트를 더해야 rho가 움직임(셋업 검증에서 확인)
-- 세 실험으로 구성함 — **Δt 타이밍 곡선 · 후시냅스 버스트 발수 · 유도 반복 빈도**로, Graupner-Brunel의 검증 세 축(타이밍·버스트 수·빈도)을 쌍에서 재현함. 각 실험은 **ca_stp 0(칼슘 고정, Graupner-Brunel 원본·문헌 기준)과 1(BBP 확률방출 연동, 본 확장)을 병렬**로 산출해 확률방출이 곡선의 부호·창을 어떻게 바꾸는지 봄
-- 문헌 대조 성격은 실험마다 다름 — 타이밍은 파라미터를 피팅하지 않은 **Bi & Poo 1998 독립 대조**, 버스트 수는 기본값 출처인 **Wittenberg & Wang 2006 구현 검증**임
+- 검증은 두 층으로 진행함. 먼저 **STDP 현상 자체가 어떠해야 하는가**(기대)를 원논문 Fig.2로 세우고 그 여섯 유형을 우리 시뮬레이터가 재현하는지 확인하며(6유형 재현), 이어 본 모델 기본값(Wittenberg fit) 영역에서 타이밍·버스트 수·빈도 의존을 상세히 봄. 상세 실험은 **ca_stp 0(칼슘 고정, Graupner-Brunel 원본·문헌 기준)과 1(BBP 확률방출 연동, 본 확장)을 병렬**로 산출함
 
-##### 1. STDP 타이밍 곡선 — 부호·창 독립 대조
+**기대 현상 — Graupner & Brunel 2012의 여섯 가지 STDP 유형 (원논문 Fig.2)**
+
+- 원논문은 **하나의 칼슘 규칙**(전·후 스파이크가 시냅스후 칼슘 c(t)를 올리고, c가 억압문턱 θd만 넘으면 억압·강화문턱 θp까지 넘으면 강화)만으로 **여섯 가지 STDP 곡선 유형**이 나옴을 보임. 유형을 가르는 것은 칼슘 파라미터의 위치 — 전스파이크 칼슘 C_pre, 후스파이크 칼슘 C_post, 전스파이크 칼슘 지연 D, 문턱 θp·θd
+
+| 유형 | 기대 현상 | 대표 파라미터(위치 근사) |
+|---|---|---|
+| D 억압만 | 어느 타이밍이든 LTD 또는 무변화 | C_pre 0.6 · C_post 0.6 · D 0 |
+| **DP 고전 헤비안** | **post→pre(−Δt) LTD, pre→post(+Δt) LTP — 교과서적 비대칭 창** | **C_pre 1.0 · C_post 2.0 · D 13.7 ms (검증)** |
+| P 강화만 | 모든 Δt에서 LTP(타이밍 무관) | C_pre 2.0 · C_post 2.0 · D 0 |
+| DPD 억압-강화-억압 | 중간 Δt만 강화, 양끝 억압(대칭형) | C_pre 0.9 · C_post 0.9 · D 4.6 ms |
+| DPD′ | 강화 창이 좁아진 변형 | θp 2.5 |
+| D′ | 강화 창 자체가 없어 전 구간 LTD | θp 3.5 |
+
+> DP형 파라미터만 원논문 공식 재현본(Brian2 Graupner_Brunel_2012)으로 대조·검증한 값이며(C_pre 1.0·C_post 2.0·D 13.7 ms·tau_ca 20 ms·θd 1.0·θp 1.3·gamma_d 200·gamma_p 321.808), 나머지 유형의 파라미터는 (C_pre·C_post·θp) 위치가 어느 구역인지 보이는 근사치임.
+
+- 즉 **STDP의 부호·창 모양은 고정된 현상이 아니라 칼슘 파라미터가 결정**하며, 그중 **DP형이 교과서적 고전 헤비안 STDP**임. 본 모델 기본값은 Wittenberg 2006 fit(C_post 0.276·rho0 0=DOWN)이라 강화 우세(P형 근처) 영역에 해당하므로, 이 기대 현상 재현은 파라미터를 원논문 검증치로 바꾸고 칼슘 분해로 억압(ρ↓)·강화(ρ↑)를 모두 가시화함(아래 1)
+
+##### 1. STDP 6유형 재현 — 고전 헤비안 포함 (Graupner-Brunel Fig.2)
+
+- 유형을 가르는 칼슘 파라미터를 원논문 검증치로 두고, 각 유형의 STDP 곡선을 **칼슘 분해 방식**으로 산출함(원논문 Fig.1D→Fig.2 방법). 우리 .mod와 동일한 칼슘식(c′ = −c/tau_ca, 전스파이크가 지연 D 후 C_pre·후스파이크가 C_post 주입)으로 Δt별 칼슘 궤적을 만들고, 억압문턱 θd·강화문턱 θp 위 체류시간 α_d·α_p를 잰 뒤, 60쌍 1 Hz 유도 후 효능 변화를 방향(칼슘 고정점 gamma_p·α_p / (gamma_p·α_p + gamma_d·α_d))과 접근도(60쌍 포화)로 계산함. 검증 상수는 원논문 값(tau_ca 20 ms · θd 1.0 · θp 1.3 · gamma_d 200 · gamma_p 321.808)이며, 특히 **DP형에서 post→pre 억압·pre→post 강화의 고전 헤비안 비대칭 창**이 재현되는지가 핵심 확인 대상임
+- 이 방식을 택한 이유는 우리 .mod의 rho 방정식이 노이즈 항이 없는 결정론이라 원논문의 확률적(노이즈 1000회 평균) 곡선을 그대로 낼 수 없기 때문임. 그러나 여섯 유형을 낳는 근본 기전은 **칼슘이 두 문턱을 언제·얼마나 넘는가**(α_d·α_p)로 정해지며 이는 노이즈·속도상수와 무관하게 칼슘 상수만으로 결정되므로, 우리 모델의 칼슘 처리로 정확히 재현 가능함
+
+- 결과로 **DP형에서 고전 헤비안 비대칭 창이 재현됨** — post→pre(−Δt)에서 억압(억압 최저 Δρ −0.072 @Δt −25 ms), pre→post(+Δt)에서 강화(강화 최고 +0.059 @Δt +5 ms), Δt 0 부근 교차. D형은 전 구간 억압전용(억압 최저 −0.217·강화 최고 +0.004로 사실상 0), P형은 전 구간 강화전용(강화 최고 +0.072·억압 최저 −0.015)으로 갈리며, (C_pre·C_post) 위상도에서 억압전용·강화전용·이상성(LTD+LTP) 구역이 나뉘어 **하나의 칼슘 규칙에서 여러 STDP 유형이 파생**되는 원논문 핵심이 재현됨
+- 한계로 우리 .mod는 노이즈 제외 결정론이라 곡선의 **부호·창 모양은 재현하되 확률적 크기는 원논문의 노이즈 평균이 필요**하며, DP만 원논문 검증 파라미터이고 D·P는 위상도상 대표 위치의 예시 파라미터임
+
+[그림 가-14B. STDP 재현 — Graupner & Brunel 2012 칼슘 분해 방식(60쌍 1 Hz · 노이즈 제외 결정론). 좌상 DP 고전 헤비안(검증 파라미터 · post→pre LTD · pre→post LTP 비대칭 창) · 우상 (C_pre·C_post) 위상도(유형 구역 · DP·D·P 위치) · 하단 D 억압전용 · P 강화전용]  (`04_experiments/Ex10_STDP_pair/figures/stdp_types.png`)
+
+##### 2. STDP 타이밍 곡선 (Wittenberg fit 영역) — 부호·창 독립 대조
 
 - 후시냅스 버스트를 고정한 채 전·후 스파이크 시간차 Δt를 음수에서 양수까지(−100에서 +100 ms) 여러 값으로 훑으며(sweep) 각 Δt에서 유도 후 rho 변화를 측정하여 STDP 곡선을 산출함. 유도 프로토콜은 전시냅스 단일 스파이크와 후시냅스 버스트를 Δt 간격으로 짝지어 5 Hz로 유도 반복 30회 인가하는 구성임
 
@@ -221,7 +247,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 
 [그림 가-15B. STDP 타이밍 창 튜닝(실측 · ca_stp 0) — post-burst 4발(넓은 창)과 2발(좁은 창·+5 ms 비대칭) 비교]  (`04_experiments/Ex10_STDP_pair/figures/stdp_curve_tuning.png`)
 
-##### 2. post-burst 수 의존 — Wittenberg 재현
+##### 3. post-burst 수 의존 — Wittenberg 재현
 
 - 시간차 Δt를 +10 ms로 고정한 채 후시냅스 버스트의 발수를 1발·2발·4발로 바꿔 가며 rho 변화를 측정함. 본 모델 경로(CA3에서 CA1 추체세포)와 기본값(Wittenberg 2006 피팅치)이 이 실험의 대조 문헌과 동일하므로, 버스트 수가 강화를 가르는 Wittenberg의 핵심 관찰을 직접 재현하는지 확인함
 
@@ -229,7 +255,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 
 [그림 가-16. post-burst 수 의존(실측 · Wittenberg 재현) — 후시냅스 1·2·4발 Δrho, ca_stp 0(단일=0 → 버스트=강화)·1(단일부터 강화)]  (`04_experiments/Ex10_STDP_pair/figures/stdp_burstnum.png`)
 
-##### 3. pairing 주파수 의존 — Sjöström 재현
+##### 4. pairing 주파수 의존 — Sjöström 재현
 
 - 유도 반복의 빈도를 저빈도에서 고빈도까지(1·5·20·50 Hz) 바꿔 가며(후스파이크 단일) rho 변화를 측정함. 저빈도에서는 짝 사이 칼슘이 감쇠해 무변화, 고빈도에서는 칼슘이 누적돼 강화로 전환되는 빈도 의존이 재현 대상임(대조 문헌 Sjöström et al. 2001은 신피질 자료라 정성 대조)
 
@@ -366,7 +392,7 @@ Leung & Fu 1994 전문(Fig 2·본문)에서 ISI별 거동을 확인해 대조하
 - Bliss TVP, Collingridge GL (1993) A synaptic model of memory: long-term potentiation in the hippocampus. *Nature* 361(6407):31–39. https://doi.org/10.1038/361031a0
 - Larson J, Munkácsy E (2015) Theta-burst LTP. *Brain Res* 1621:38–50. https://doi.org/10.1016/j.brainres.2014.10.034
 
-**STDP — 쌍 장기가소성 검증 문헌 (진행 예정)**
+**STDP — 쌍 장기가소성 검증 문헌**
 
 - Bi GQ, Poo MM (1998) Synaptic modifications in cultured hippocampal neurons: dependence on spike timing, synaptic strength, and postsynaptic cell type. *J Neurosci* 18(24):10464–10472. https://doi.org/10.1523/JNEUROSCI.18-24-10464.1998
 - Wittenberg GM, Wang SS (2006) Malleability of spike-timing-dependent plasticity at the CA3-CA1 synapse. *J Neurosci* 26(24):6610–6617. https://doi.org/10.1523/JNEUROSCI.5388-05.2006
