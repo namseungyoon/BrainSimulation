@@ -1,5 +1,24 @@
 # 가. 시뮬레이션 반응과 생리학적 데이터 비교 검증
 
+## 목차
+
+- **완료한 실험과 문헌 검증 (요약)**
+- **가) 구축**
+  - 1) 뉴런 모델 (세포·세그먼트 수준)
+  - 2) 시냅스 모델 (규모 무관 공통) — ① 단기가소성 모델 (Ecker 2020) · ② 장기가소성 모델 (Graupner-Brunel 2012)
+  - 3) 시뮬레이션 규모별 구성 — ① 뉴런 쌍 · ② 마이크로 슬라이스 네트워크
+- **나) 검증**
+  - 1) 뉴런 쌍
+    - ① 단기가소성 (Ecker) — 1. paired-pulse (독립 문헌 검증) · 2. burst (Ecker STP 프레임워크 재현)
+    - ② 장기가소성 (Graupner-Brunel) — 1. STDP 6유형 재현(고전 헤비안) · 2. STDP 타이밍 곡선(Wittenberg) · 3. post-burst 수 의존(Wittenberg) · 4. pairing 주파수 의존(Sjöström)
+  - 2) 마이크로 슬라이스 네트워크
+    - ① 단기가소성 (Ecker) — 1. I-O 곡선 · 2. paired-pulse (PPF) · 3. burst
+    - ② 장기가소성 (Graupner-Brunel) — 1. 주파수의존 LTD/LTP · HFS·TBS (진행 예정) · 2. θ 위상 타이밍 — 현 칼슘 모델의 재현 한계 (완료)
+    - ③ 실측 · 장기가소성 vs MEA — 1. MEA 실측 대조 (진행 예정)
+- **참고문헌 (References)**
+
+---
+
 - MEA(Multi-Electrode Array, 다전극 어레이) 전극이 놓이는 국소 조직 규모에서 시냅스 가소성(LTP 장기강화·LTD 장기억압)을 검증하고, 나아가 새로운 가소성 모델을 개발·검증할 기반을 마련함
 - 해마 CA1(Cornu Ammonis 1) 마이크로 슬라이스(MEA 전극 3개가 들어가는 최소 조직, 종축 500 × 측관통 800 × 두께 400 µm)를 Romani et al. 2024 아틀라스·커넥텀 파이프라인으로 in silico(컴퓨터 시뮬레이션) 재구성하고, 창 내부 모든 뉴런을 대표세포 축소 없이 전세포 완전형태 NEURON 모델로 인스턴트화함
 - 마이크로 슬라이스 채택 근거: 전체 CA1(456,378세포)은 계산자원상 불가능하나, 실측 MEA와 직접 대응할 최소 단위가 필요함
@@ -11,10 +30,10 @@
 | 규모 | 단기가소성 (Ecker) | 장기가소성 (Graupner-Brunel → 신규) |
 |---|---|---|
 | 뉴런 쌍 | paired-pulse · burst | STDP (타이밍 Δt · 버스트 수 · 반복 빈도, 각각 ca_stp 0·1 병렬) |
-| 마이크로 슬라이스 네트워크 | I-O · PPF · burst · fEPSP | 주파수의존 LTD/LTP (HFS·TBS·LFS·주파수-응답) |
+| 마이크로 슬라이스 네트워크 | I-O · PPF · burst · fEPSP | 주파수의존 LTD/LTP (HFS·TBS·LFS) |
 | 실측 MEA | — (해당 실험 없음) | MEA 실측 대조 (최종 목표) |
 
-> 약어: I-O(Input-Output, 입출력), PPF(Paired-Pulse Facilitation), fEPSP(field Excitatory Postsynaptic Potential, 필드 흥분성 시냅스후전위), STDP(Spike-Timing-Dependent Plasticity, 스파이크 타이밍 의존 가소성), LFS(Low-Frequency Stimulation, 저빈도 자극), HFS(High-Frequency Stimulation, 고빈도 자극), TBS(Theta-Burst Stimulation, theta-burst 자극), BCM(Bienenstock-Cooper-Munro, 주파수-응답 가소성 이론). Δt = 전·후 스파이크 시간차(sweep = 여러 Δt를 훑어 STDP 곡선 산출).
+> 약어: I-O(Input-Output, 입출력), PPF(Paired-Pulse Facilitation), fEPSP(field Excitatory Postsynaptic Potential, 필드 흥분성 시냅스후전위), STDP(Spike-Timing-Dependent Plasticity, 스파이크 타이밍 의존 가소성), LFS(Low-Frequency Stimulation, 저빈도 자극), HFS(High-Frequency Stimulation, 고빈도 자극), TBS(Theta-Burst Stimulation, theta-burst 자극). Δt = 전·후 스파이크 시간차(sweep = 여러 Δt를 훑어 STDP 곡선 산출).
 
 ### 완료한 실험과 문헌 검증 (요약)
 
@@ -100,7 +119,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 
 #### ① 단기가소성 (Ecker)
 
-- 구축한 뉴런 쌍(아래 표의 대표 연결들)을 그대로 사용해 두 가지 단기가소성 실험을 진행함. 두 실험 모두 전시냅스를 자극하여 시냅스 컨덕턴스 g(t)를 기록하고 쌍마다 100 시행을 평균하며 지표로 PPR을 사용함. paired-pulse는 2펄스를 여러 ISI(Inter-Stimulus Interval, 두 펄스 사이의 자극 간 간격)로 인가하여 짧은 시간규모의 단기가소성을 보고, burst는 여러 펄스를 이어지는 열(train)로 인가하여 긴 시간규모의 단기가소성을 봄
+- 구축한 뉴런 쌍(아래 표의 대표 연결들)을 그대로 사용해 두 가지 단기가소성 실험을 진행함. 두 실험 모두 전시냅스를 자극하여 시냅스 컨덕턴스 g(t)를 기록하고 쌍마다 60 시행을 평균하며 지표로 PPR을 사용함. paired-pulse는 2펄스를 여러 ISI(Inter-Stimulus Interval, 두 펄스 사이의 자극 간 간격)로 인가하여 짧은 시간규모의 단기가소성을 보고, burst는 여러 펄스를 이어지는 열(train)로 인가하여 긴 시간규모의 단기가소성을 봄
 
 - 검증 대상 경로: HippocampusHub Connection Physiology(Kohus et al. 2016, Romani 2024)의 22개 pathway 규칙을 STP 프로파일에 따라 5개 클래스로 분류
   - E1 촉진성 흥분: 추체세포(PC, Pyramidal Cell) → 오리엔스 인터뉴런(OLM·Tri·BS·BP), 낮은 U·강한 촉진
@@ -108,7 +127,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
   - I1 촉진성 억제: CCK·SCA·PPA 인터뉴런 상호, 촉진
   - I2 강억압 억제: PV basket(PVBC)·축삭축삭세포(AA, axo-axonic)·OLM·bistratified(BS) → 추체세포, 강억압·수적 우세
   - I3 약억압 수상돌기 억제: CCK basket(CCKBC)·SCA·PPA·Ivy → 추체세포, 약억압
-- 5개 클래스를 포괄하는 **15개 대표 경로**로 구성하며 각 경로를 100 시행 반복함. 연결마다 STP 파라미터가 고유하게 지정됨 — U(방출확률)·D(감쇠 시상수, ms)·F(촉진 시상수, ms)·NRRP(방출가능 소포부위 수, Number of Readily Releasable Pool). 아래 표의 이 15개 경로가 단기가소성 검증(paired-pulse·burst)의 대상임
+- 5개 클래스를 포괄하는 **15개 대표 경로**로 구성하며 각 경로를 60 시행으로 분석함(pair는 100 시행 기록 중 60을 사용해 burst와 시행수를 통일). 연결마다 STP 파라미터가 고유하게 지정됨 — U(방출확률)·D(감쇠 시상수, ms)·F(촉진 시상수, ms)·NRRP(방출가능 소포부위 수, Number of Readily Releasable Pool). 아래 표의 이 15개 경로가 단기가소성 검증(paired-pulse·burst)의 대상임
 
 | 클래스 | 대표 쌍 (pre → post) | U | D (ms) | F (ms) | NRRP |
 |---|---|---|---|---|---|
@@ -131,44 +150,50 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 - U가 비슷해도 D·F가 달라 거동이 갈림(PC→OLM은 F 670으로 강촉진, AA→PC는 D 1278로 강억압)
 - 인터뉴런 약칭: OLM(oriens-lacunosum moleculare), PVBC(parvalbumin basket cell, 파브알부민 basket), CCKBC(CCK basket cell), BS(bistratified), AA(axo-axonic), SCA(Schaffer collateral-associated), PPA(perforant path-associated), Ivy(ivy cell), Tri(trilaminar), BP(back-projection)
 
+두 실험의 자극 프로토콜을 하나로 개관하면, paired-pulse는 안정화(settle) 후 2펄스를 네 ISI로 인가해 PPR을 산출하고, burst는 8펄스 자극열을 주파수(5·10·20·40 Hz)로 인가해 정상상태 필터링을 봄. 아래 그림은 두 프로토콜의 자극 타이밍과 시뮬레이션 창을 한눈에 보임
+
+[그림 가-6A. Ex2b/2c 자극 프로토콜 개요 — (A) paired-pulse 4 ISI(20·50·100·200 ms → PPR), (B) train 8펄스 주파수 스윕(5·10·20·40 Hz → 정상상태 필터링), settle·tail 창 포함]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_protocol.png`)
+
 ##### 1. paired-pulse — 독립 문헌 검증
 
 - 각 대표 경로마다 전시냅스에 펄스를 두 번 주는데, 두 펄스 사이의 간격 ISI(Inter-Stimulus Interval, 자극 간 간격)를 20, 50, 100, 200 ms 네 값으로 바꿔 가며 인가함. 각 ISI에서 두 번째 응답의 시냅스 컨덕턴스 최고값을 첫 번째 응답의 최고값으로 나눈 PPR(Paired-Pulse Ratio)을 구하고, 이를 ISI에 대해 이어 PPR-vs-ISI 곡선을 산출함. 이 곡선은 짧은 간격에서 시냅스가 촉진되는지 억압되는지, 그리고 그 효과가 간격이 벌어지면서 얼마나 빨리 원래대로 회복되는지를 보여 줌. 산출한 곡선은 같은 값을 개별 쌍기록으로 측정한 문헌과 직접 대조함
 
 [그림 가-6. paired-pulse 자극 신호 — 2펄스, 모든 ISI(20·50·100·200 ms) 타이밍]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_stim_pp.png`)
 
-- 결과 — 15개 경로 전체 분석
-
-15개 경로를 5개 클래스로 묶어 PPR의 ISI 곡선을 보면 방향이 뚜렷하게 갈림. 촉진성인 E1(PC→OLM, 평균 PPR 약 1.20)과 I1(CCKBC→CCKBC, 약 1.67)은 두 번째 응답이 커지고, 억압성인 E2(약 0.64)와 I2(약 0.80)는 작아지며, I3 약억압 수상돌기 억제(약 1.00)는 거의 변하지 않음. 짧은 ISI(20 ms)에서 촉진·억압 효과가 가장 크고 ISI가 길어질수록 무변조(PPR 1)로 회복하는 고전적 단기가소성 시간규모도 함께 나타남
-
-[그림 가-6B. 대표 경로 15개 PPR-vs-ISI 곡선(클래스별 그룹) — E1·I1 촉진, E2·I2·I3 억압/약억압]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_ppr15_bypath.png`)
-
-같은 15개 경로를 쌍별 개별 패널로 제시하며, 음영 밴드는 각 경로의 100 시행 부트스트랩 95% CI(Confidence Interval, 신뢰구간 — 참값이 그 안에 있을 것으로 95% 신뢰하는 범위)임. 예를 들어 PC→PC는 0.36(0.28–0.45)으로 억압, PC→OLM은 1.89(1.04–3.69)로 촉진으로 경로마다 방향이 명확함
-
-[그림 가-6C. 대표 경로 15개 개별 PPR-vs-ISI(쌍별 패널, 밴드 = 100시행 부트스트랩 95% CI)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_ppr15_grid.png`)
+- 구성 — 15개 경로의 뉴런 쌍 셋업
 
 15개 경로의 실제 뉴런 쌍 형태와, 각 쌍에서 시냅스가 놓인 위치와 개수, 전류주입으로 자극하는 pre 소마와 반응을 기록하는 post 소마 지점을 제시함
 
 [그림 가-6D. 대표 경로 15개 뉴런 쌍 — 전(파랑)·후(보라) 실제 형태 · 시냅스 개수/위치(커넥텀 실측) · 자극(pre 소마)·기록(post 소마)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_pairs15.png`)
 
-15개 경로에 등장하는 세포 유형 9종(추체세포와 인터뉴런 8종)의 실제 완전형태를 제시함
+대표 경로 하나의 분석 화면으로, 자극이 어떻게 PPR 값으로 산출되어 촉진/억압을 판정하는지 계산 흐름을 예시함. ① pre 소마에 2펄스 전류(IClamp)를 주면 ② pre가 활동전위 2발을 내고, 이 스파이크가 시냅스를 통해 ③ post 시냅스후 전위와 ④ 시냅스 컨덕턴스 g(t)를 일으킴. PPR은 ④에서 2번째 펄스의 g 최고값(a2)을 1번째 최고값(a1)으로 나눈 값(a2/a1)이며, PPR>1이면 촉진(2번째 응답이 큼)·PPR<1이면 억압(2번째가 작음)·≈1이면 무변조로 판정함. 이 산출을 60시행 반복해 ⑤ 4 ISI별 PPR과 부트스트랩 95% CI를 얻음. 왼쪽 3D 패널은 이 과정을 전(pre·초록·자극)·후(post·보라·측정) 세포의 실제 형태와 시냅스 위치(빨강·개수는 커넥텀 실측) 위에서 세그먼트 막전위 색(색막대 = 세포 min/max, 점선 = 소마)으로 보여, pre 활동전위와 post 시냅스후 전위가 시냅스에서 소마로 전파되는 모습을 확인함
 
-[그림 가-6E. 대표 경로에 등장하는 세포 유형별 실제 형태(추체세포 + 인터뉴런 8종, 각 유형 대표 1개 전세포 완전형태)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_celltypes.png`)
+[그림 가-6F. 대표 경로 1개 분석 화면 캡처 — 왼쪽 3D 형태·막전위 전파, 오른쪽 5패널(① 자극 · ② pre AP · ③ post Vm · ④ 시냅스 g · ⑤ 4 ISI PPR 박스플롯 60시행 부트스트랩)]  (대표 경로 1개 캡처)
+
+- 결과 — 15개 경로 전체 분석
+
+15개 경로를 5개 클래스로 묶어 PPR의 ISI 곡선을 보면 방향이 뚜렷하게 갈림. 촉진성인 E1(PC→OLM, 평균 PPR 약 1.07)과 I1(CCKBC→CCKBC, 약 1.74)은 두 번째 응답이 커지고, 억압성인 E2(약 0.61)와 I2(약 0.79)는 작아지며, I3 약억압 수상돌기 억제(약 1.00)는 거의 변하지 않음. 짧은 ISI(20 ms)에서 촉진·억압 효과가 가장 크고 ISI가 길어질수록 무변조(PPR 1)로 회복하는 고전적 단기가소성 시간규모도 함께 나타남
+
+[그림 가-6B. 대표 경로 15개 PPR-vs-ISI 곡선(클래스별 그룹) — E1·I1 촉진, E2·I2·I3 억압/약억압]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_ppr15_bypath.png`)
+
+같은 15개 경로를 쌍별 개별 패널로 제시하며, 음영 밴드는 각 경로의 60 시행 부트스트랩 95% CI(Confidence Interval, 신뢰구간 — 참값이 그 안에 있을 것으로 95% 신뢰하는 범위)임. 예를 들어 PC→PC는 0.35(0.25–0.47)로 억압, PC→OLM은 1.07(0.50–2.22)로 촉진으로 경로마다 방향이 명확함
+
+[그림 가-6C. 대표 경로 15개 개별 PPR-vs-ISI(쌍별 패널, 밴드 = 60시행 부트스트랩 95% CI)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_ppr15_grid.png`)
+
+15개 경로의 실제 기록 파형을 시냅스 컨덕턴스 g(t)로 제시함. 대표 조건은 paired-pulse ISI 50 ms이며 각 경로 시행 평균임(파형은 평균, PPR 지표는 60 시행). 촉진성(E1·I1)은 2번째 펄스 응답이 커지고 억압성(E2·I2·I3)은 작아지는 것을 파형 자체로 확인함(예로 PC→OLM은 촉진, OLM→PC·PVBC→PC는 억압)
+
+[그림 가-6G. 15경로 실제 기록 파형 — 시냅스 컨덕턴스 g(t) (대표 조건 paired-pulse ISI 50 ms · 시행 평균)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_rectraces15.png`)
 
 방출확률 U가 클수록 PPR이 낮아지는 관계를 STP 곡선과 PPR-vs-U 산점도로 제시함
 
-[그림 가-7. STP 곡선·PPR-vs-U 산점도]  (`ex2c_stp_curves_15groups.png`)
-
-클래스 사이의 PPR 분포 차이가 통계적으로 유의함을 제시함(Kruskal-Wallis H = 22.80, p = 1.4×10⁻⁴). 방출확률 U와 PPR의 음의 상관(Spearman r = −0.317)은 Tsodyks-Markram 모델의 예측과 정합함(이론 대 실측 Pearson r = 0.551)
-
-[그림 가-8. 클래스별 PPR 분포·Kruskal-Wallis·bootstrap forest plot]  (`statistical_test/figures/ex2d_stats.png`, `ex2d_bootstrap.png`)
+[그림 가-7. STP 곡선·PPR-vs-U 산점도]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_stp_curves_15groups.png`)
 
 - 문헌 비교 검증 — 위 15경로 중 개별 쌍기록 문헌이 존재하는 대표 6쌍. 문헌 PPR 정량값은 각 논문 PubMed 초록에서 확인
   - 6쌍 중 4쌍이 방향(촉진·억압)에서 일치함(개별 쌍기록이므로 독립 문헌 검증에 해당). 정량 크기는 문헌마다 자극 조건·측정 ISI가 달라 편차가 있음. 나머지 2쌍 중 OLM→PC는 불일치, Ivy→PC는 정량 PPR 문헌이 희소하여 판정을 보류하며, 각 사유를 아래에서 확인함
 
 | 경로 | 시뮬 PPR | 문헌 PPR (정량) | 판정 | 문헌 |
 |---|---|---|---|---|
-| PC → PC | 0.34 | 억압 (ISI↑ 회복; 정량 PPR 미보고) | 방향 일치 | Deuchars & Thomson 1996 (CA1) |
+| PC → PC | 0.35 | 억압 (ISI↑ 회복; 정량 PPR 미보고) | 방향 일치 | Deuchars & Thomson 1996 (CA1) |
 | PVBC → PC | 0.81 | 약 0.63 (37 % PPD @10 ms) | 방향 일치 | Kraushaar & Jonas 2000 (⚠️치상회) |
 | CCKBC → PC | 0.83 | 억압 (초록은 비동기 방출 중심, PPR 미보고) | 방향 참고 | Hefft & Jonas 2005 (⚠️치상회) |
 | PC → OLM | 1.07 | 2.53 (@20 ms) | 방향 일치 (크기 약함) | Ali & Thomson 1998 (CA1) |
@@ -177,7 +202,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 
 > 문헌 PPR은 각 논문 PubMed 초록 확인. ⚠️ Kraushaar 2000·Hefft 2005는 CA1이 아니라 치상회(dentate gyrus)의 basket·CCK 문헌으로 CA1 PVBC·CCKBC의 가장 가까운 대체 인용임. 특히 Hefft 2005는 PPR이 아니라 비동기 방출을 다룬 논문이라 억압 방향의 참고 근거로만 사용. 흥분성 2쌍(PC→PC·PC→OLM)만 CA1 직접 문헌이며, PC→OLM은 문헌 촉진(2.53 @20 ms)이 우리(1.07)보다 강함
 - 기전: 억제성(PVBC·CCKBC·OLM→PC)의 억압과 흥분성(PC→OLM)의 촉진은 모두 전시냅스 방출확률 동역학(TM: 높은 U는 첫 방출로 자원 고갈→억압, 낮은 U에 촉진 F가 더해지면→촉진)에서 나오며, 부호가 문헌과 일치함
-- 불일치한 OLM→PC는 시뮬이 억압(0.62)인 반면 문헌은 무변조(Maccaferri et al. 2000, PPR 0.93 @100 ms)임. 방출확률 U를 0.10으로 재조정하면 시뮬 PPR이 1.12로 이동해 무변조(≈1)를 재현하므로, 편차가 파라미터 미세조정 부족에서 비롯됨을 확인함
+- 불일치한 OLM→PC는 시뮬이 억압(0.62)인 반면 문헌은 무변조(Maccaferri et al. 2000, PPR 0.93 @100 ms)임. 방출확률 U를 0.10으로 재조정하면 시뮬 PPR이 1.26으로 이동해 무변조 근처로 이동하므로, 편차가 파라미터 미세조정 부족에서 비롯됨을 확인함
 - 보류한 Ivy→PC는 시뮬에서 촉진(PPR 1.16)으로 나타나지만, Ivy 세포는 비교적 최근에 특성화되어(Fuentealba et al. 2008) 정량 PPR 문헌이 희소함(초록도 PC로부터의 느린 억제만 기술). 따라서 방향만 제시하고 판정은 보류하며, 향후 정량 문헌이 확보되면 재검토함
 
 ##### 2. burst — Ecker STP 프레임워크 재현
@@ -186,6 +211,12 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 - 단기가소성 파라미터가 Ecker 피팅값이므로 이 실험은 독립 문헌 검증이 아니라, 본 시뮬레이터의 구현이 Ecker가 특성화한 클래스별 단기가소성 동역학을 제대로 재현하는지 확인하는 자기일관성 검증에 해당함
 
 [그림 가-9. burst 자극 신호 — 주파수 스윕(5·10·20·40 Hz), 각 8펄스 자극열 (간격 200·100·50·25 ms)]  (`04_experiments/Ex2c_stp_dynamics_pair/figures/ex2c_stim_burst.png`)
+
+- 구성 — 버스트 STP 궤적 산출
+
+대표 경로 하나의 분석 화면을 캡처하여, 8펄스 자극이 어떻게 버스트 STP 궤적으로 산출되는지 계산 흐름을 예시함(대표 주파수 20 Hz). ① pre 소마에 8펄스 전류(IClamp, 20 Hz)를 주면 ② pre가 활동전위 8발을 내고, 이 스파이크가 시냅스를 통해 ③ post 시냅스후 전위와 ④ 시냅스 컨덕턴스 g(t)를 일으킴. 버스트 STP 궤적은 ④에서 각 펄스의 g 최고값을 1번째 펄스 최고값으로 나눈 상대진폭(1펄스=1)이며, 촉진성은 펄스가 진행되며 상대진폭이 누적하여 커지고 억압성은 급감함. paired-pulse PPR과 동일하게 60시행으로 산출하고 회복펄스는 제외해 8펄스만 표시함. 왼쪽 3D 패널은 이 과정을 전(pre·초록·자극)·후(post·보라·측정) 세포의 실제 형태와 시냅스 위치(빨강) 위에서 세그먼트 막전위 색으로 보이며, 트레이스(③④)는 대표 주파수의 시행 평균임
+
+[그림 가-9C. 대표 경로 1개 burst 분석 화면 캡처(20 Hz) — 왼쪽 3D 형태·막전위 전파, 오른쪽 5패널(① 8펄스 자극 · ② pre AP 8발 · ③ post Vm 평균 · ④ 시냅스 g 평균 · ⑤ STP 궤적 8펄스 60시행), 회복펄스 제외]  (대표 경로 1개 캡처)
 
 - 결과 — 15개 경로 전체 분석
 
@@ -201,10 +232,7 @@ $$w = w_0 + \rho\,(b\,w_0 - w_0),\qquad b = w_1/w_0$$
 
 #### ② 장기가소성 (Graupner-Brunel)
 
-- 목적은 Graupner-Brunel 칼슘 모델이 교체 가능한 표준 슬롯으로서 문헌 STDP(Spike-Timing-Dependent Plasticity)를 **부호와 창모양** 수준에서 재현하는지 보는 것임(정량 완전일치가 아니라 방향·형태 재현이 1차 목표). 신규 가소성 모델도 같은 프로토콜로 이 자리에서 재검증됨
-- STDP는 전·후 스파이크 시간차 Δt가 입력인 **쌍 수준 현상**이라 타이밍을 통제할 수 있는 쌍에서만 검증 가능함(문헌도 모두 쌍·단일 시냅스). 셋업은 E3(SR 층) 근처 추체세포 한 개에 SC(Schaffer Collateral) 시냅스 한 개를 커넥텀 그대로 두고, 단기 검증에서 0으로 얼렸던 gamma_p·gamma_d를 되살려 효능 변수 rho를 활성화한 뒤, 전시냅스(VecStim)와 후시냅스(소마 전류주입)로 Δt를 부여해 유도 후 rho를 판독함
-- 유도에는 후시냅스 버스트가 필요함 — 단일 스파이크쌍은 시냅스후 칼슘이 강화문턱 theta_p에 못 미쳐 변화가 없고(Inglebert et al. 2020), 버스트를 더해야 rho가 움직임(셋업 검증에서 확인)
-- 검증은 두 층으로 진행함. 먼저 **STDP 현상 자체가 어떠해야 하는가**(기대)를 원논문 Fig.2로 세우고 그 여섯 유형을 우리 시뮬레이터가 재현하는지 확인하며(6유형 재현), 이어 본 모델 기본값(Wittenberg fit) 영역에서 타이밍·버스트 수·빈도 의존을 상세히 봄. 상세 실험은 **ca_stp 0(칼슘 고정, Graupner-Brunel 원본·문헌 기준)과 1(BBP 확률방출 연동, 본 확장)을 병렬**로 산출함
+이 실험의 목적은 Graupner-Brunel 칼슘 모델이 교체 가능한 표준 슬롯으로서 문헌 STDP(Spike-Timing-Dependent Plasticity, 스파이크 시간차 의존 가소성)를 **부호와 창모양** 수준에서 재현하는지 보는 것임(정량 완전일치가 아니라 방향·형태 재현이 1차 목표). STDP는 전·후 스파이크 시간차 Δt가 입력인 **쌍 수준 현상**이라 타이밍을 통제할 수 있는 뉴런 쌍에서만 검증 가능하며(문헌도 모두 쌍·단일 시냅스), 셋업은 E3(SR 층) 근처 추체세포 한 개에 SC(Schaffer Collateral) 시냅스 한 개를 커넥텀 그대로 두고, 단기 검증에서 0으로 얼렸던 강화·억압 속도상수(gamma_p·gamma_d)를 되살려 시냅스 효능(장기가소성으로 강화·억압되는 시냅스 세기 상태)을 활성화한 뒤, 전시냅스(VecStim)와 후시냅스(소마 전류주입)로 Δt를 부여해 유도 후 그 시냅스 효능의 변화를 판독함. 유도에는 후시냅스 버스트가 필요한데, 단일 스파이크쌍은 시냅스후 칼슘이 강화문턱(theta_p)에 못 미쳐 변화가 없고(Inglebert et al. 2020) 버스트를 더해야 시냅스 효능이 움직이기 때문임(셋업 검증에서 확인). 검증은 두 층으로 진행하여, 먼저 **STDP 현상 자체가 어떠해야 하는가**(기대)를 원논문 Fig.2로 세우고 그 여섯 유형을 우리 시뮬레이터가 재현하는지 확인한 뒤(6유형 재현), 본 모델 기본값(Wittenberg fit) 영역에서 타이밍·버스트 수·빈도 의존을 상세히 보며, 상세 실험은 **ca_stp 0(칼슘 고정, Graupner-Brunel 원본·문헌 기준)과 1(BBP 확률방출 연동, 본 확장)을 병렬**로 산출함. 신규 가소성 모델도 같은 프로토콜로 이 자리에서 재검증됨
 
 **기대 현상 — Graupner & Brunel 2012의 여섯 가지 STDP 유형 (원논문 Fig.2)**
 
@@ -341,17 +369,34 @@ Leung & Fu 1994 전문(Fig 2·본문)에서 ISI별 거동을 확인해 대조하
 
 #### ② 장기가소성 (Graupner-Brunel)
 
-##### 1. 주파수의존 LTD/LTP — 진행 예정
+- 네트워크 장기가소성은 세 유도 프로토콜로 검증함 — 주파수 기반 **HFS·TBS**(고빈도→LTP)와 위상 기반 **θ 위상 타이밍**(peak→LTP·trough→LTD). 각 프로토콜은 문헌 여러 편을 근거로 하며, 본 절의 핵심 대비는 **현 Graupner-Brunel 칼슘 모델이 "빈도 의존"은 재현하나 "위상 의존"은 재현하지 못함**을 보여 신규 가소성 모델의 필요성을 정량 논증하는 것임
+- 실행 티어: 네트워크 psolve가 극도로 느려(0.9초 시뮬 ≈ 벽시계 1.5시간, 조건당 유도 자극 1초 이상) 조건당 수 시간~수십 시간 소요됨. 따라서 유도 검증은 **단일 시냅스 티어**(추체 1개 + SC→PC 시냅스 1개, 결정론 GB .mod)로 먼저 완주하고, 네트워크는 전파 시각화(3D) 용도로만 선택 적용함. ca_stp는 쌍 검증에서 문헌과 더 잘 맞는 0(칼슘 고정)을 적용함
 
-- 동일 Graupner-Brunel 모델을 네트워크에 얹고, 표준 LTP/LTD 유도 프로토콜로 fEPSP slope % 변화를 측정하여 문헌과 대조
-- 유도 프로토콜(각 문헌)
-  - HFS-LTP: 고빈도 자극(100 Hz 테타너스 1초) → LTP (Bliss & Collingridge 1993; Hernandez et al. 2005)
-  - TBS-LTP: theta-burst(4펄스 100 Hz를 5 Hz theta 리듬으로 반복) → LTP, 가장 생리적 (Larson & Munkácsy 2015)
-  - LFS-LTD: 저빈도 자극(1 Hz × 900펄스) → LTD (Dudek & Bear 1992)
-  - 주파수-응답(BCM): 1~100 Hz를 훑어 저빈도 LTD ↔ 고빈도 LTP로 부호가 갈리는 곡선 재현, 위 셋을 종합 (Dudek & Bear 1992)
-- Graupner 모델이 칼슘(=주파수) 의존으로 가소성 부호를 결정하도록 설계되어, 이 주파수-응답이 핵심 검증 대상임
-- 네트워크 유도 시뮬레이션은 조건당 수 시간에서 수십 시간이 드는 무거운 계산이므로, ca_stp는 쌍 검증에서 문헌과 더 잘 맞는 것으로 판정된 대표 한 값만 적용함(쌍처럼 0·1을 모두 돌리지 않음). 즉 쌍에서 방법론을 확정하고 그 결론을 네트워크에 적용하는 순서임
-- 실행 가능성 단계: HFS(100 Hz 1초)와 TBS는 본 데스크톱에서 실행 가능하여 먼저 진행함. 반면 LFS-LTD(1 Hz를 7분에서 15분간 인가)는 자극 시간이 길어 본 데스크톱 단독으로는 비현실적이므로, 자극 시간 단축안 또는 클라우드 실행을 별도 대책으로 두고 이후 진행함
+##### 1. 주파수의존 LTD/LTP — HFS·TBS (진행 예정)
+
+- 동일 Graupner-Brunel 모델을 얹고 표준 LTP 유도 프로토콜로 시냅스 효능(및 fEPSP slope %) 변화를 측정해 문헌과 대조
+- 유도 프로토콜(문헌별)
+  - HFS-LTP: 고빈도 강직자극(100 Hz × 1초 = 100펄스, 1~4열) → LTP, fEPSP slope ~140–160% (Bliss & Collingridge 1993; Hernandez et al. 2005)
+  - TBS-LTP: theta-burst(4펄스 100 Hz 버스트를 5 Hz theta로 10회 = 1에폭 2초) → LTP, 가장 생리적 (Larson & Munkácsy 2015; 원조 Larson & Lynch 1986)
+- Graupner 모델은 칼슘(=자극 빈도) 의존으로 부호를 결정하도록 설계되어 고빈도→칼슘 대량 누적→θp 초과→강화가 핵심 검증 대상임. 빈도 의존 자체는 쌍 STDP(가-14, 빈도 의존)에서 이미 정성 재현됨(저빈도 무변화→고빈도 강화)
+
+##### 2. θ 위상 타이밍 — 현 칼슘 모델의 재현 한계 (완료)
+
+- 목적은 **재현 성공이 아니라 현 칼슘 모델의 재현 불가를 정량 논증**하는 것임 — θ 진동의 어느 위상에 자극을 주는지가 가소성 방향을 결정하는 현상(peak→LTP·trough→LTD)을 현 모델이 낼 수 없음을 보여 신규 모델의 필요성을 부각함. 문헌 두 편을 그대로 재현 대상으로 삼음
+- 문헌·환경·측정 (그대로 따름)
+  - Huerta & Lisman 1995 (Neuron 15:1053, in vitro) — 환경: 랫 해마 슬라이스에 carbachol 50 µM 관류로 콜린성 θ(7–9 Hz) 유도, SC-CA1 두 독립 경로. 측정: population spike / fEPSP, maximal(population spike 일관 유발 최소강도)의 절반 세기, 경로독립성은 PPF(50 ms)로 확인. conditioning: θ 중 단일 버스트 4 shocks @ 100 Hz를 peak/trough의 95% 지점에 온라인 트리거(그 외 자극 정지). 결과: **peak→LTP, trough→LTD — 자극량 동일, 위상만 변수**
+  - Hyman et al. 2003 (J Neurosci 23:11725, in vivo) — 환경: 행동 중 랫, CA1 stratum radiatum 자극, 국소 θ(EEG) 실시간 위상 트리거. 측정: fEPSP slope. 결과: **peak 자극 +17.9±0.94%(LTP), trough 자극 −12.9±1.03%(LTD)** — in vitro 위상 의존이 in vivo 행동 상태에서도 성립
+- 단일 시냅스 재현 구성: 추체 1개(SP_PC)의 SR 수상돌기에 SC→PC 시냅스 1개, θ 배경은 소마에 8 Hz 정현파 전류(진폭 0.5 nA) 주입으로 peak/trough 정의, conditioning은 4펄스 100 Hz 버스트를 위상 φ에 정렬해 pre 인가. **수렴 볼리 프록시**(버스트 동기 소마 전류 0.6 nA)로 실제 field 자극이 다수 구심을 동원해 후세포를 발화시키는 것을 축약 — θ peak에서 후세포 발화·trough에서 무발화(생리적으로 올바른 게이팅). 위상 스윕 8점(0~315°, H&L 단일 버스트)과 반복버스트(θ 주기마다 20회, Hyman tetanic 근사)로 측정
+- 자극 패턴과 게이팅은 아래 HTML로 묘사함(θ 정현파·peak/trough 버스트 정렬·발화/무발화)
+
+[그림 가-15. θ 위상 타이밍 자극 패턴·결과 UI — (자극) θ 8 Hz + peak/trough 버스트 정렬·수렴 볼리 게이팅, (결과 A) 칼슘 c(t) vs 임계 θd·θp, (결과 B) 위상-Δρ 곡선]  (`04_experiments/Ex_theta_phase/ui/theta_phase_ui_sweep_ncyc1.html`)
+
+- 결과로 **위상 의존 양방향성이 재현되지 않음** — 게이팅은 정상 작동(peak 0° post AP 2·trough 180° post AP 0)하나, 8개 위상 전부 LTP로 Δρ가 +0.051~+0.055로 평평함(peak +0.055 vs trough +0.051, 차이 0.004). trough LTD가 나타나지 않음
+- 반복버스트(Hyman tetanic 근사, θ 20주기)로 누적해도 결과 동일 — peak Δρ +0.312(post AP 23)·trough Δρ +0.303(post AP 0)으로 **둘 다 강한 LTP**. 게이팅은 20주기 내내 완벽(peak 발화·trough 무발화)하나 trough가 LTD로 뒤집히지 않고, 반복은 양쪽 강화를 키울 뿐임(문헌 Hyman: trough −12.9%와 정반대)
+- 원인은 명확함 — GB 칼슘 c는 pre/post **스파이크에만** 점프하고(C_pre 1.0/전스파이크, C_post 0.276/후스파이크), 4펄스 100 Hz 버스트의 C_pre 칼슘만으로 c_peak ≈ 3.0~3.3이 되어 **강화문턱 θp(1.3)를 위상·후발화와 무관하게 초과**함. trough가 LTD가 되려면 칼슘이 θd~θp(1.0~1.3) 대역에 앉아야 하는데, 그러려면 **전압의존 NMDA 칼슘**(trough 과분극 시 Mg-block으로 칼슘 감소)이 필요하나 현 점-칼슘 모델에는 없음
+- 결론: 현 Graupner-Brunel 모델은 빈도 의존 가소성은 담되 **θ 위상 의존 양방향 가소성은 구조적으로 재현 불가** → 전압의존 칼슘을 갖춘 **신규 가소성 모델의 필요성**을 정량적으로 뒷받침함
+
+[그림 가-15B. θ 위상 타이밍 재현 실패 원인 — (A) 칼슘 c(t) peak vs trough, 둘 다 θp 초과 · (B) 위상-Δρ 곡선(평평, 문헌 기대 peak↑/trough↓ 대비) · (C) 소마 Vm 게이팅(peak 발화·trough 무발화)]  (`04_experiments/Ex_theta_phase/figures/theta_phase_sweep_ncyc1.png`)
 
 #### ③ 실측 · 장기가소성 (Graupner-Brunel) vs MEA
 
